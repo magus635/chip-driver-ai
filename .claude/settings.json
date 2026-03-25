@@ -1,0 +1,27 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(scripts/compile.sh)",
+      "Bash(scripts/link.sh)",
+      "Bash(scripts/flash.sh)",
+      "Bash(scripts/debug-snapshot.sh)",
+      "Bash(scripts/check-env.sh)",
+      "Bash(source config/project.env*)",
+      "Bash(cat .claude/*.log)",
+      "Bash(cat .claude/*.md)",
+      "Bash(cat build/*.map)",
+      "Bash(arm-none-eabi-size*)",
+      "Bash(arm-none-eabi-nm*)",
+      "Bash(find src/*)",
+      "Bash(grep * src/*)",
+      "Bash(md5sum src/**/*)"
+    ],
+    "deny": [
+      "Bash(rm -rf *)",
+      "Bash(sudo rm*)"
+    ]
+  },
+  "env": {
+    "CLAUDE_CODE_PROJECT": "chip-driver-ai"
+  }
+}

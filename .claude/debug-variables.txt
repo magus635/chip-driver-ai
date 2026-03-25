@@ -1,0 +1,18 @@
+# .claude/debug-variables.txt — 调试变量监控列表
+# debugger-agent 从 .map 文件查找这些变量的地址并读取值
+# 每行一个全局变量名
+
+# ── 示例：CAN 驱动全局变量 ─────────────────────────────
+# 根据你的驱动代码中实际的全局变量名修改
+
+g_can_init_done
+g_can_tx_count
+g_can_rx_count
+g_can_error_count
+g_can_state
+
+# ── 示例：通用驱动状态变量 ────────────────────────────
+# g_driver_status
+# g_error_flags
+# g_rx_buffer_head
+# g_rx_buffer_tail
