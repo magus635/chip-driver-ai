@@ -31,3 +31,4 @@ typedef struct {
 #define RCC_APB1ENR_CAN2EN (1U << 26)
 
 #endif /* RCC_CONFIG_H */
+#define RCC_APB2ENR_SPI1EN (1U << 12)

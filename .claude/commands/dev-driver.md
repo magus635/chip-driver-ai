@@ -33,14 +33,37 @@ output=.claude/doc-summary.md
 - [ ] 关键时序参数
 - [ ] 中断/DMA 相关配置
 
-### STEP 2 · 代码生成
+### STEP 1.5 · 寄存器级交叉审查 (Review & HitL Confirm)
+
+使用 Task 工具启动 `reviewer-agent` agent 进行静态防呆和内存对齐分析：
+```
+doc_summary=.claude/doc-summary.md
+module=$ARGUMENTS
+```
+
+等待 agent 审查返回结果：
+- 若返回 `REVIEW_FAILED`：停止流程，根据诊断报告修改约束或让系统打回重做。
+- 若返回 `REVIEW_PASSED`：**必须在此立刻暂停整个流程，等待人工复核**。弹窗/打印提示：
+> 🚨 `[HITL 等待人工决断]` AI 已经完成底层“地基”设计及自动化机审，未发现位段重叠或偏移越界。
+> 请作为 Owner 的你最后扫视一眼 `.claude/doc-summary.md`。如果架构和物理地址提取均无误，请回复“继续”(Continue)，系统将进入海量代码生成与编译修复阶段。
+
+等待用户回复确认指令后，方可进入 STEP 2。
+
+### STEP 2 · 业务代码硬核生成
 
 读取以下上下文后生成驱动代码：
-1. `.claude/doc-summary.md`（文档摘要）
+1. `.claude/doc-summary.md`（经过审查的高亮规则）
 2. `src/` 目录下已有的框架文件（识别 TODO/stub 位置）
 3. `config/project.env`（芯片型号、时钟频率等）
+4. **`docs/architecture-guidelines.md` 或相关架构规范（绝不能跨层违规：底层操作比如 |= 必须封装在 _ll 层的 static inline 中，高层业务只能调底层的 wrapper API）**
+5. **`docs/embedded-c-coding-standard.md`（确保 MISRA-C 与标准合规）**
 
 生成规则：
+- 强制遵守【硬件潜能开发原则】：
+    1. **拒绝“玩具级”驱动**：严禁生成只包含单一模式或固定波特率的 API，必须提供 `ConfigType` 配置结构体。
+    2. **拒绝“死等”逻辑**：除初始化外，数据收发层严禁使用无限 `while`，必须引入超时退出或中断/DMA 事件。
+    3. **全量错误应对**：代码必须包含状态机，能实时处理 OVR、CRC 错误、总线挂死，并提供 `GetStatus` API 暴露给上层诊断。
+    4. **资源利用最大化**：例如 CAN 模块必须生成多邮箱管理算法（非固定 0 号邮箱），SPI 必须包含 8/16位动态切换。
 - 只在框架预留位置填写实现，不新增文件
 - 每个关键操作旁注明文档依据（章节号）
 - 生成后输出修改文件清单
