@@ -8,7 +8,19 @@
 # - 记录到状态系统
 # - 支持错误去重
 
-set -euo pipefail
+set -uo pipefail
+
+# 跨平台 MD5 封装（macOS 用 md5，Linux 用 md5sum）
+_md5() {
+    if command -v md5sum &>/dev/null; then
+        md5sum "$@" | cut -c1-12
+    elif command -v md5 &>/dev/null; then
+        md5 -q "$@" | cut -c1-12
+    else
+        # fallback: 用 cksum
+        cksum "$@" | awk '{print $1}'
+    fi
+}
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 PROJECT_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
@@ -16,7 +28,6 @@ cd "$PROJECT_ROOT"
 
 # 源文件：加载配置和状态管理
 source config/project.env
-source scripts/state-manager.sh
 
 # 如果未指定，使用默认值
 ITERATION=${COMPILE_ITERATION:-1}
@@ -56,7 +67,9 @@ for src in $SRC_FILES; do
     echo "  CC  $src"
 
     # 捕获编译输出（同时显示和保存）
-    if $CC $CFLAGS ${INC_FLAGS} -c "$src" -o "$obj" 2>&1 | tee -a "$COMPILE_OUTPUT"; then
+    # 注意：用 PIPESTATUS 获取编译器的真实返回码，而非 tee 的返回码
+    $CC $CFLAGS ${INC_FLAGS} -c "$src" -o "$obj" 2>&1 | tee -a "$COMPILE_OUTPUT"
+    if [ ${PIPESTATUS[0]} -eq 0 ]; then
         OBJ_FILES="$OBJ_FILES $obj"
     else
         COMPILE_ERRORS=$((COMPILE_ERRORS + 1))
@@ -111,7 +124,7 @@ else
     fi
 
     # 计算错误哈希用于去重
-    error_hash=$(echo "${error_msg}:${error_file}:${error_line}" | md5sum | cut -c1-12)
+    error_hash=$(echo "${error_msg}:${error_file}:${error_line}" | _md5)
 
     # 输出错误详情（供 AI 分析）
     echo ""
@@ -122,19 +135,7 @@ else
     echo "Message: $error_msg"
     echo "[/ERROR_ANALYSIS]"
 
-    # 检查错误去重（如果有活跃会话）
-    if [ -f ".claude/state/session.json" ]; then
-        echo ""
-        echo "[DEDUP_CHECK]"
 
-        # 查询是否存在相同错误
-        if prev_repair=$(source scripts/state-manager.sh && state_manager::query_error_by_hash "$error_hash" 2>/dev/null || echo ""); then
-            echo "Previous:   $prev_repair (此错误之前在此次修复中出现过)"
-        else
-            echo "Previous:   (新错误，首次出现)"
-        fi
-        echo "[/DEDUP_CHECK]"
-    fi
 
     # 输出完整日志供 AI 分析
     echo ""

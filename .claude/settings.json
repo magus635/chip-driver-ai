@@ -8,13 +8,16 @@
       "Bash(scripts/check-env.sh)",
       "Bash(source config/project.env*)",
       "Bash(cat .claude/*.log)",
-      "Bash(cat .claude/*.md)",
+      "Bash(cat .claude/*.md*)",
       "Bash(cat build/*.map)",
+      "Bash(ls build/)",
       "Bash(arm-none-eabi-size*)",
       "Bash(arm-none-eabi-nm*)",
       "Bash(find src/*)",
       "Bash(grep * src/*)",
-      "Bash(md5sum src/**/*)"
+      "Bash(md5sum src/**/*)",
+      "Bash(md5 src/**/*)",
+      "Bash(cksum src/**/*)"
     ],
     "deny": [
       "Bash(rm -rf *)",

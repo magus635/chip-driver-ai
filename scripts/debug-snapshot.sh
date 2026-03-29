@@ -18,11 +18,25 @@ echo ""
 # ── 1. 串口输出采集 ──────────────────────────────────────
 echo "=== SERIAL OUTPUT (${SERIAL_CAPTURE_SECONDS}s) ==="
 
-if command -v timeout &> /dev/null && [ -e "$SERIAL_PORT" ]; then
-    timeout "$SERIAL_CAPTURE_SECONDS" \
-        stty -F "$SERIAL_PORT" "$SERIAL_BAUD" cs8 -cstopb -parenb 2>/dev/null || true
-    timeout "$SERIAL_CAPTURE_SECONDS" \
-        cat "$SERIAL_PORT" 2>/dev/null || echo "[串口无输出或端口不可用: $SERIAL_PORT]"
+# 兼容 timeout 命令
+TIMEOUT_CMD=""
+if command -v timeout &> /dev/null; then
+    TIMEOUT_CMD="timeout"
+elif command -v gtimeout &> /dev/null; then
+    TIMEOUT_CMD="gtimeout"
+else
+    # Perl fallback 如果没有 timeout/gtimeout
+    TIMEOUT_CMD="perl -e 'alarm shift; exec @ARGV' "
+fi
+
+if [ -n "$TIMEOUT_CMD" ] && [ -e "$SERIAL_PORT" ]; then
+    # stty 兼容性
+    if uname | grep -q 'Darwin'; then
+        eval "$TIMEOUT_CMD $SERIAL_CAPTURE_SECONDS stty -f \"$SERIAL_PORT\" \"$SERIAL_BAUD\" cs8 -cstopb -parenb 2>/dev/null" || true
+    else
+        eval "$TIMEOUT_CMD $SERIAL_CAPTURE_SECONDS stty -F \"$SERIAL_PORT\" \"$SERIAL_BAUD\" cs8 -cstopb -parenb 2>/dev/null" || true
+    fi
+    eval "$TIMEOUT_CMD $SERIAL_CAPTURE_SECONDS cat \"$SERIAL_PORT\" 2>/dev/null" || echo "[串口无输出或端口不可用: $SERIAL_PORT]"
 else
     echo "[串口端口 $SERIAL_PORT 未连接，跳过串口采集]"
     echo "[提示] 请在 config/project.env 中设置正确的 SERIAL_PORT"
@@ -44,12 +58,22 @@ if [ -f ".claude/debug-registers.txt" ] && command -v nc &> /dev/null; then
         sleep 2
     fi
 
+    # netcat 参数兼容性 (macOS 是 BSD nc 无 -q)
+    NC_ARGS=""
+    if nc -h 2>&1 | grep -q '\-q'; then
+        NC_ARGS="-q1"
+    else
+        NC_ARGS=""
+        # 或者考虑用 expect/python 替代 nc，如果是 BSD nc
+    fi
+
     while IFS=' ' read -r reg_name reg_addr; do
         [[ "$reg_name" =~ ^#.*$ ]] && continue  # 跳过注释
         [ -z "$reg_name" ] && continue
-        # 通过 OpenOCD telnet 读取内存
-        VALUE=$(echo "mdw $reg_addr" | \
-            nc -q1 localhost 4444 2>/dev/null | \
+        # 通过 OpenOCD telnet 读取内存 (注意 BSD nc 可能需要在发送命令后关闭 stdin 或用 -G 控制)
+        # 兼容写法：用 echo 发送并通过 tee 发给 nc，然后通过 head 获取返回
+        VALUE=$( (echo "mdw $reg_addr"; sleep 0.1; echo "exit") | \
+            nc localhost 4444 2>/dev/null | \
             grep "$reg_addr" | awk '{print $2}' || echo "读取失败")
         echo "$reg_name @ $reg_addr: $VALUE"
     done < ".claude/debug-registers.txt"

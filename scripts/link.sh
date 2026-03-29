@@ -8,7 +8,18 @@
 # - 分析 .map 文件
 # - 记录到状态系统
 
-set -euo pipefail
+set -uo pipefail
+
+# 跨平台 MD5 封装
+_md5() {
+    if command -v md5sum &>/dev/null; then
+        md5sum "$@" | cut -c1-12
+    elif command -v md5 &>/dev/null; then
+        md5 -q "$@" | cut -c1-12
+    else
+        cksum "$@" | awk '{print $1}'
+    fi
+}
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 PROJECT_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
@@ -16,7 +27,6 @@ cd "$PROJECT_ROOT"
 
 # 源文件
 source config/project.env
-source scripts/state-manager.sh
 
 # 参数处理
 ITERATION=${LINK_ITERATION:-1}
@@ -56,12 +66,16 @@ LINK_OUTPUT="/tmp/link-output-$$.log"
 : > "$LINK_OUTPUT"
 
 # 执行链接，生成 .map 文件
-if $CC ${LDFLAGS:-} \
+LINK_EXIT=0
+$CC ${LDFLAGS:-} \
     -T "$LINKER_SCRIPT" \
     -Wl,-Map="$MAP_FILE" \
     $OBJ_FILES \
     -o "${TARGET_ELF:-build/output.elf}" \
-    2>&1 | tee -a "$LINK_OUTPUT"; then
+    2>&1 | tee -a "$LINK_OUTPUT"
+LINK_EXIT=${PIPESTATUS[0]}
+
+if [ $LINK_EXIT -eq 0 ]; then
 
     # 链接成功，生成其他格式
     echo ""
@@ -139,7 +153,7 @@ else
     fi
 
     # 计算错误哈希
-    error_hash=$(echo "${error_type}:${error_symbol}" | md5sum | cut -c1-12)
+    error_hash=$(echo "${error_type}:${error_symbol}" | _md5)
     echo "Hash:    $error_hash"
 
     echo "[/LINK_ERROR_ANALYSIS]"
@@ -163,22 +177,7 @@ else
         echo "[/MAP_ANALYSIS]"
     fi
 
-    # ───────────────────────────────────────────────────────────────────
-    # 阶段：错误去重检查
-    # ───────────────────────────────────────────────────────────────────
 
-    if [ -f ".claude/state/session.json" ]; then
-        echo ""
-        echo "[DEDUP_CHECK_LINK]"
-
-        if prev_repair=$(bash scripts/state-manager.sh query-error "$error_hash" 2>/dev/null || echo ""); then
-            echo "Previous: $prev_repair (此错误之前在此次修复中出现过)"
-        else
-            echo "Previous: (新错误，首次出现)"
-        fi
-
-        echo "[/DEDUP_CHECK_LINK]"
-    fi
 
     # 输出完整日志
     echo ""

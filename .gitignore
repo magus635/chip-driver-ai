@@ -1,0 +1,27 @@
+# Build and Toolchain
+build/
+*.o
+*.elf
+*.bin
+*.hex
+*.map
+
+# IDE
+.vscode/
+
+# Claude AI State
+.claude/state/
+.claude/last-*.log
+.claude/*-output.txt
+.claude/doc-summary.md
+.claude/pre-fix.md5
+.claude/post-fix.md5
+.claude/*.bak
+
+# Mac
+.DS_Store
+
+# Temporary
+/tmp/
+*.tmp
+*.bak

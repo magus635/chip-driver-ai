@@ -1,0 +1,148 @@
+{
+  "version": "1.0.0",
+  "lastScanned": 1774664260727,
+  "projectRoot": "/Users/qlwang/Downloads/chip-driver-ai",
+  "techStack": {
+    "languages": [],
+    "frameworks": [],
+    "packageManager": null,
+    "runtime": null
+  },
+  "build": {
+    "buildCommand": null,
+    "testCommand": null,
+    "lintCommand": null,
+    "devCommand": null,
+    "scripts": {}
+  },
+  "conventions": {
+    "namingStyle": null,
+    "importStyle": null,
+    "testPattern": null,
+    "fileOrganization": null
+  },
+  "structure": {
+    "isMonorepo": false,
+    "workspaces": [],
+    "mainDirectories": [
+      "docs",
+      "scripts",
+      "src"
+    ],
+    "gitBranches": {
+      "defaultBranch": "main",
+      "branchingStrategy": null
+    }
+  },
+  "customNotes": [],
+  "directoryMap": {
+    "build": {
+      "path": "build",
+      "purpose": "Build output",
+      "fileCount": 1,
+      "lastAccessed": 1774664260701,
+      "keyFiles": [
+        "test-compile.log"
+      ]
+    },
+    "config": {
+      "path": "config",
+      "purpose": "Configuration files",
+      "fileCount": 3,
+      "lastAccessed": 1774664260701,
+      "keyFiles": [
+        "STM32F407VGT6.ld",
+        "openocd.cfg",
+        "project.env"
+      ]
+    },
+    "docs": {
+      "path": "docs",
+      "purpose": "Documentation",
+      "fileCount": 0,
+      "lastAccessed": 1774664260707,
+      "keyFiles": []
+    },
+    "scripts": {
+      "path": "scripts",
+      "purpose": "Build/utility scripts",
+      "fileCount": 17,
+      "lastAccessed": 1774664260708,
+      "keyFiles": [
+        "check-env.sh",
+        "compile.sh",
+        "compiler-agent.sh",
+        "debug-snapshot.sh",
+        "debugger-agent.sh"
+      ]
+    },
+    "src": {
+      "path": "src",
+      "purpose": "Source code",
+      "fileCount": 4,
+      "lastAccessed": 1774664260709,
+      "keyFiles": [
+        "can_driver.c",
+        "can_driver.c.backup",
+        "can_driver_test.c"
+      ]
+    }
+  },
+  "hotPaths": [
+    {
+      "path": "",
+      "accessCount": 2,
+      "lastAccessed": 1774664365409,
+      "type": "directory"
+    },
+    {
+      "path": ".claude/repair-log.md",
+      "accessCount": 1,
+      "lastAccessed": 1774664372634,
+      "type": "file"
+    },
+    {
+      "path": ".claude/debug-session.md",
+      "accessCount": 1,
+      "lastAccessed": 1774664372687,
+      "type": "file"
+    },
+    {
+      "path": "src/can_driver.c.backup",
+      "accessCount": 1,
+      "lastAccessed": 1774664386643,
+      "type": "file"
+    },
+    {
+      "path": "src/include/can_driver.h",
+      "accessCount": 1,
+      "lastAccessed": 1774664571786,
+      "type": "file"
+    },
+    {
+      "path": "config/project.env",
+      "accessCount": 1,
+      "lastAccessed": 1774664571837,
+      "type": "file"
+    },
+    {
+      "path": "src/include/rcc_config.h",
+      "accessCount": 1,
+      "lastAccessed": 1774664583266,
+      "type": "file"
+    },
+    {
+      "path": "docs/STM32F407_CAN_Reference.md",
+      "accessCount": 1,
+      "lastAccessed": 1774665560145,
+      "type": "file"
+    },
+    {
+      "path": "src/bsp/include/can_bsp.h",
+      "accessCount": 1,
+      "lastAccessed": 1774665560277,
+      "type": "file"
+    }
+  ],
+  "userDirectives": []
+}

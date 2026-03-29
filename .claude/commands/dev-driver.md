@@ -56,7 +56,7 @@ log_file=.claude/repair-log.md
 ```
 
 等待 agent 返回。如返回 `COMPILE_SUCCESS`，进入 STEP 4。
-如返回 `COMPILE_FAILED_MAX_ITER`，停止并输出诊断报告。
+如返回 `COMPILE_FAILED_MAX_ITER` 或 `COMPILE_STUCK`，停止并输出诊断报告。
 
 ### STEP 4 · 链接修复循环 (调用 linker-agent)
 
@@ -69,7 +69,7 @@ log_file=.claude/repair-log.md
 ```
 
 等待 agent 返回。如返回 `LINK_SUCCESS`，进入 STEP 5。
-如返回 `LINK_FAILED_MAX_ITER`，停止并输出诊断报告。
+如返回 `LINK_FAILED_MAX_ITER` 或 `LINK_STUCK`，停止并输出诊断报告。
 
 ### STEP 5 · 烧录与调试验证 (调用 debugger-agent)
 
