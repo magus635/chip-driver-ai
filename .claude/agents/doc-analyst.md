@@ -129,6 +129,7 @@ Read PDF: docs/RM0090.pdf, pages: "680-750"
 - **时钟使能位**：位名 + 位位置（如 SPI1EN, bit 12）
 - **复位寄存器**：RCC_APBxRSTR（如需软复位）
 - **复位位**：位名 + 位位置
+- **时钟源选择 (Clock Source Mux)**：该外设是否可以选择 PCLK、HSE、PLL 或内部振荡器？对应的切换位（如 `RCC_CCIPR.I2C1SEL`）是什么？
 - **最大时钟频率**：该外设允许的最大 APBx 时钟（MHz）
 
 #### GPIO 引脚配置
@@ -140,6 +141,7 @@ Read PDF: docs/RM0090.pdf, pages: "680-750"
 | I2C1_SCL | PB6 | PB8 | AF4 | **Open-Drain** | **External Pull-Up Required** |
 
 > **硬性约束**：I2C 必须是 Open-Drain + 外部上拉；SPI 是 Push-Pull；CAN 需要外部收发器。
+> **潜在冲突预防**：标注默认引脚是否与调试口 (SWD/JTAG)、晶振 (OSC) 或启动配置 (BOOT) 冲突。
 ```
 
 #### A.1 全局模型与数据路径 (Data & Control Flow)
@@ -173,8 +175,8 @@ Read PDF: docs/RM0090.pdf, pages: "680-750"
 
 ```markdown
 ### 三、寄存器映射 · <外设名>
-| 偏移 | 寄存器名 | 复位值 | 全部位域定义 (必须完整，不可省略) | 访问类型(RW/RO/W1C/RC) | 硬件副作用 (Side Effects) |
-|------|----------|--------|----------------------------------|------------------------|---------------------------|
+| 偏移 | 寄存器名 | 复位值 | 访问宽度(8/16/32) | 全部位域定义 (必须完整，不可省略) | 访问类型(RW/RO/W1C/RC) | 硬件副作用 (Side Effects) |
+|------|----------|--------|-------------------|----------------------------------|------------------------|---------------------------|
 | 0x00 | CR1 | 0x0000 | [15]BIDIMODE, [14]BIDIOE, [13]CRCEN, [12]CRCNEXT, [11]DFF, [10]RXONLY, [9]SSM, [8]SSI, [7]LSBFIRST, [6]SPE, [5:3]BR, [2]MSTR, [1]CPOL, [0]CPHA | RW | SPE=0时才能修改BR/CPOL/CPHA |
 | 0x04 | CR2 | 0x0000 | [7]TXEIE, [6]RXNEIE, [5]ERRIE, [4:3]Reserved, [2]SSOE, [1]TXDMAEN, [0]RXDMAEN | RW | - |
 | 0x08 | SR  | 0x0002 | [7]BSY(RO), [6]OVR(RC), [5]MODF(RC), [4]CRCERR(W1C), [3]UDR(RO), [2]CHSIDE(RO), [1]TXE(RO), [0]RXNE(RO) | Mixed | **见原子操作序列** |
@@ -241,7 +243,7 @@ Read PDF: docs/RM0090.pdf, pages: "680-750"
 
 # SEQ_OVR_CLEAR: SPI Overrun 清除序列
 # 来源: RM0090 §28.3.10 "Error flags"
-# 约束: 必须严格按顺序执行，不可调换
+# 约束: 必须严格按顺序执行，不可调换，需内存屏障 (Memory Barrier)
 SEQUENCE SEQ_OVR_CLEAR:
     1. tmp = READ(SPI->DR)    // 读DR，丢弃数据
     2. tmp = READ(SPI->SR)    // 读SR，完成OVR清除
@@ -353,9 +355,14 @@ END_SEQUENCE
       "bus": "APB2",
       "clock_enable": {
         "register": "RCC_APB2ENR",
-        "bit_name": "SPI1EN",
         "bit_position": 12,
         "source": "RM0008 §7.3.7"
+      },
+      "clock_source_mux": {
+        "register": "RCC_CCIPR",
+        "field_name": "SPI1SEL",
+        "description": "00:PCLK, 01:PLLQ, 10:HSE...",
+        "value_used": "00"
       },
       "reset": {
         "register": "RCC_APB2RSTR",
@@ -385,10 +392,10 @@ END_SEQUENCE
     {
       "instance": "SPI1",
       "pins": [
-        {"function": "SCK",  "default_pin": "PA5", "alt_pin": "PB3", "af": 0, "mode": "AF_PP", "pull": "NONE", "speed": "HIGH"},
-        {"function": "MISO", "default_pin": "PA6", "alt_pin": "PB4", "af": 0, "mode": "INPUT", "pull": "PULL_UP", "speed": null},
-        {"function": "MOSI", "default_pin": "PA7", "alt_pin": "PB5", "af": 0, "mode": "AF_PP", "pull": "NONE", "speed": "HIGH"},
-        {"function": "NSS",  "default_pin": "PA4", "alt_pin": "PA15", "af": 0, "mode": "AF_PP", "pull": "NONE", "speed": "HIGH"}
+        {"function": "SCK",  "default_pin": "PA5", "alt_pin": "PB3", "af": 0, "mode": "AF_PP", "pull": "NONE", "speed": "HIGH", "conflict": "None"},
+        {"function": "MISO", "default_pin": "PA6", "alt_pin": "PB4", "af": 0, "mode": "INPUT", "pull": "PULL_UP", "speed": null, "conflict": "Potential SWD overlap if remap"},
+        {"function": "MOSI", "default_pin": "PA7", "alt_pin": "PB5", "af": 0, "mode": "AF_PP", "pull": "NONE", "speed": "HIGH", "conflict": "None"},
+        {"function": "NSS",  "default_pin": "PA4", "alt_pin": "PA15", "af": 0, "mode": "AF_PP", "pull": "NONE", "speed": "HIGH", "conflict": "Potential JTAG conflict"}
       ],
       "constraints": ["SPI1 在 APB2，最高 36MHz", "MISO 必须配置上拉防止浮空"],
       "source": "DS5319 Table 5"
@@ -399,6 +406,7 @@ END_SEQUENCE
     {
       "name": "CR1",
       "offset": "0x00",
+      "width": 32,
       "reset_value": "0x0000",
       "access": "RW",
       "fields": [
@@ -448,7 +456,8 @@ END_SEQUENCE
         {"order": 1, "operation": "READ", "target": "DR", "comment": "读DR丢弃数据"},
         {"order": 2, "operation": "READ", "target": "SR", "comment": "读SR完成清除"}
       ],
-      "constraints": ["顺序不可调换", "两次读之间不可插入其他操作"]
+      "constraints": ["顺序不可调换", "两次读之间不可插入其他操作"],
+      "barrier_required": true
     },
     {
       "id": "SEQ_MODF_CLEAR",
