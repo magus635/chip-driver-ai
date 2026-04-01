@@ -1,6 +1,6 @@
 {
   "version": "1.0.0",
-  "lastScanned": 1774781614605,
+  "lastScanned": 1775002164666,
   "projectRoot": "/Users/qlwang/Downloads/chip-driver-ai",
   "techStack": {
     "languages": [],
@@ -39,21 +39,21 @@
     "build": {
       "path": "build",
       "purpose": "Build output",
-      "fileCount": 10,
-      "lastAccessed": 1774781614577,
+      "fileCount": 12,
+      "lastAccessed": 1775002164650,
       "keyFiles": [
         "can_driver.o",
+        "can_drv.o",
         "firmware.bin",
         "firmware.elf",
-        "firmware.hex",
-        "last-compile.log"
+        "firmware.hex"
       ]
     },
     "config": {
       "path": "config",
       "purpose": "Configuration files",
       "fileCount": 3,
-      "lastAccessed": 1774781614577,
+      "lastAccessed": 1775002164651,
       "keyFiles": [
         "STM32F407VGT6.ld",
         "openocd.cfg",
@@ -64,7 +64,7 @@
       "path": "docs",
       "purpose": "Documentation",
       "fileCount": 4,
-      "lastAccessed": 1774781614578,
+      "lastAccessed": 1775002164651,
       "keyFiles": [
         "STM32F407_CAN_Reference.md",
         "architecture-guidelines.md",
@@ -76,7 +76,7 @@
       "path": "scripts",
       "purpose": "Build/utility scripts",
       "fileCount": 5,
-      "lastAccessed": 1774781614578,
+      "lastAccessed": 1775002164652,
       "keyFiles": [
         "check-env.sh",
         "compile.sh",
@@ -88,14 +88,204 @@
     "src": {
       "path": "src",
       "purpose": "Source code",
-      "fileCount": 3,
-      "lastAccessed": 1774781614578,
-      "keyFiles": [
-        "can_driver.c",
-        "spi_driver.c"
-      ]
+      "fileCount": 1,
+      "lastAccessed": 1775002164652,
+      "keyFiles": []
     }
   },
-  "hotPaths": [],
+  "hotPaths": [
+    {
+      "path": ".claude/commands/dev-driver.md",
+      "accessCount": 11,
+      "lastAccessed": 1775082402430,
+      "type": "file"
+    },
+    {
+      "path": "docs/stm32f103_reference_manual.pdf",
+      "accessCount": 7,
+      "lastAccessed": 1775054392244,
+      "type": "file"
+    },
+    {
+      "path": ".claude/agents/doc-analyst.md",
+      "accessCount": 4,
+      "lastAccessed": 1775081738203,
+      "type": "file"
+    },
+    {
+      "path": ".claude/agents/reviewer-agent.md",
+      "accessCount": 3,
+      "lastAccessed": 1775081738576,
+      "type": "file"
+    },
+    {
+      "path": "config/project.env",
+      "accessCount": 2,
+      "lastAccessed": 1775053894431,
+      "type": "file"
+    },
+    {
+      "path": ".claude/doc-summary.md",
+      "accessCount": 2,
+      "lastAccessed": 1775054502638,
+      "type": "file"
+    },
+    {
+      "path": "src/drivers/Spi/src/spi_drv.c",
+      "accessCount": 2,
+      "lastAccessed": 1775081582203,
+      "type": "file"
+    },
+    {
+      "path": "src/drivers/Spi/include/spi_ll.h",
+      "accessCount": 2,
+      "lastAccessed": 1775081583317,
+      "type": "file"
+    },
+    {
+      "path": ".claude/agents/compiler-agent.md",
+      "accessCount": 2,
+      "lastAccessed": 1775082055975,
+      "type": "file"
+    },
+    {
+      "path": ".claude/agents/linker-agent.md",
+      "accessCount": 2,
+      "lastAccessed": 1775082102145,
+      "type": "file"
+    },
+    {
+      "path": "README.md",
+      "accessCount": 1,
+      "lastAccessed": 1775053070733,
+      "type": "file"
+    },
+    {
+      "path": "src/drivers/Can/src/can_drv.c",
+      "accessCount": 1,
+      "lastAccessed": 1775053076811,
+      "type": "file"
+    },
+    {
+      "path": "src/drivers/Can/include/can_ll.h",
+      "accessCount": 1,
+      "lastAccessed": 1775053077490,
+      "type": "file"
+    },
+    {
+      "path": "docs/STM32F407_CAN_Reference.md",
+      "accessCount": 1,
+      "lastAccessed": 1775053190282,
+      "type": "file"
+    },
+    {
+      "path": "docs/architecture-guidelines.md",
+      "accessCount": 1,
+      "lastAccessed": 1775053196380,
+      "type": "file"
+    },
+    {
+      "path": ".claude/doc-summary.json",
+      "accessCount": 1,
+      "lastAccessed": 1775054445886,
+      "type": "file"
+    },
+    {
+      "path": ".claude/repair-log.md",
+      "accessCount": 1,
+      "lastAccessed": 1775081573818,
+      "type": "file"
+    },
+    {
+      "path": "src/drivers/Spi/include/spi_reg.h",
+      "accessCount": 1,
+      "lastAccessed": 1775081582566,
+      "type": "file"
+    },
+    {
+      "path": "src/drivers/Spi/include/spi_cfg.h",
+      "accessCount": 1,
+      "lastAccessed": 1775081593107,
+      "type": "file"
+    },
+    {
+      "path": "src/drivers/Spi/include/spi_types.h",
+      "accessCount": 1,
+      "lastAccessed": 1775081597734,
+      "type": "file"
+    },
+    {
+      "path": "src/drivers/Spi/include/spi_api.h",
+      "accessCount": 1,
+      "lastAccessed": 1775081597750,
+      "type": "file"
+    },
+    {
+      "path": ".claude/agents/debugger-agent.md",
+      "accessCount": 1,
+      "lastAccessed": 1775081747936,
+      "type": "file"
+    },
+    {
+      "path": ".claude/analysis/phase2-design.md",
+      "accessCount": 1,
+      "lastAccessed": 1775081749276,
+      "type": "file"
+    },
+    {
+      "path": ".claude/lib/error-patterns.json",
+      "accessCount": 1,
+      "lastAccessed": 1775081992694,
+      "type": "file"
+    },
+    {
+      "path": ".claude/lib/repair-strategies.json",
+      "accessCount": 1,
+      "lastAccessed": 1775081992816,
+      "type": "file"
+    },
+    {
+      "path": ".claude/agents/codegen-agent.md",
+      "accessCount": 1,
+      "lastAccessed": 1775082164155,
+      "type": "file"
+    },
+    {
+      "path": ".claude/lib/session-state.json",
+      "accessCount": 1,
+      "lastAccessed": 1775082210262,
+      "type": "file"
+    },
+    {
+      "path": ".claude/lib/memory-schema.json",
+      "accessCount": 1,
+      "lastAccessed": 1775082218653,
+      "type": "file"
+    },
+    {
+      "path": ".claude/memory/repair-patterns.json",
+      "accessCount": 1,
+      "lastAccessed": 1775082234274,
+      "type": "file"
+    },
+    {
+      "path": ".claude/memory/chip-knowledge.json",
+      "accessCount": 1,
+      "lastAccessed": 1775082248296,
+      "type": "file"
+    },
+    {
+      "path": ".claude/memory/project-context.json",
+      "accessCount": 1,
+      "lastAccessed": 1775082257591,
+      "type": "file"
+    },
+    {
+      "path": ".claude/agents/session-manager.md",
+      "accessCount": 1,
+      "lastAccessed": 1775082299087,
+      "type": "file"
+    }
+  ],
   "userDirectives": []
 }

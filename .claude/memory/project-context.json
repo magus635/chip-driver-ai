@@ -1,0 +1,88 @@
+{
+  "version": "1.0.0",
+  "description": "项目上下文记忆 - 跨会话的项目状态追踪",
+  "last_updated": null,
+
+  "project_info": {
+    "name": "chip-driver-ai",
+    "target_chip": "STM32F103",
+    "toolchain": "arm-none-eabi-gcc",
+    "framework": "custom-baremetal"
+  },
+
+  "module_status": {
+    "can_bus": {
+      "status": "completed",
+      "last_session": null,
+      "files": [
+        "src/drivers/Can/include/can_reg.h",
+        "src/drivers/Can/include/can_ll.h",
+        "src/drivers/Can/include/can_types.h",
+        "src/drivers/Can/include/can_cfg.h",
+        "src/drivers/Can/include/can_api.h",
+        "src/drivers/Can/src/can_drv.c"
+      ],
+      "notes": []
+    },
+    "spi": {
+      "status": "in_progress",
+      "last_session": null,
+      "files": [
+        "src/drivers/Spi/include/spi_reg.h",
+        "src/drivers/Spi/include/spi_ll.h",
+        "src/drivers/Spi/include/spi_types.h",
+        "src/drivers/Spi/include/spi_cfg.h",
+        "src/drivers/Spi/include/spi_api.h",
+        "src/drivers/Spi/src/spi_drv.c"
+      ],
+      "notes": []
+    },
+    "uart": {
+      "status": "not_started",
+      "last_session": null,
+      "files": [],
+      "notes": []
+    },
+    "i2c": {
+      "status": "not_started",
+      "last_session": null,
+      "files": [],
+      "notes": []
+    },
+    "adc": {
+      "status": "not_started",
+      "last_session": null,
+      "files": [],
+      "notes": []
+    },
+    "tim": {
+      "status": "not_started",
+      "last_session": null,
+      "files": [],
+      "notes": []
+    }
+  },
+
+  "architecture_decisions": [
+    {
+      "id": "AD001",
+      "date": "2026-03-27",
+      "decision": "采用四层架构：_reg.h → _ll.h → _drv.c → _api.h",
+      "rationale": "层次分离，便于测试和移植",
+      "status": "active"
+    },
+    {
+      "id": "AD002",
+      "date": "2026-03-27",
+      "decision": "_ll.h 中的函数必须是 static inline",
+      "rationale": "避免链接时多重定义，同时保证零开销抽象",
+      "status": "active"
+    }
+  ],
+
+  "known_issues": [],
+
+  "todo_items": [],
+
+  "session_history": []
+}

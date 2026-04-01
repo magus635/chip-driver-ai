@@ -1,0 +1,64 @@
+{
+  "$schema": "memory-schema",
+  "version": "1.0.0",
+  "description": "跨会话记忆系统 - 学习与知识积累",
+
+  "memory_types": {
+    "repair_patterns": {
+      "description": "成功修复模式的学习记录",
+      "retention": "permanent",
+      "structure": {
+        "error_signature": "错误的特征签名（类型+关键词）",
+        "successful_fix": "成功的修复方法",
+        "context": "适用上下文（芯片型号、模块类型）",
+        "confidence": "置信度（基于成功次数）",
+        "last_used": "最后使用时间",
+        "use_count": "使用次数"
+      }
+    },
+
+    "chip_knowledge": {
+      "description": "芯片特定知识（非文档派生）",
+      "retention": "permanent",
+      "structure": {
+        "chip_family": "芯片系列",
+        "quirks": "已发现的硬件特性/陷阱",
+        "best_practices": "最佳实践",
+        "common_mistakes": "常见错误"
+      }
+    },
+
+    "user_preferences": {
+      "description": "用户偏好设置",
+      "retention": "permanent",
+      "structure": {
+        "coding_style": "代码风格偏好",
+        "review_strictness": "审查严格度偏好",
+        "verbosity": "输出详细程度偏好",
+        "auto_confirm": "自动确认的步骤"
+      }
+    },
+
+    "project_context": {
+      "description": "项目上下文（跨会话）",
+      "retention": "session_linked",
+      "structure": {
+        "architecture_decisions": "架构决策记录",
+        "known_issues": "已知问题",
+        "todo_items": "待办事项",
+        "module_status": "各模块开发状态"
+      }
+    },
+
+    "failure_lessons": {
+      "description": "失败教训（避免重复错误）",
+      "retention": "permanent",
+      "structure": {
+        "failure_type": "失败类型",
+        "root_cause": "根因",
+        "lesson": "教训",
+        "prevention": "预防措施"
+      }
+    }
+  }
+}

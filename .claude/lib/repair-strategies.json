@@ -1,0 +1,186 @@
+{
+  "version": "1.0.0",
+  "description": "修复策略决策库 - 指导 Agent 如何修复各类错误",
+
+  "decision_rules": {
+    "compile": {
+      "priority_order": ["preprocessor_error", "syntax_error", "declaration_error", "type_error"],
+      "max_same_error_attempts": 3,
+      "escalation_trigger": "连续3次相同错误类型且修复无效"
+    },
+    "link": {
+      "priority_order": ["symbol_error", "memory_error", "script_error"],
+      "max_same_error_attempts": 2,
+      "escalation_trigger": "符号错误需要新增文件或大规模重构"
+    }
+  },
+
+  "repair_actions": {
+    "add_include": {
+      "description": "添加头文件包含",
+      "template": "#include \"{header}\"",
+      "placement": "文件顶部的include区域",
+      "validation": "重新编译检查错误是否消失",
+      "common_mappings": {
+        "uint8_t": "stdint.h",
+        "uint16_t": "stdint.h",
+        "uint32_t": "stdint.h",
+        "bool": "stdbool.h",
+        "NULL": "stddef.h",
+        "size_t": "stddef.h",
+        "memcpy": "string.h",
+        "memset": "string.h"
+      }
+    },
+
+    "add_include_guard": {
+      "description": "添加头文件保护",
+      "template": "#ifndef {GUARD}\n#define {GUARD}\n\n{content}\n\n#endif",
+      "naming_convention": "{FILENAME}_H",
+      "validation": "检查是否已存在guard"
+    },
+
+    "add_forward_declaration": {
+      "description": "添加前向声明",
+      "template": "{return_type} {function_name}({params});",
+      "placement": "调用点之前，或头文件中",
+      "validation": "确保签名与实现一致"
+    },
+
+    "add_explicit_cast": {
+      "description": "添加显式类型转换",
+      "template": "({target_type}){expression}",
+      "constraints": ["不能用于volatile指针到非volatile", "注意数据截断风险"],
+      "validation": "确保转换语义正确"
+    },
+
+    "implement_function": {
+      "description": "实现缺失的函数",
+      "steps": [
+        "1. 从doc-summary.json获取函数预期行为",
+        "2. 参照框架中类似函数的实现模式",
+        "3. 在对应的.c文件中添加实现",
+        "4. 确保符合coding-standard"
+      ],
+      "validation": "编译通过且行为符合文档"
+    },
+
+    "enable_optimization_Os": {
+      "description": "启用代码大小优化",
+      "config_file": "config/project.env",
+      "changes": [
+        "CFLAGS += -Os",
+        "CFLAGS += -fdata-sections -ffunction-sections",
+        "LDFLAGS += --gc-sections"
+      ],
+      "expected_reduction": "10-30%",
+      "validation": "检查.map文件确认代码缩减"
+    },
+
+    "move_to_const": {
+      "description": "将数据移至Flash（const）",
+      "pattern": "const {type} {name}",
+      "applicable_to": ["查找表", "字符串常量", "配置数据"],
+      "validation": "确保数据运行时不需修改"
+    }
+  },
+
+  "error_to_action_mapping": {
+    "compile": {
+      "undeclared_identifier": {
+        "first_attempt": "search_and_add_include",
+        "second_attempt": "add_declaration",
+        "fallback": "request_human_review"
+      },
+      "implicit_function": {
+        "first_attempt": "search_and_add_include",
+        "second_attempt": "add_forward_declaration",
+        "fallback": "implement_function"
+      },
+      "type_mismatch": {
+        "first_attempt": "check_and_fix_declaration",
+        "second_attempt": "add_explicit_cast",
+        "fallback": "request_human_review"
+      },
+      "include_not_found": {
+        "first_attempt": "search_file_and_fix_path",
+        "second_attempt": "check_makefile_includes",
+        "fallback": "report_missing_file"
+      }
+    },
+    "link": {
+      "undefined_reference": {
+        "first_attempt": "check_if_implemented",
+        "if_not_implemented": "implement_function",
+        "if_implemented": "check_source_in_build",
+        "fallback": "check_library_dependency"
+      },
+      "multiple_definition": {
+        "first_attempt": "check_if_in_header",
+        "if_in_header": "move_to_source_or_static",
+        "fallback": "add_extern_declaration"
+      },
+      "flash_overflow": {
+        "first_attempt": "enable_optimization_Os",
+        "second_attempt": "enable_gc_sections",
+        "third_attempt": "analyze_map_for_bloat",
+        "fallback": "request_code_review"
+      }
+    }
+  },
+
+  "symbol_search_strategy": {
+    "description": "符号查找策略 - 用于解决undeclared/undefined错误",
+    "steps": [
+      {
+        "step": 1,
+        "action": "grep_in_project_headers",
+        "command": "grep -r '{symbol}' src/ --include='*.h'",
+        "on_found": "add_include_for_that_header"
+      },
+      {
+        "step": 2,
+        "action": "grep_in_system_headers",
+        "common_locations": ["/usr/include", "toolchain/include"],
+        "on_found": "add_standard_include"
+      },
+      {
+        "step": 3,
+        "action": "check_doc_summary",
+        "file": ".claude/doc-summary.json",
+        "on_found": "symbol_should_be_generated"
+      },
+      {
+        "step": 4,
+        "action": "escalate",
+        "reason": "symbol_not_found_anywhere"
+      }
+    ]
+  },
+
+  "anti_patterns": {
+    "description": "禁止的修复方式",
+    "forbidden": [
+      {
+        "pattern": "注释掉报错行",
+        "reason": "掩盖问题而非解决问题"
+      },
+      {
+        "pattern": "盲目添加(void*)强制转换",
+        "reason": "可能隐藏类型安全问题"
+      },
+      {
+        "pattern": "删除未使用变量警告对应的变量",
+        "reason": "变量可能是预留功能或被条件编译使用"
+      },
+      {
+        "pattern": "在头文件中定义非inline函数实现",
+        "reason": "导致multiple definition"
+      },
+      {
+        "pattern": "使用魔数代替宏定义",
+        "reason": "违反MISRA-C和可维护性"
+      }
+    ]
+  }
+}

@@ -1,0 +1,80 @@
+{
+  "version": "1.0.0",
+  "description": "修复模式学习库 - 记录成功的错误修复策略",
+  "last_updated": null,
+
+  "patterns": [
+    {
+      "id": "RP001",
+      "error_signature": {
+        "type": "declaration_error",
+        "subtype": "undeclared_identifier",
+        "keyword_pattern": "uint\\d+_t|int\\d+_t|bool|size_t"
+      },
+      "successful_fix": {
+        "action": "add_include",
+        "target": "stdint.h 或 stdbool.h 或 stddef.h",
+        "details": "标准定长类型需要对应的标准头文件"
+      },
+      "context": {
+        "applicable_to": "all",
+        "chip_family": "*"
+      },
+      "confidence": 0.95,
+      "use_count": 0,
+      "last_used": null,
+      "source": "built-in"
+    },
+    {
+      "id": "RP002",
+      "error_signature": {
+        "type": "link_error",
+        "subtype": "multiple_definition",
+        "keyword_pattern": "multiple definition of"
+      },
+      "successful_fix": {
+        "action": "check_header_implementation",
+        "target": "将函数实现移到.c文件，或添加static/inline",
+        "details": "头文件中的非inline函数会导致多重定义"
+      },
+      "context": {
+        "applicable_to": "all",
+        "chip_family": "*"
+      },
+      "confidence": 0.90,
+      "use_count": 0,
+      "last_used": null,
+      "source": "built-in"
+    },
+    {
+      "id": "RP003",
+      "error_signature": {
+        "type": "declaration_error",
+        "subtype": "implicit_function",
+        "keyword_pattern": "implicit declaration of function"
+      },
+      "successful_fix": {
+        "action": "search_and_include",
+        "target": "搜索函数定义所在头文件并包含",
+        "details": "先grep搜索，再添加#include"
+      },
+      "context": {
+        "applicable_to": "all",
+        "chip_family": "*"
+      },
+      "confidence": 0.85,
+      "use_count": 0,
+      "last_used": null,
+      "source": "built-in"
+    }
+  ],
+
+  "learning_rules": {
+    "promotion_threshold": 3,
+    "confidence_increment": 0.05,
+    "confidence_decrement": 0.10,
+    "max_confidence": 0.99,
+    "min_confidence": 0.50,
+    "retirement_threshold": 0.50
+  }
+}

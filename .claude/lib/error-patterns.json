@@ -1,0 +1,150 @@
+{
+  "version": "1.0.0",
+  "description": "错误模式分类库 - 用于 compiler-agent 和 linker-agent 的智能错误识别",
+
+  "compile_errors": {
+    "syntax_error": {
+      "missing_semicolon": {
+        "patterns": ["expected ';'", "expected declaration", "before.*token"],
+        "confidence": "high",
+        "root_causes": ["行末缺少分号", "大括号匹配错误", "宏展开异常"],
+        "fix_priority": ["check_previous_line", "check_macro_expansion", "check_brace_matching"]
+      },
+      "mismatched_braces": {
+        "patterns": ["expected '}'", "expected '{'", "unmatched"],
+        "confidence": "medium",
+        "root_causes": ["{}未配对", "()未配对", "条件编译块不完整"],
+        "fix_priority": ["count_braces", "check_ifdef_endif", "check_function_scope"]
+      },
+      "invalid_token": {
+        "patterns": ["stray.*in program", "invalid preprocessing directive"],
+        "confidence": "high",
+        "root_causes": ["非ASCII字符", "编码问题", "复制粘贴引入的隐藏字符"],
+        "fix_priority": ["check_encoding", "remove_hidden_chars"]
+      }
+    },
+
+    "type_error": {
+      "type_mismatch": {
+        "patterns": ["incompatible pointer type", "assignment.*from.*incompatible", "conflicting types"],
+        "confidence": "high",
+        "root_causes": ["指针类型不匹配", "函数签名不一致", "结构体定义冲突"],
+        "fix_priority": ["check_declaration", "add_explicit_cast", "fix_function_signature"]
+      },
+      "implicit_conversion": {
+        "patterns": ["implicit conversion", "loss of precision", "truncation"],
+        "confidence": "medium",
+        "root_causes": ["整数宽度不匹配", "有符号/无符号混用"],
+        "fix_priority": ["use_explicit_cast", "change_variable_type"]
+      }
+    },
+
+    "declaration_error": {
+      "undeclared_identifier": {
+        "patterns": ["undeclared identifier", "'.*' undeclared", "use of undeclared"],
+        "confidence": "high",
+        "root_causes": ["头文件未包含", "变量未声明", "拼写错误", "作用域问题"],
+        "fix_priority": ["search_header_for_symbol", "add_include", "check_spelling", "add_declaration"]
+      },
+      "implicit_function": {
+        "patterns": ["implicit declaration of function"],
+        "confidence": "high",
+        "root_causes": ["函数声明的头文件未包含", "函数未声明"],
+        "fix_priority": ["search_header_for_function", "add_include", "add_forward_declaration"]
+      },
+      "redefinition": {
+        "patterns": ["redefinition of", "redeclared", "previous definition"],
+        "confidence": "high",
+        "root_causes": ["头文件缺少include guard", "多处定义同一符号", "头文件包含实现"],
+        "fix_priority": ["add_include_guard", "use_extern", "move_to_source"]
+      }
+    },
+
+    "preprocessor_error": {
+      "include_not_found": {
+        "patterns": ["No such file or directory", "not found", "cannot find include"],
+        "confidence": "high",
+        "root_causes": ["头文件路径错误", "头文件不存在", "Include路径未配置"],
+        "fix_priority": ["check_file_exists", "fix_include_path", "update_makefile_includes"]
+      },
+      "macro_error": {
+        "patterns": ["#error", "macro.*not defined", "unterminated"],
+        "confidence": "high",
+        "root_causes": ["配置宏未定义", "#if条件不满足", "宏参数错误"],
+        "fix_priority": ["check_config_macros", "define_required_macro", "fix_macro_syntax"]
+      }
+    }
+  },
+
+  "link_errors": {
+    "symbol_error": {
+      "undefined_reference": {
+        "patterns": ["undefined reference to", "unresolved external symbol"],
+        "confidence": "high",
+        "extraction_regex": "undefined reference to `([^']+)'",
+        "root_causes": ["函数未实现", "源文件未编译", "库未链接", "符号名错误"],
+        "fix_priority": ["check_implementation_exists", "check_source_in_makefile", "check_library_link"]
+      },
+      "multiple_definition": {
+        "patterns": ["multiple definition of", "already defined"],
+        "confidence": "high",
+        "extraction_regex": "multiple definition of `([^']+)'",
+        "root_causes": ["头文件包含函数实现", "全局变量多处定义", "缺少static修饰"],
+        "fix_priority": ["move_implementation_to_source", "use_extern_declaration", "add_static"]
+      }
+    },
+
+    "memory_error": {
+      "flash_overflow": {
+        "patterns": ["region.*FLASH.*overflowed", "text.*will not fit"],
+        "confidence": "high",
+        "extraction_regex": "overflowed by (\\d+) bytes",
+        "root_causes": ["代码过大", "未启用优化", "Flash配置错误"],
+        "fix_priority": ["enable_optimization_Os", "enable_gc_sections", "check_flash_size", "remove_unused_code"]
+      },
+      "ram_overflow": {
+        "patterns": ["region.*RAM.*overflowed", "data.*will not fit"],
+        "confidence": "high",
+        "extraction_regex": "overflowed by (\\d+) bytes",
+        "root_causes": ["全局变量过多", "栈空间配置过大", "未使用const"],
+        "fix_priority": ["add_const_qualifier", "reduce_buffer_sizes", "check_ram_size"]
+      }
+    },
+
+    "script_error": {
+      "invalid_script": {
+        "patterns": ["linker script", "syntax error", "memory region"],
+        "confidence": "medium",
+        "root_causes": ["链接脚本语法错误", "MEMORY区域配置错误"],
+        "fix_priority": ["check_script_syntax", "verify_memory_regions"]
+      }
+    }
+  },
+
+  "debug_issues": {
+    "initialization": {
+      "clock_not_enabled": {
+        "indicators": ["peripheral register reads 0xFFFFFFFF", "no response"],
+        "root_causes": ["RCC时钟未使能", "总线时钟配置错误"],
+        "fix_priority": ["check_rcc_enable", "verify_clock_tree"]
+      },
+      "init_sequence_wrong": {
+        "indicators": ["timeout during init", "status bit not set"],
+        "root_causes": ["初始化顺序错误", "未等待就绪标志"],
+        "fix_priority": ["check_init_order", "add_status_wait"]
+      }
+    },
+    "communication": {
+      "no_transmission": {
+        "indicators": ["TX buffer always full", "no interrupt"],
+        "root_causes": ["外设未使能", "引脚配置错误", "波特率错误"],
+        "fix_priority": ["check_peripheral_enable", "check_gpio_config", "verify_baudrate"]
+      },
+      "data_corruption": {
+        "indicators": ["CRC error", "frame error", "data mismatch"],
+        "root_causes": ["时序参数错误", "噪声干扰", "采样点配置错误"],
+        "fix_priority": ["adjust_timing", "check_sample_point", "add_filtering"]
+      }
+    }
+  }
+}

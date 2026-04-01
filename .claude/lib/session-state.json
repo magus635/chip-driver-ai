@@ -1,0 +1,66 @@
+{
+  "$schema": "session-state-schema",
+  "version": "1.0.0",
+  "description": "会话状态持久化 - 支持断点恢复",
+
+  "current_session": {
+    "id": null,
+    "module": null,
+    "started_at": null,
+    "last_updated": null,
+    "current_step": null,
+    "status": "idle"
+  },
+
+  "checkpoint": {
+    "step": null,
+    "substep": null,
+    "data": {},
+    "can_resume": false
+  },
+
+  "step_history": [],
+
+  "agent_states": {
+    "doc-analyst": {
+      "last_run": null,
+      "status": null,
+      "output_files": []
+    },
+    "reviewer-agent": {
+      "last_run": null,
+      "status": null,
+      "review_result": null
+    },
+    "codegen-agent": {
+      "last_run": null,
+      "status": null,
+      "generated_files": []
+    },
+    "compiler-agent": {
+      "last_run": null,
+      "status": null,
+      "iterations": 0,
+      "last_error_hash": null
+    },
+    "linker-agent": {
+      "last_run": null,
+      "status": null,
+      "iterations": 0,
+      "last_error_hash": null
+    },
+    "debugger-agent": {
+      "last_run": null,
+      "status": null,
+      "rounds": 0
+    }
+  },
+
+  "artifacts": {
+    "doc_summary_md": null,
+    "doc_summary_json": null,
+    "review_report": null,
+    "repair_log": null,
+    "generated_files": []
+  }
+}
