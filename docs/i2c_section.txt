@@ -1,0 +1,3869 @@
+Inter-integrated circuit (I2C) interface
+
+RM0008
+
+The master can decide to enter Transmitter or Receiver mode depending on the LSB of the
+slave address sent.
+●
+
+●
+
+In 7-bit addressing mode,
+–
+
+To enter Transmitter mode, a master sends the slave address with LSB reset.
+
+–
+
+To enter Receiver mode, a master sends the slave address with LSB set.
+
+In 10-bit addressing mode,
+–
+
+To enter Transmitter mode, a master sends the header (11110xx0) and then the
+slave address, (where xx denotes the two most significant bits of the address).
+
+–
+
+To enter Receiver mode, a master sends the header (11110xx0) and then the
+slave address. Then it should send a repeated Start condition followed by the
+header (11110xx1), (where xx denotes the two most significant bits of the
+address).
+
+The TRA bit indicates whether the master is in Receiver or Transmitter mode.
+
+Master transmitter
+Following the address transmission and after clearing ADDR, the master sends bytes from
+the DR register to the SDA line via the internal shift register.
+The master waits until the first data byte is written into I2C_DR (see Figure 271 Transfer
+sequencing EV8_1).
+When the acknowledge pulse is received, the TxE bit is set by hardware and an interrupt is
+generated if the ITEVFEN and ITBUFEN bits are set.
+If TxE is set and a data byte was not written in the DR register before the end of the last data
+transmission, BTF is set and the interface waits until BTF is cleared by a read from I2C_SR1
+followed by a write to I2C_DR, stretching SCL low.
+Closing the communication
+After the last byte is written to the DR register, the STOP bit is set by software to generate a
+Stop condition (see Figure 271 Transfer sequencing EV8_2). The interface automatically
+goes back to slave mode (M/SL bit cleared).
+Note:
+
+730/1096
+
+Stop condition should be programmed during EV8_2 event, when either TxE or BTF is set.
+
+Doc ID 13902 Rev 14
+
+Inter-integrated circuit (I2C) interface
+
+RM0008
+
+Figure 271. Transfer sequence diagram for master transmitter
+7-bit master transmitter
+S
+
+Address
+
+A
+
+EV5
+
+Data1
+EV6 EV8_1
+
+EV8
+
+A
+
+Data2
+
+A
+
+EV8
+
+EV8
+
+.....
+
+DataN
+
+A
+
+P
+EV8_2
+
+10-bit master transmitter
+S
+
+Header
+EV5
+
+A
+
+Address
+EV9
+
+A
+
+Data1
+EV6
+
+EV8_1
+
+EV8
+
+A
+EV8
+
+.....
+
+DataN
+
+A
+
+P
+EV8_2
+
+Legend: S= Start, Sr = Repeated Start, P= Stop, A= Acknowledge,
+EVx= Event (with interrupt if ITEVFEN = 1)
+EV5: SB=1, cleared by reading SR1 register followed by writing DR register with Address.
+EV6: ADDR=1, cleared by reading SR1 register followed by reading SR2.
+EV8_1: TxE=1, shift register empty, data register empty, write Data1 in DR.
+EV8: TxE=1, shift register not empty,.data register empty, cleared by writing DR register
+EV8_2: TxE=1, BTF = 1, Program Stop request. TxE and BTF are cleared by hardware by the Stop condition
+EV9: ADD10=1, cleared by reading SR1 register followed by writing DR register.
+Notes: 1- The EV5, EV6, EV9, EV8_1 and EV8_2 events stretch SCL low until the end of the corresponding software sequence.
+2- The EV8 software sequence must complete before the end of the current byte transfer. In case EV8 software
+sequence can not be managed before the current byte end of transfer, it is recommended to use BTF instead
+of TXE with the drawback of slowing the communication.
+ai15881b
+
+Doc ID 13902 Rev 14
+
+731/1096
+
+Inter-integrated circuit (I2C) interface
+
+RM0008
+
+Master receiver
+Following the address transmission and after clearing ADDR, the I2C interface enters
+Master Receiver mode. In this mode the interface receives bytes from the SDA line into the
+DR register via the internal shift register. After each byte the interface generates in
+sequence:
+1.
+
+An acknowledge pulse if the ACK bit is set
+
+2.
+
+The RxNE bit is set and an interrupt is generated if the ITEVFEN and ITBUFEN bits are
+set (see Figure 272 Transfer sequencing EV7).
+
+If the RxNE bit is set and the data in the DR register is not read before the end of the last
+data reception, the BTF bit is set by hardware and the interface waits until BTF is cleared by
+a read in the SR1 register followed by a read in the DR register, stretching SCL low.
+Closing the communication
+Method 1: This method is for the case when the I2C is used with interrupts that have the
+highest priority in the application.
+The master sends a NACK for the last byte received from the slave. After receiving this
+NACK, the slave releases the control of the SCL and SDA lines. Then the master can send
+a Stop/Restart condition.
+1.
+
+To generate the nonacknowledge pulse after the last received data byte, the ACK bit
+must be cleared just after reading the second last data byte (after second last RxNE
+event).
+
+2.
+
+To generate the Stop/Restart condition, software must set the STOP/START bit just
+after reading the second last data byte (after the second last RxNE event).
+
+3.
+
+In case a single byte has to be received, the Acknowledge disable and the Stop
+condition generation are made just after EV6 (in EV6_1, just after ADDR is cleared).
+
+After the Stop condition generation, the interface goes automatically back to slave mode
+(M/SL bit cleared).
+
+732/1096
+
+Doc ID 13902 Rev 14
+
+Inter-integrated circuit (I2C) interface
+
+RM0008
+
+Figure 272. Method 1: transfer sequence diagram for master receiver
+ BIT MASTER RECEIVER
+3
+
+!DDRESS
+
+!
+
+$ATA
+
+!
+
+%6 %6?
+
+%6
+
+$ATA
+
+!
+
+%6
+
+%6
+
+
+
+$ATA.
+
+.!
+
+%6?
+
+0
+%6
+
+ BIT MASTER RECEIVER
+3
+
+(EADER
+%6
+
+!
+
+!DDRESS
+%6
+
+!
+%6
+
+(EADER
+
+3R
+%6
+
+!
+
+$ATA
+
+! $ATA
+
+%6 %6?
+
+%6
+
+!
+%6
+
+
+
+$ATA.
+
+.!
+
+%6?
+
+,EGEND 3 3TART 3R  2EPEATED 3TART 0 3TOP ! !CKNOWLEDGE .! .ON ACKNOWLEDGE
+%6X %VENT WITH INTERRUPT IF )4%6&%.
+%6 3" CLEARED BY READING 32 REGISTER FOLLOWED BY WRITING $2 REGISTER
+%6 !$$2 CLEARED BY READING 32 REGISTER FOLLOWED BY READING 32 )N  BIT MASTER RECEIVER MODE THIS SE
+QUENCE SHOULD BE FOLLOWED BY WRITING #2 WITH 34!24  
+%6? NO ASSOCIATED FLAG EVENT USED FOR  BYTE RECEPTION ONLY 4HE !CKNOWLEDGE DISABLE AND 3TOP CONDITION
+GENERATION ARE MADE JUST AFTER %6 THAT IS AFTER !$$2 IS CLEARED
+%6 2X.% CLEARED BY READING $2 REGISTER
+%6? 2X.% CLEARED BY READING $2 REGISTER PROGRAM !# + AND 34/0 REQUEST
+%6 !$$ CLEARED BY READING 32 REGISTER FOLLOWED BY WRITING $2 REGISTER
+
+0
+%6
+
+AI
+
+1. If a single byte is received, it is NA.
+2. The EV5, EV6 and EV9 events stretch SCL low until the end of the corresponding software sequence.
+3. The EV7 software sequence must complete before the end of the current byte transfer. In case EV7
+software sequence can not be managed before the current byte end of transfer, it is recommended to use
+BTF instead of RXNE with the drawback of slowing the communication.
+4. The EV6_1 or EV7_1 software sequence must complete before the ACK pulse of the current byte transfer.
+
+Method 2: This method is for the case when the I2C is used with interrupts that do not have
+the highest priority in the application or when the I2C is used with polling.
+With this method, DataN_2 is not read, so that after DataN_1, the communication is
+stretched (both RxNE and BTF are set). Then, clear the ACK bit before reading DataN-2 in
+DR to ensure it is be cleared before the DataN Acknowledge pulse. After that, just after
+reading DataN_2, set the STOP/ START bit and read DataN_1. After RxNE is set, read
+DataN. This is illustrated below:
+
+Doc ID 13902 Rev 14
+
+733/1096
+
+Inter-integrated circuit (I2C) interface
+
+RM0008
+
+Figure 273. Method 2: transfer sequence diagram for master receiver when N>2
+7- bit master receiver
+S
+
+Address
+
+A
+
+EV5
+
+Data1
+
+A
+
+EV6
+
+Data2
+EV7
+
+A
+
+DataN-2
+
+A
+
+DataN-1
+
+A
+
+EV7
+
+DataN
+
+NA
+
+EV7_2
+
+P
+EV7
+
+10- bit master receiver
+S
+
+Header
+
+Sr
+
+Address
+
+A
+
+EV5
+
+Header
+EV5
+
+A
+
+A
+EV6
+
+EV9
+
+Data1
+
+A
+
+EV6
+
+Data2
+EV7
+
+A
+
+DataN-2
+EV7
+
+A
+
+DataN-1
+
+A
+
+DataN
+
+NA
+
+EV7_2
+
+P
+EV7
+
+Legend: S = Start, Sr = Repeated Start, P = Stop, A = Acknowledge, NA = Non-acknowledge,
+EVx = Event (with interrupt if ITEVFEN = 1)
+EV5: SB=1, cleared by reading SR1 register followed by writing the DR register.
+EV6: ADDR1, cleared by reading SR1 register followed by reading SR2.
+In 10-bit master receiver mode, this sequence should be followed by writing CR2 with START = 1.
+EV7: RxNE=1, cleared by reading DR register
+EV7_2: BTF = 1, DataN-2 in DR and DataN-1 in shift register, program ACK = 0, Read DataN-2 in DR.
+Program STOP = 1, read DataN-1.
+EV9: ADD10= 1, cleared by reading SR1 register followed by writing DR register.
+
+1. The EV5, EV6 and EV9 events stretch SCL low until the end of the corresponding software sequence.
+2. The EV7 software sequence must complete before the end of the current byte transfer.In case EV7
+software sequence can not be managed before the current byte end of transfer, it is recommended to use
+BTF instead of RXNE with the drawback of slowing the communication.
+
+When 3 bytes remain to be read:
+
+734/1096
+
+●
+
+RxNE = 1 => Nothing (DataN-2 not read).
+
+●
+
+DataN-1 received
+
+●
+
+BTF = 1 because both shift and data registers are full: DataN-2 in DR and DataN-1 in
+the shift register => SCL tied low: no other data will be received on the bus.
+
+●
+
+Clear ACK bit
+
+●
+
+Read DataN-2 in DR => This will launch the DataN reception in the shift register
+
+●
+
+DataN received (with a NACK)
+
+●
+
+Program START/STOP
+
+●
+
+Read DataN-1
+
+●
+
+RxNE = 1
+
+●
+
+Read DataN
+
+Doc ID 13902 Rev 14
+
+Inter-integrated circuit (I2C) interface
+
+RM0008
+
+The procedure described above is valid for N>2. The cases where a single byte or two bytes
+are to be received should be handled differently, as described below:
+●
+
+●
+
+Case of a single byte to be received:
+–
+
+In the ADDR event, clear the ACK bit.
+
+–
+
+Clear ADDR
+
+–
+
+Program the STOP/START bit.
+
+–
+
+Read the data after the RxNE flag is set.
+
+Case of two bytes to be received:
+–
+
+Set POS and ACK
+
+–
+
+Wait for the ADDR flag to be set
+
+–
+
+Clear ADDR
+
+–
+
+Clear ACK
+
+–
+
+Wait for BTF to be set
+
+–
+
+Program STOP
+
+–
+
+Read DR twice
+
+Figure 274. Method 2: transfer sequence diagram for master receiver when N=2
+7- bit master receiver
+S
+
+Address
+
+A
+
+EV5
+
+Data1
+
+A
+
+Data2
+
+NA
+
+EV6 EV6_1
+
+P
+EV7_3
+
+10- bit master receiver
+S
+
+Header
+EV5
+
+Address
+
+A
+
+A
+EV6
+
+EV9
+
+Sr
+
+Header
+EV5
+
+A
+
+Data1
+EV6 EV6_1
+
+A
+
+Data2
+
+NA
+
+P
+EV7_3
+
+Legend: S = Start, Sr = Repeated Start, P = Stop, A = Acknowledge, NA = Non-acknowledge,
+EVx = Event (with interrupt if ITEVFEN = 1)
+EV5: SB=1, cleared by reading SR1 register followed by writing the DR register.
+EV6: ADDR1, cleared by reading SR1 register followed by reading SR2.
+In 10-bit master receiver mode, this sequence should be followed by writing CR2 with START = 1.
+EV6_1: No associated flag event. The acknowledge disable should be done just after EV6, that is after ADDR is cleared.
+EV7_3: BTF = 1, program STOP = 1, read DR twice (Read Data1 and Data2) just after programming the STOP.
+EV9: ADD10= 1, cleared by reading SR1 register followed by writing DR register.
+
+1. The EV5, EV6 and EV9 events stretch SCL low until the end of the corresponding software sequence.
+2. The EV6_1 software sequence must complete before the ACK pulse of the current byte transfer.
+
+Doc ID 13902 Rev 14
+
+735/1096
+
+Inter-integrated circuit (I2C) interface
+
+RM0008
+
+Figure 275. Method 2: transfer sequence diagram for master receiver when N=1
+7- bit master receiver
+S
+
+Address
+
+A
+
+EV5
+
+Data1
+
+NA
+
+EV6_3
+
+P
+EV7
+
+10- bit master receiver
+S
+
+Header
+
+Address
+
+A
+
+EV5
+
+EV9
+
+A
+EV6
+
+Sr
+
+Header
+EV5
+
+A
+
+Data1
+EV6_3
+
+NA
+
+P
+EV7
+
+Legend: S = Start, Sr = Repeated Start, P = Stop, A = Acknowledge, NA = Non-acknowledge,
+EVx = Event (with interrupt if ITEVFEN = 1)
+EV5: SB=1, cleared by reading SR1 register followed by writing the DR register.
+EV6: ADDR =1, cleared by reading SR1 resister followed by reading SR2 register.
+EV6_3: ADDR = 1, program ACK = 0, clear ADDR by reading SR1 register followed by reading SR2 register, program
+STOP =1 just after ADDR is cleared.
+Note: The EV6_3 software sequence must complete before the current byte end of transfer.
+EV7: RxNE =1, cleared by reading DR register.
+EV9: ADD10= 1, cleared by reading SR1 register followed by writing DR register.
+.
+
+1. The EV5, EV6 and EV9 events stretch SCL low until the end of the corresponding software sequence.
+
+26.3.4
+
+Error conditions
+The following are the error conditions which may cause communication to fail.
+
+Bus error (BERR)
+This error occurs when the I2C interface detects an external Stop or Start condition during
+an address or a data transfer. In this case:
+●
+
+the BERR bit is set and an interrupt is generated if the ITERREN bit is set
+
+●
+
+in Slave mode: data are discarded and the lines are released by hardware:
+
+●
+
+–
+
+in case of a misplaced Start, the slave considers it is a restart and waits for an
+address, or a Stop condition
+
+–
+
+in case of a misplaced Stop, the slave behaves like for a Stop condition and the
+lines are released by hardware
+
+In Master mode: the lines are not released and the state of the current transmission is
+not affected. It is up to the software to abort or not the current transmission
+
+Acknowledge failure (AF)
+This error occurs when the interface detects a nonacknowledge bit. In this case:
+
+736/1096
+
+●
+
+the AF bit is set and an interrupt is generated if the ITERREN bit is set
+
+●
+
+a transmitter which receives a NACK must reset the communication:
+–
+
+If Slave: lines are released by hardware
+
+–
+
+If Master: a Stop or repeated Start condition must be generated by software
+
+Doc ID 13902 Rev 14
+
+Inter-integrated circuit (I2C) interface
+
+RM0008
+
+Arbitration lost (ARLO)
+This error occurs when the I2C interface detects an arbitration lost condition. In this case,
+●
+
+the ARLO bit is set by hardware (and an interrupt is generated if the ITERREN bit is
+set)
+
+●
+
+the I2C Interface goes automatically back to slave mode (the M/SL bit is cleared). When
+the I2C loses the arbitration, it is not able to acknowledge its slave address in the same
+transfer, but it can acknowledge it after a repeated Start from the winning master.
+
+●
+
+lines are released by hardware
+
+Overrun/underrun error (OVR)
+An overrun error can occur in slave mode when clock stretching is disabled and the I2C
+interface is receiving data. The interface has received a byte (RxNE=1) and the data in DR
+has not been read, before the next byte is received by the interface. In this case,
+●
+
+The last received byte is lost.
+
+●
+
+In case of Overrun error, software should clear the RxNE bit and the transmitter should
+re-transmit the last received byte.
+
+Underrun error can occur in slave mode when clock stretching is disabled and the I2C
+interface is transmitting data. The interface has not updated the DR with the next byte
+(TxE=1), before the clock comes for the next byte. In this case,
+●
+
+The same byte in the DR register will be sent again
+
+●
+
+The user should make sure that data received on the receiver side during an underrun
+error are discarded and that the next bytes are written within the clock low time
+specified in the I2C bus standard.
+
+For the first byte to be transmitted, the DR must be written after ADDR is cleared and before
+the first SCL rising edge. If not possible, the receiver must discard the first data.
+
+26.3.5
+
+SDA/SCL line control
+●
+
+●
+
+If clock stretching is enabled:
+–
+
+Transmitter mode: If TxE=1 and BTF=1: the interface holds the clock line low
+before transmission to wait for the microcontroller to read SR1 and then write the
+byte in the Data Register (both buffer and shift register are empty).
+
+–
+
+Receiver mode: If RxNE=1 and BTF=1: the interface holds the clock line low after
+reception to wait for the microcontroller to read SR1 and then read the byte in the
+Data Register (both buffer and shift register are full).
+
+If clock stretching is disabled in Slave mode:
+–
+
+Overrun Error in case of RxNE=1 and no read of DR has been done before the
+next byte is received. The last received byte is lost.
+
+–
+
+Underrun Error in case TxE=1 and no write into DR has been done before the next
+byte must be transmitted. The same byte will be sent again.
+
+–
+
+Write Collision not managed.
+
+Doc ID 13902 Rev 14
+
+737/1096
+
+Inter-integrated circuit (I2C) interface
+
+26.3.6
+
+RM0008
+
+SMBus
+Introduction
+The System Management Bus (SMBus) is a two-wire interface through which various
+devices can communicate with each other and with the rest of the system. It is based on I2C
+principles of operation. SMBus provides a control bus for system and power management
+related tasks. A system may use SMBus to pass messages to and from devices instead of
+toggling individual control lines.
+The System Management Bus Specification refers to three types of devices. A slave is a
+device that is receiving or responding to a command. A master is a device that issues
+commands, generates the clocks, and terminates the transfer. A host is a specialized master
+that provides the main interface to the system's CPU. A host must be a master-slave and
+must support the SMBus host notify protocol. Only one host is allowed in a system.
+
+Similarities between SMBus and I2C
+●
+
+2 wire bus protocol (1 Clk, 1 Data) + SMBus Alert line optional
+
+●
+
+Master-slave communication, Master provides clock
+
+●
+
+Multi master capability
+
+●
+
+SMBus data format similar to I2C 7-bit addressing format (Figure 267).
+
+Differences between SMBus and I2C
+The following table describes the differences between SMBus and I2C.
+Table 188. SMBus vs. I2C
+I2C
+
+SMBus
+Max. speed 100 kHz
+
+Max. speed 400 kHz
+
+Min. clock speed 10 kHz
+
+No minimum clock speed
+
+35 ms clock low timeout
+
+No timeout
+
+Logic levels are fixed
+
+Logic levels are VDD dependent
+
+Different address types (reserved, dynamic etc.)
+
+7-bit, 10-bit and general call slave address types
+
+Different bus protocols (quick command, process
+No bus protocols
+call etc.)
+
+SMBus application usage
+With System Management Bus, a device can provide manufacturer information, tell the
+system what its model/part number is, save its state for a suspend event, report different
+types of errors, accept control parameters, and return its status. SMBus provides a control
+bus for system and power management related tasks.
+
+Device identification
+Any device that exists on the System Management Bus as a slave has a unique address
+called the Slave Address. For the list of reserved slave addresses, refer to the SMBus
+specification ver. 2.0 (http://smbus.org/specs/).
+
+738/1096
+
+Doc ID 13902 Rev 14
+
+Inter-integrated circuit (I2C) interface
+
+RM0008
+
+Bus protocols
+The SMBus specification supports up to 9 bus protocols. For more details of these protocols
+and SMBus address types, refer to SMBus specification ver. 2.0 (http://smbus.org/specs/).
+These protocols should be implemented by the user software.
+
+Address resolution protocol (ARP)
+SMBus slave address conflicts can be resolved by dynamically assigning a new unique
+address to each slave device. The Address Resolution Protocol (ARP) has the following
+attributes:
+●
+
+Address assignment uses the standard SMBus physical layer arbitration mechanism
+
+●
+
+Assigned addresses remain constant while device power is applied; address retention
+through device power loss is also allowed
+
+●
+
+No additional SMBus packet overhead is incurred after address assignment. (i.e.
+subsequent accesses to assigned slave addresses have the same overhead as
+accesses to fixed address devices.)
+
+●
+
+Any SMBus master can enumerate the bus
+
+Unique device identifier (UDID)
+In order to provide a mechanism to isolate each device for the purpose of address
+assignment, each device must implement a unique device identifier (UDID).
+For the details on 128 bit UDID and more information on ARP, refer to SMBus specification
+ver. 2.0 (http://smbus.org/specs/).
+
+SMBus alert mode
+SMBus Alert is an optional signal with an interrupt line for devices that want to trade their
+ability to master for a pin. SMBA is a wired-AND signal just as the SCL and SDA signals are.
+SMBA is used in conjunction with the SMBus General Call Address. Messages invoked with
+the SMBus are 2 bytes long.
+A slave-only device can signal the host through SMBA that it wants to talk by setting ALERT
+bit in I2C_CR1 register. The host processes the interrupt and simultaneously accesses all
+SMBA devices through the Alert Response Address (known as ARA having a value 0001
+100X). Only the device(s) which pulled SMBA low will acknowledge the Alert Response
+Address. This status is identified using SMBALERT Status flag in I2C_SR1 register. The
+host performs a modified Receive Byte operation. The 7 bit device address provided by the
+slave transmit device is placed in the 7 most significant bits of the byte. The eighth bit can be
+a zero or one.
+If more than one device pulls SMBA low, the highest priority (lowest address) device will win
+communication rights via standard arbitration during the slave address transfer. After
+acknowledging the slave address the device must disengage its SMBA pull-down. If the host
+still sees SMBA low when the message transfer is complete, it knows to read the ARA
+again.
+A host which does not implement the SMBA signal may periodically access the ARA.
+For more details on SMBus Alert mode, refer to SMBus specification ver. 2.0
+(http://smbus.org/specs/).
+
+Doc ID 13902 Rev 14
+
+739/1096
+
+Inter-integrated circuit (I2C) interface
+
+RM0008
+
+Timeout error
+There are differences in the timing specifications between I2C and SMBus.
+SMBus defines a clock low timeout, TIMEOUT of 35 ms. Also SMBus specifies TLOW:
+SEXT as the cumulative clock low extend time for a slave device. SMBus specifies TLOW:
+MEXT as the cumulative clock low extend time for a master device. For more details on
+these timeouts, refer to SMBus specification ver. 2.0 (http://smbus.org/specs/).
+The status flag Timeout or Tlow Error in I2C_SR1 shows the status of this feature.
+
+How to use the interface in SMBus mode
+To switch from I2C mode to SMBus mode, the following sequence should be performed.
+●
+
+Set the SMBus bit in the I2C_CR1 register
+
+●
+
+Configure the SMBTYPE and ENARP bits in the I2C_CR1 register as required for the
+application
+
+If you want to configure the device as a master, follow the Start condition generation
+procedure in Section 26.3.3: I2C master mode. Otherwise, follow the sequence in
+Section 26.3.2: I2C slave mode.
+The application has to control the various SMBus protocols by software.
+
+26.3.7
+
+●
+
+SMB Device Default Address acknowledged if ENARP=1 and SMBTYPE=0
+
+●
+
+SMB Host Header acknowledged if ENARP=1 and SMBTYPE=1
+
+●
+
+SMB Alert Response Address acknowledged if SMBALERT=1
+
+DMA requests
+DMA requests (when enabled) are generated only for data transfer. DMA requests are
+generated by Data Register becoming empty in transmission and Data Register becoming
+full in reception. The DMA request must be served before the end of the current byte
+transfer. When the number of data transfers which has been programmed for the
+corresponding DMA channel is reached, the DMA controller sends an End of Transfer EOT
+signal to the I2C interface and generates a Transfer Complete interrupt if enabled:
+●
+
+Master transmitter: In the interrupt routine after the EOT interrupt, disable DMA
+requests then wait for a BTF event before programming the Stop condition.
+
+●
+
+Master receiver: when the number of bytes to be received is equal to or greater than
+two, the DMA controller sends a hardware signal, EOT_1, corresponding to the last but
+one data byte (number_of_bytes – 1). If, in the I2C_CR2 register, the LAST bit is set,
+I2C automatically sends a NACK after the next byte following EOT_1. The user can
+generate a Stop condition in the DMA Transfer Complete interrupt routine if enabled.
+
+Transmission using DMA
+DMA mode can be enabled for transmission by setting the DMAEN bit in the I2C_CR2
+register. Data will be loaded from a Memory area configured using the DMA peripheral (refer
+to the DMA specification) to the I2C_DR register whenever the TxE bit is set. To map a DMA
+channel for I2C transmission, perform the following sequence. Here x is the channel number.
+
+740/1096
+
+Doc ID 13902 Rev 14
+
+Inter-integrated circuit (I2C) interface
+
+RM0008
+1.
+
+Set the I2C_DR register address in the DMA_CPARx register. The data will be moved
+to this address from the memory after each TxE event.
+
+2.
+
+Set the memory address in the DMA_CMARx register. The data will be loaded into
+I2C_DR from this memory after each TxE event.
+
+3.
+
+Configure the total number of bytes to be transferred in the DMA_CNDTRx register.
+After each TxE event, this value will be decremented.
+
+4.
+
+Configure the channel priority using the PL[0:1] bits in the DMA_CCRx register
+
+5.
+
+Set the DIR bit and, in the DMA_CCRx register, configure interrupts after half transfer
+or full transfer depending on application requirements.
+
+6.
+
+Activate the channel by setting the EN bit in the DMA_CCRx register.
+
+When the number of data transfers which has been programmed in the DMA Controller
+registers is reached, the DMA controller sends an End of Transfer EOT/ EOT_1 signal to the
+I2C interface and the DMA generates an interrupt, if enabled, on the DMA channel interrupt
+vector.
+Note:
+
+Do not enable the ITBUFEN bit in the I2C_CR2 register if DMA is used for transmission.
+
+Reception using DMA
+DMA mode can be enabled for reception by setting the DMAEN bit in the I2C_CR2 register.
+Data will be loaded from the I2C_DR register to a Memory area configured using the DMA
+peripheral (refer to the DMA specification) whenever a data byte is received. To map a DMA
+channel for I2C reception, perform the following sequence. Here x is the channel number.
+1.
+
+Set the I2C_DR register address in DMA_CPARx register. The data will be moved from
+this address to the memory after each RxNE event.
+
+2.
+
+Set the memory address in the DMA_CMARx register. The data will be loaded from the
+I2C_DR register to this memory area after each RxNE event.
+
+3.
+
+Configure the total number of bytes to be transferred in the DMA_CNDTRx register.
+After each RxNE event, this value will be decremented.
+
+4.
+
+Configure the channel priority using the PL[0:1] bits in the DMA_CCRx register
+
+5.
+
+Reset the DIR bit and configure interrupts in the DMA_CCRx register after half transfer
+or full transfer depending on application requirements.
+
+6.
+
+Activate the channel by setting the EN bit in the DMA_CCRx register.
+
+When the number of data transfers which has been programmed in the DMA Controller
+registers is reached, the DMA controller sends an End of Transfer EOT/ EOT_1 signal to the
+I2C interface and DMA generates an interrupt, if enabled, on the DMA channel interrupt
+vector.
+Note:
+
+Do not enable the ITBUFEN bit in the I2C_CR2 register if DMA is used for reception.
+
+Doc ID 13902 Rev 14
+
+741/1096
+
+Inter-integrated circuit (I2C) interface
+
+26.3.8
+
+RM0008
+
+Packet error checking
+A PEC calculator has been implemented to improve the reliability of communication. The
+PEC is calculated by using the C(x) = x8 + x2 + x + 1 CRC-8 polynomial serially on each bit.
+●
+
+26.4
+
+PEC calculation is enabled by setting the ENPEC bit in the I2C_CR1 register. PEC is a
+CRC-8 calculated on all message bytes including addresses and R/W bits.
+–
+
+In transmission: set the PEC transfer bit in the I2C_CR1 register after the TxE
+event corresponding to the last byte. The PEC will be transferred after the last
+transmitted byte.
+
+–
+
+In reception: set the PEC bit in the I2C_CR1 register after the RxNE event
+corresponding to the last byte so that the receiver sends a NACK if the next
+received byte is not equal to the internally calculated PEC. In case of MasterReceiver, a NACK must follow the PEC whatever the check result.The PEC must
+be set before the ACK pulse of the current byte reception.
+
+●
+
+A PECERR error flag/interrupt is also available in the I2C_SR1 register.
+
+●
+
+If DMA and PEC calculation are both enabled:–
+
+In transmission: when the I2C interface receives an EOT signal from the DMA
+controller, it automatically sends a PEC after the last byte.
+
+–
+
+In reception: when the I2C interface receives an EOT_1 signal from the DMA
+controller, it will automatically consider the next byte as a PEC and will check it. A
+DMA request is generated after PEC reception.
+
+●
+
+To allow intermediate PEC transfers, a control bit is available in the I2C_CR2 register
+(LAST bit) to determine if it is really the last DMA transfer or not. If it is the last DMA
+request for a master receiver, a NACK is automatically sent after the last received byte.
+
+●
+
+PEC calculation is corrupted by an arbitration loss.
+
+I2C interrupts
+The table below gives the list of I2C interrupt requests.
+Table 189. I2C Interrupt requests
+T
+
+Interrupt event
+Start bit sent (Master)
+
+Event flag
+
+Enable control bit
+
+SB
+
+Address sent (Master) or Address matched (Slave)
+
+ADDR
+
+10-bit header sent (Master)
+
+ADD10
+
+Stop received (Slave)
+
+STOPF
+
+Data byte transfer finished
+
+BTF
+
+Receive buffer not empty
+
+RxNE
+
+Transmit buffer empty
+
+TxE
+
+ITEVFEN
+
+ITEVFEN and ITBUFEN
+
+742/1096
+
+Doc ID 13902 Rev 14
+
+Inter-integrated circuit (I2C) interface
+
+RM0008
+Table 189. I2C Interrupt requests (continued)
+Interrupt event
+
+Note:
+
+Event flag
+
+Bus error
+
+BERR
+
+Arbitration loss (Master)
+
+ARLO
+
+Acknowledge failure
+
+AF
+
+Overrun/Underrun
+
+OVR
+
+PEC error
+
+PECERR
+
+Timeout/Tlow error
+
+TIMEOUT
+
+SMBus Alert
+
+SMBALERT
+
+Enable control bit
+
+ITERREN
+
+1
+
+SB, ADDR, ADD10, STOPF, BTF, RxNE and TxE are logically ORed on the same interrupt
+channel.
+
+2
+
+BERR, ARLO, AF, OVR, PECERR, TIMEOUT and SMBALERT are logically ORed on the
+same interrupt channel.
+Figure 276. I2C interrupt mapping diagram
+ITEVFEN
+SB
+ADDR
+ADD10
+STOPF
+
+it_event
+BTF
+TxE
+
+ITBUFEN
+
+RxNE
+ITERREN
+
+BERR
+ARLO
+
+it_error
+
+AF
+OVR
+PECERR
+TIMEOUT
+SMBALERT
+
+Doc ID 13902 Rev 14
+
+743/1096
+
+Inter-integrated circuit (I2C) interface
+
+RM0008
+
+I2C debug mode
+
+26.5
+
+When the microcontroller enters the debug mode (Cortex™-M3 core halted), the SMBUS
+timeout either continues to work normally or stops, depending on the
+DBG_I2Cx_SMBUS_TIMEOUT configuration bits in the DBG module. For more details,
+refer to Section 31.16.2: Debug support for timers, watchdog, bxCAN and I2C on
+page 1068.
+
+I2C registers
+
+26.6
+
+Refer to Section 2.1 on page 46 for a list of abbreviations used in register descriptions.
+The peripheral registers can be accessed by half-words (16-bit) or words (32-bit).
+
+I2C Control register 1 (I2C_CR1)
+
+26.6.1
+
+Address offset: 0x00
+Reset value: 0x0000
+15
+
+14
+
+SWRST
+
+13
+ALERT
+
+12
+PEC
+
+11
+POS
+
+10
+ACK
+
+9
+STOP
+
+Res.
+rw
+
+rw
+
+rw
+
+rw
+
+rw
+
+rw
+
+8
+
+7
+
+NO
+START
+STRETCH
+rw
+
+rw
+
+6
+
+5
+
+4
+
+ENGC ENPEC ENARP
+rw
+
+rw
+
+rw
+
+3
+
+2
+
+SMB
+TYPE
+
+Res.
+
+rw
+
+1
+
+0
+
+SMBUS
+
+PE
+
+rw
+
+rw
+
+Bit 15 SWRST: Software reset
+When set, the I2C is under reset state. Before resetting this bit, make sure the I2C lines are
+released and the bus is free.
+0: I2C Peripheral not under reset
+1: I2C Peripheral under reset state
+Note: This bit can be used in case the BUSY bit is set to ‘1 when no stop condition has been
+detected on the bus.
+Bit 14 Reserved, must be kept at reset value
+Bit 13 ALERT: SMBus alert
+This bit is set and cleared by software, and cleared by hardware when PE=0.
+0: Releases SMBA pin high. Alert Response Address Header followed by NACK.
+1: Drives SMBA pin low. Alert Response Address Header followed by ACK.
+Bit 12 PEC: Packet error checking
+This bit is set and cleared by software, and cleared by hardware when PEC is transferred or
+by a START or Stop condition or when PE=0.
+0: No PEC transfer
+1: PEC transfer (in Tx or Rx mode)
+Note: PEC calculation is corrupted by an arbitration loss.
+
+744/1096
+
+Doc ID 13902 Rev 14
+
+Inter-integrated circuit (I2C) interface
+
+RM0008
+
+Bit 11 POS: Acknowledge/PEC Position (for data reception)
+This bit is set and cleared by software and cleared by hardware when PE=0.
+0: ACK bit controls the (N)ACK of the current byte being received in the shift register. The
+PEC bit indicates that current byte in shift register is a PEC.
+1: ACK bit controls the (N)ACK of the next byte which will be received in the shift register.
+The PEC bit indicates that the next byte in the shift register is a PEC
+Note: The POS bit is used when the procedure for reception of 2 bytes (see Method 2:
+transfer sequence diagram for master receiver when N=2) is followed. It must be
+configured before data reception starts. In this case, to NACK the 2nd byte, the ACK bit
+must be cleared just after ADDR is cleared. To check the 2nd byte as PEC, the PEC bit
+must be set during the ADDR stretch event after configuring the POS bit.
+Bit 10 ACK: Acknowledge enable
+This bit is set and cleared by software and cleared by hardware when PE=0.
+0: No acknowledge returned
+1: Acknowledge returned after a byte is received (matched address or data)
+Bit 9 STOP: Stop generation
+The bit is set and cleared by software, cleared by hardware when a Stop condition is
+detected, set by hardware when a timeout error is detected.
+In Master Mode:
+0: No Stop generation.
+1: Stop generation after the current byte transfer or after the current Start condition is sent.
+In Slave mode:
+0: No Stop generation.
+1: Release the SCL and SDA lines after the current byte transfer.
+Note: When the STOP, START or PEC bit is set, the software must not perform any write
+access to I2C_CR1 before this bit is cleared by hardware. Otherwise there is a risk of
+setting a second STOP, START or PEC request.
+Bit 8 START: Start generation
+This bit is set and cleared by software and cleared by hardware when start is sent or PE=0.
+In Master Mode:
+0: No Start generation
+1: Repeated start generation
+In Slave mode:
+0: No Start generation
+1: Start generation when the bus is free
+Bit 7 NOSTRETCH: Clock stretching disable (Slave mode)
+This bit is used to disable clock stretching in slave mode when ADDR or BTF flag is set, until
+it is reset by software.
+0: Clock stretching enabled
+1: Clock stretching disabled
+Bit 6 ENGC: General call enable
+0: General call disabled. Address 00h is NACKed.
+1: General call enabled. Address 00h is ACKed.
+Bit 5 ENPEC: PEC enable
+0: PEC calculation disabled
+1: PEC calculation enabled
+
+Doc ID 13902 Rev 14
+
+745/1096
+
+Inter-integrated circuit (I2C) interface
+
+RM0008
+
+Bit 4 ENARP: ARP enable
+0: ARP disable
+1: ARP enable
+SMBus Device default address recognized if SMBTYPE=0
+SMBus Host address recognized if SMBTYPE=1
+Bit 3 SMBTYPE: SMBus type
+0: SMBus Device
+1: SMBus Host
+Bit 2 Reserved, must be kept at reset value
+Bit 1 SMBUS: SMBus mode
+0: I2C mode
+1: SMBus mode
+Bit 0 PE: Peripheral enable
+0: Peripheral disable
+1: Peripheral enable: the corresponding IOs are selected as alternate functions depending
+on SMBus bit.
+Note: If this bit is reset while a communication is on going, the peripheral is disabled at the
+end of the current communication, when back to IDLE state.
+All bit resets due to PE=0 occur at the end of the communication.
+In master mode, this bit must not be reset before the end of the communication.
+
+I2C Control register 2 (I2C_CR2)
+
+26.6.2
+
+Address offset: 0x04
+Reset value: 0x0000
+15
+
+14
+
+13
+
+12
+
+11
+
+10
+
+9
+
+8
+
+LAST
+
+DMA
+EN
+
+ITBUF
+EN
+
+ITEVT
+EN
+
+ITERR
+EN
+
+rw
+
+rw
+
+rw
+
+rw
+
+Reserved
+rw
+
+7
+
+6
+
+5
+
+4
+
+3
+
+2
+
+1
+
+0
+
+rw
+
+rw
+
+FREQ[5:0]
+Reserved
+rw
+
+rw
+
+rw
+
+rw
+
+Bits 15:13 Reserved, must be kept at reset value
+Bit 12 LAST: DMA last transfer
+0: Next DMA EOT is not the last transfer
+1: Next DMA EOT is the last transfer
+Note: This bit is used in master receiver mode to permit the generation of a NACK on the last
+received data.
+Bit 11 DMAEN: DMA requests enable
+0: DMA requests disabled
+1: DMA request enabled when TxE=1 or RxNE =1
+Bit 10 ITBUFEN: Buffer interrupt enable
+0: TxE = 1 or RxNE = 1 does not generate any interrupt.
+1:TxE = 1 or RxNE = 1 generates Event Interrupt (whatever the state of DMAEN)
+
+746/1096
+
+Doc ID 13902 Rev 14
+
+Inter-integrated circuit (I2C) interface
+
+RM0008
+
+Bit 9 ITEVTEN: Event interrupt enable
+0: Event interrupt disabled
+1: Event interrupt enabled
+This interrupt is generated when:
+–SB = 1 (Master)
+–ADDR = 1 (Master/Slave)
+–ADD10= 1 (Master)
+–STOPF = 1 (Slave)
+–BTF = 1 with no TxE or RxNE event
+–TxE event to 1 if ITBUFEN = 1
+–RxNE event to 1if ITBUFEN = 1
+Bit 8 ITERREN: Error interrupt enable
+0: Error interrupt disabled
+1: Error interrupt enabled
+This interrupt is generated when:
+–
+BERR = 1
+–
+ARLO = 1
+–
+AF = 1
+–
+OVR = 1
+–
+PECERR = 1
+–
+TIMEOUT = 1
+–
+SMBALERT = 1
+Bits 7:6 Reserved, must be kept at reset value
+Bits 5:0 FREQ[5:0]: Peripheral clock frequency
+The peripheral clock frequency must be configured using the input APB clock frequency (I2C
+peripheral connected to APB). The minimum allowed frequency is 2 MHz, the maximum
+frequency is limited by the maximum APB frequency (36 MHz) and an intrinsic limitation of
+46 MHz.
+0b000000: Not allowed
+0b000001: Not allowed
+0b000010: 2 MHz
+...
+0b100100: 36 MHz
+Higher than 0b100100: Not allowed
+
+Doc ID 13902 Rev 14
+
+747/1096
+
+Inter-integrated circuit (I2C) interface
+
+RM0008
+
+I2C Own address register 1 (I2C_OAR1)
+
+26.6.3
+
+Address offset: 0x08
+Reset value: 0x0000
+15
+
+14
+
+13
+
+ADD
+MODE
+
+12
+
+11
+
+10
+
+9
+
+8
+
+7
+
+6
+
+5
+
+ADD[9:8]
+
+4
+
+3
+
+2
+
+1
+
+ADD[7:1]
+
+0
+ADD0
+
+Reserved
+
+rw
+
+rw
+
+rw
+
+rw
+
+rw
+
+rw
+
+rw
+
+rw
+
+rw
+
+rw
+
+rw
+
+4
+
+3
+
+2
+
+1
+
+0
+
+rw
+
+rw
+
+rw
+
+Bit 15 ADDMODE Addressing mode (slave mode)
+0: 7-bit slave address (10-bit address not acknowledged)
+1: 10-bit slave address (7-bit address not acknowledged)
+Bit 14 Reserved, must be kept at reset value
+Bits 13:10 Reserved, must be kept at reset value
+Bits 9:8 ADD[9:8]: Interface address
+7-bit addressing mode: don’t care
+10-bit addressing mode: bits9:8 of address
+Bits 7:1 ADD[7:1]: Interface address
+bits 7:1 of address
+Bit 0 ADD0: Interface address
+7-bit addressing mode: don’t care
+10-bit addressing mode: bit 0 of address
+
+I2C Own address register 2 (I2C_OAR2)
+
+26.6.4
+
+Address offset: 0x0C
+Reset value: 0x0000
+15
+
+14
+
+13
+
+12
+
+11
+
+10
+
+9
+
+8
+
+7
+
+6
+
+5
+
+rw
+
+rw
+
+rw
+
+ADD2[7:1]
+
+ENDUAL
+
+Reserved
+rw
+
+Bits 15:8 Reserved, must be kept at reset value
+Bits 7:1 ADD2[7:1]: Interface address
+bits 7:1 of address in dual addressing mode
+Bit 0 ENDUAL: Dual addressing mode enable
+0: Only OAR1 is recognized in 7-bit addressing mode
+1: Both OAR1 and OAR2 are recognized in 7-bit addressing mode
+
+748/1096
+
+Doc ID 13902 Rev 14
+
+rw
+
+Inter-integrated circuit (I2C) interface
+
+RM0008
+
+I2C Data register (I2C_DR)
+
+26.6.5
+
+Address offset: 0x10
+Reset value: 0x0000
+15
+
+14
+
+13
+
+12
+
+11
+
+10
+
+9
+
+8
+
+7
+
+6
+
+5
+
+4
+
+3
+
+2
+
+1
+
+0
+
+rw
+
+rw
+
+rw
+
+DR[7:0]
+Reserved
+rw
+
+rw
+
+rw
+
+rw
+
+rw
+
+Bits 15:8 Reserved, must be kept at reset value
+Bits 7:0 DR[7:0] 8-bit data register
+Byte received or to be transmitted to the bus.
+–Transmitter mode: Byte transmission starts automatically when a byte is written in the DR
+register. A continuous transmit stream can be maintained if the next data to be transmitted
+is put in DR once the transmission is started (TxE=1)
+–Receiver mode: Received byte is copied into DR (RxNE=1). A continuous transmit stream
+can be maintained if DR is read before the next data byte is received (RxNE=1).
+Note: In slave mode, the address is not copied into DR.
+Note: Write collision is not managed (DR can be written if TxE=0).
+Note: If an ARLO event occurs on ACK pulse, the received byte is not copied into DR and so
+cannot be read.
+
+I2C Status register 1 (I2C_SR1)
+
+26.6.6
+
+Address offset: 0x14
+Reset value: 0x0000
+15
+
+14
+
+SMB
+ALERT
+
+TIME
+OUT
+
+rc_w0
+
+rc_w0
+
+13
+
+12
+
+11
+
+10
+
+9
+
+8
+
+7
+
+6
+
+OVR
+
+AF
+
+ARLO
+
+BERR
+
+TxE
+
+RxNE
+
+Res.
+
+PEC
+ERR
+rc_w0
+
+rc_w0
+
+5
+
+4
+
+3
+
+STOPF ADD10
+
+2
+
+1
+
+0
+
+BTF
+
+ADDR
+
+SB
+
+r
+
+r
+
+r
+
+Res.
+rc_w0
+
+rc_w0
+
+rc_w0
+
+r
+
+r
+
+r
+
+r
+
+Bit 15 SMBALERT: SMBus alert
+In SMBus host mode:
+0: no SMBALERT
+1: SMBALERT event occurred on pin
+In SMBus slave mode:
+0: no SMBALERT response address header
+1: SMBALERT response address header to SMBALERT LOW received
+– Cleared by software writing 0, or by hardware when PE=0.
+Bit 14 TIMEOUT: Timeout or Tlow error
+0: No timeout error
+1: SCL remained LOW for 25 ms (Timeout)
+or
+Master cumulative clock low extend time more than 10 ms (Tlow:mext)
+or
+Slave cumulative clock low extend time more than 25 ms (Tlow:sext)
+– When set in slave mode: slave resets the communication and lines are released by hardware
+– When set in master mode: Stop condition sent by hardware
+– Cleared by software writing 0, or by hardware when PE=0.
+Note: This functionality is available only in SMBus mode.
+
+Doc ID 13902 Rev 14
+
+749/1096
+
+Inter-integrated circuit (I2C) interface
+
+RM0008
+
+Bit 13 Reserved, must be kept at reset value
+Bit 12 PECERR: PEC Error in reception
+0: no PEC error: receiver returns ACK after PEC reception (if ACK=1)
+1: PEC error: receiver returns NACK after PEC reception (whatever ACK)
+–Cleared by software writing 0, or by hardware when PE=0.
+–
+Bit 11 OVR: Overrun/Underrun
+0: No overrun/underrun
+1: Overrun or underrun
+–Set by hardware in slave mode when NOSTRETCH=1 and:
+–In reception when a new byte is received (including ACK pulse) and the DR register has not
+been read yet. New received byte is lost.
+–In transmission when a new byte should be sent and the DR register has not been written
+yet. The same byte is sent twice.
+–Cleared by software writing 0, or by hardware when PE=0.
+Note: If the DR write occurs very close to SCL rising edge, the sent data is unspecified and a
+hold timing error occurs
+Bit 10 AF: Acknowledge failure
+0: No acknowledge failure
+1: Acknowledge failure
+–Set by hardware when no acknowledge is returned.
+–Cleared by software writing 0, or by hardware when PE=0.
+Bit 9 ARLO: Arbitration lost (master mode)
+0: No Arbitration Lost detected
+1: Arbitration Lost detected
+Set by hardware when the interface loses the arbitration of the bus to another master
+–Cleared by software writing 0, or by hardware when PE=0.
+After an ARLO event the interface switches back automatically to Slave mode (M/SL=0).
+Note: In SMBUS, the arbitration on the data in slave mode occurs only during the data phase,
+or the acknowledge transmission (not on the address acknowledge).
+Bit 8 BERR: Bus error
+0: No misplaced Start or Stop condition
+1: Misplaced Start or Stop condition
+–Set by hardware when the interface detects an SDA rising or falling edge while SCL is high,
+occurring in a non-valid position during a byte transfer.
+–Cleared by software writing 0, or by hardware when PE=0.
+Bit 7 TxE: Data register empty (transmitters)
+0: Data register not empty
+1: Data register empty
+–Set when DR is empty in transmission. TxE is not set during address phase.
+–Cleared by software writing to the DR register or by hardware after a start or a stop
+condition or when PE=0.
+TxE is not set if either a NACK is received, or if next byte to be transmitted is PEC (PEC=1)
+Note: TxE is not cleared by writing the first data being transmitted, or by writing data when
+BTF is set, as in both cases the data register is still empty.
+
+750/1096
+
+Doc ID 13902 Rev 14
+
+Inter-integrated circuit (I2C) interface
+
+RM0008
+
+Bit 6 RxNE: Data register not empty (receivers)
+0: Data register empty
+1: Data register not empty
+–Set when data register is not empty in receiver mode. RxNE is not set during address
+phase.
+–Cleared by software reading or writing the DR register or by hardware when PE=0.
+RxNE is not set in case of ARLO event.
+Note: RxNE is not cleared by reading data when BTF is set, as the data register is still full.
+Bit 5 Reserved, must be kept at reset value
+Bit 4 STOPF: Stop detection (slave mode)
+0: No Stop condition detected
+1: Stop condition detected
+–Set by hardware when a Stop condition is detected on the bus by the slave after an
+acknowledge (if ACK=1).
+–Cleared by software reading the SR1 register followed by a write in the CR1 register, or by
+hardware when PE=0
+Note: The STOPF bit is not set after a NACK reception.
+It is recommended to perform the complete clearing sequence (READ SR1 then
+WRITE CR1) after the STOPF is set. Refer to Figure 270: Transfer sequence diagram
+for slave receiver on page 728.
+Bit 3 ADD10: 10-bit header sent (Master mode)
+0: No ADD10 event occurred.
+1: Master has sent first address byte (header).
+–Set by hardware when the master has sent the first byte in 10-bit address mode.
+–Cleared by software reading the SR1 register followed by a write in the DR register of the
+second address byte, or by hardware when PE=0.
+Note: ADD10 bit is not set after a NACK reception
+Bit 2 BTF: Byte transfer finished
+0: Data byte transfer not done
+1: Data byte transfer succeeded
+–Set by hardware when NOSTRETCH=0 and:
+–In reception when a new byte is received (including ACK pulse) and DR has not been
+read yet (RxNE=1).
+–In transmission when a new byte should be sent and DR has not been written yet
+(TxE=1).
+–Cleared by software reading SR1 followed by either a read or write in the DR register or
+by hardware after a start or a stop condition in transmission or when PE=0.
+Note: The BTF bit is not set after a NACK reception
+The BTF bit is not set if next byte to be transmitted is the PEC (TRA=1 in I2C_SR2
+register and PEC=1 in I2C_CR1 register)
+
+Doc ID 13902 Rev 14
+
+751/1096
+
+Inter-integrated circuit (I2C) interface
+
+RM0008
+
+Bit 1 ADDR: Address sent (master mode)/matched (slave mode)
+This bit is cleared by software reading SR1 register followed reading SR2, or by hardware
+when PE=0.
+Address matched (Slave)
+0: Address mismatched or not received.
+1: Received address matched.
+–Set by hardware as soon as the received slave address matched with the OAR registers
+content or a general call or a SMBus Device Default Address or SMBus Host or SMBus
+Alert is recognized. (when enabled depending on configuration).
+Note: In slave mode, it is recommended to perform the complete clearing sequence (READ
+SR1 then READ SR2) after ADDR is set. Refer to Figure 270: Transfer sequence
+diagram for slave receiver on page 728.
+Address sent (Master)
+0: No end of address transmission
+1: End of address transmission
+–For 10-bit addressing, the bit is set after the ACK of the 2nd byte.
+–For 7-bit addressing, the bit is set after the ACK of the byte.
+Note: ADDR is not set after a NACK reception
+Bit 0 SB: Start bit (Master mode)
+0: No Start condition
+1: Start condition generated.
+–Set when a Start condition generated.
+–Cleared by software by reading the SR1 register followed by writing the DR register, or by
+hardware when PE=0
+
+752/1096
+
+Doc ID 13902 Rev 14
+
+Inter-integrated circuit (I2C) interface
+
+RM0008
+
+I2C Status register 2 (I2C_SR2)
+
+26.6.7
+
+Address offset: 0x18
+Reset value: 0x0000
+Note:
+
+15
+
+Reading I2C_SR2 after reading I2C_SR1 clears the ADDR flag, even if the ADDR flag was
+set after reading I2C_SR1. Consequently, I2C_SR2 must be read only when ADDR is found
+set in I2C_SR1 or when the STOPF bit is cleared.
+14
+
+13
+
+12
+
+11
+
+10
+
+9
+
+8
+
+PEC[7:0]
+r
+
+r
+
+r
+
+r
+
+r
+
+r
+
+r
+
+r
+
+7
+
+6
+
+5
+
+4
+
+3
+
+DUALF
+
+SMB
+HOST
+
+SMBDE
+FAULT
+
+GEN
+CALL
+
+Res.
+
+r
+
+r
+
+r
+
+r
+
+2
+
+1
+
+0
+
+TRA
+
+BUSY
+
+MSL
+
+r
+
+r
+
+r
+
+Bits 15:8 PEC[7:0] Packet error checking register
+This register contains the internal PEC when ENPEC=1.
+Bit 7 DUALF: Dual flag (Slave mode)
+0: Received address matched with OAR1
+1: Received address matched with OAR2
+–Cleared by hardware after a Stop condition or repeated Start condition, or when PE=0.
+Bit 6 SMBHOST: SMBus host header (Slave mode)
+0: No SMBus Host address
+1: SMBus Host address received when SMBTYPE=1 and ENARP=1.
+–Cleared by hardware after a Stop condition or repeated Start condition, or when PE=0.
+Bit 5 SMBDEFAULT: SMBus device default address (Slave mode)
+0: No SMBus Device Default address
+1: SMBus Device Default address received when ENARP=1
+–Cleared by hardware after a Stop condition or repeated Start condition, or when PE=0.
+Bit 4 GENCALL: General call address (Slave mode)
+0: No General Call
+1: General Call Address received when ENGC=1
+–Cleared by hardware after a Stop condition or repeated Start condition, or when PE=0.
+Bit 3 Reserved, must be kept at reset value
+Bit 2 TRA: Transmitter/receiver
+0: Data bytes received
+1: Data bytes transmitted
+This bit is set depending on the R/W bit of the address byte, at the end of total address
+phase.
+It is also cleared by hardware after detection of Stop condition (STOPF=1), repeated Start
+condition, loss of bus arbitration (ARLO=1), or when PE=0.
+Bit 1 BUSY: Bus busy
+0: No communication on the bus
+1: Communication ongoing on the bus
+–Set by hardware on detection of SDA or SCL low
+–cleared by hardware on detection of a Stop condition.
+It indicates a communication in progress on the bus. This information is still updated when
+the interface is disabled (PE=0).
+
+Doc ID 13902 Rev 14
+
+753/1096
+
+Inter-integrated circuit (I2C) interface
+
+RM0008
+
+Bit 0 MSL: Master/slave
+0: Slave Mode
+1: Master Mode
+–Set by hardware as soon as the interface is in Master mode (SB=1).
+–Cleared by hardware after detecting a Stop condition on the bus or a loss of arbitration
+(ARLO=1), or by hardware when PE=0.
+
+Note:
+
+Reading I2C_SR2 after reading I2C_SR1 clears the ADDR flag, even if the ADDR flag was
+set after reading I2C_SR1. Consequently, I2C_SR2 must be read only when ADDR is found
+set in I2C_SR1 or when the STOPF bit is cleared.
+
+26.6.8
+
+I2C Clock control register (I2C_CCR)
+Address offset: 0x1C
+Reset value: 0x0000
+
+Note:
+
+1
+
+fPCLK1 must be at least 2 MHz to achieve standard mode I²C frequencies. It must be at least
+4 MHz to achieve fast mode I²C frequencies. It must be a multiple of 10MHz to reach the
+400 kHz maximum I²C fast mode clock.
+
+2
+
+The CCR register must be configured only when the I2C is disabled (PE = 0).
+
+15
+
+14
+
+F/S
+
+DUTY
+
+rw
+
+rw
+
+13
+
+12
+
+11
+
+10
+
+9
+
+8
+
+7
+
+6
+
+5
+
+4
+
+3
+
+2
+
+1
+
+0
+
+rw
+
+rw
+
+rw
+
+rw
+
+rw
+
+CCR[11:0]
+Reserved
+rw
+
+rw
+
+rw
+
+rw
+
+rw
+
+rw
+
+Bit 15 F/S: I2C master mode selection
+0: Standard Mode I2C
+1: Fast Mode I2C
+Bit 14 DUTY: Fast mode duty cycle
+0: Fast Mode tlow/thigh = 2
+1: Fast Mode tlow/thigh = 16/9 (see CCR)
+Bits 13:12 Reserved, must be kept at reset value
+
+754/1096
+
+Doc ID 13902 Rev 14
+
+rw
+
+Inter-integrated circuit (I2C) interface
+
+RM0008
+
+Bits 11:0 CCR[11:0]: Clock control register in Fast/Standard mode (Master mode)
+Controls the SCL clock in master mode.
+Standard mode or SMBus:
+Thigh = CCR * TPCLK1
+Tlow = CCR * TPCLK1
+Fast mode:
+If DUTY = 0:
+Thigh = CCR * TPCLK1
+Tlow = 2 * CCR * TPCLK1
+If DUTY = 1: (to reach 400 kHz)
+Thigh = 9 * CCR * TPCLK1
+Tlow = 16 * CCR * TPCLK1
+For instance: in standard mode, to generate a 100 kHz SCL frequency:
+If FREQR = 08, TPCLK1 = 125 ns so CCR must be programmed with 0x28
+(0x28 <=> 40d x 125 ns = 5000 ns.)
+Note: 1. The minimum allowed value is 0x04, except in FAST DUTY mode where the
+minimum allowed value is 0x01
+2. thigh = tr(SCL) + tw(SCLH). See device datasheet for the definitions of parameters
+3. tlow = tf(SCL) + tw(SCLL). See device datasheet for the definitions of parameters
+4. These timings are without filters.
+5. The CCR register must be configured only when the I2C is disabled (PE = 0).
+
+I2C TRISE register (I2C_TRISE)
+
+26.6.9
+
+Address offset: 0x20
+Reset value: 0x0002
+15
+
+14
+
+13
+
+12
+
+11
+
+10
+
+9
+
+8
+
+7
+
+6
+
+5
+
+4
+
+3
+
+2
+
+1
+
+0
+
+rw
+
+rw
+
+TRISE[5:0]
+Reserved
+rw
+
+rw
+
+rw
+
+rw
+
+Bits 15:6 Reserved, must be kept at reset value
+Bits 5:0 TRISE[5:0]: Maximum rise time in Fast/Standard mode (Master mode)
+These bits must be programmed with the maximum SCL rise time given in the I2C bus
+specification, incremented by 1.
+For instance: in standard mode, the maximum allowed SCL rise time is 1000 ns.
+If, in the I2C_CR2 register, the value of FREQ[5:0] bits is equal to 0x08 and TPCLK1 = 125 ns
+therefore the TRISE[5:0] bits must be programmed with 09h.
+(1000 ns / 125 ns = 8 + 1)
+The filter value can also be added to TRISE[5:0].
+If the result is not an integer, TRISE[5:0] must be programmed with the integer part, in order
+to respect the tHIGH parameter.
+Note: TRISE[5:0] must be configured only when the I2C is disabled (PE = 0).
+
+Doc ID 13902 Rev 14
+
+755/1096
+
+Inter-integrated circuit (I2C) interface
+
+26.6.10
+
+RM0008
+
+I2C register map
+The table below provides the I2C register map and reset values.
+
+0
+
+0
+
+I2C_TRISE
+
+0
+
+0
+
+0
+
+0
+
+0
+
+0
+
+0
+
+0
+
+0
+
+0
+
+0
+
+0
+
+ADD0
+
+0
+
+0
+
+0
+
+0
+
+0
+
+0
+
+0
+
+0
+
+0
+
+0
+
+0
+
+0
+
+0
+
+0
+
+0
+
+0
+
+0
+
+0
+
+0
+
+0
+
+0
+
+0
+
+CCR[11:0]
+0
+
+0
+
+0
+
+0
+
+0
+
+0
+
+0
+
+0
+
+0
+
+TRISE[5:0]
+
+Reserved
+
+Reset value
+
+SB
+
+0
+
+BTF
+
+0
+
+0
+
+MSL
+
+0
+
+0
+
+ADDR
+
+0
+
+Reserved
+
+0
+
+STOPF
+
+Reserved
+
+0
+
+GENCALL
+
+0
+
+SMBDEFAULT
+
+0
+
+SMBHOST
+
+RxNE
+
+0
+
+TxE
+
+0
+
+BERR
+
+0
+
+ARLO
+
+0
+
+AF
+
+0
+
+OVR
+
+0
+
+PECERR
+
+Reserved
+
+TIMEOUT
+
+0
+
+TRA
+
+Reserved
+
+0
+
+0
+
+0
+
+PEC[7:0]
+
+Reset value
+0x20
+
+0
+
+0
+
+Reserved
+
+I2C_CCR
+
+0
+
+Reserved
+
+Reset value
+0x1C
+
+0
+
+F/S
+
+I2C_SR2
+
+0
+
+DR[7:0]
+
+SMBALERT
+
+Reserved
+
+Reset value
+
+0x18
+
+0
+
+Reserved
+
+DUTY
+
+I2C_SR1
+
+0
+
+ADD[7:1]
+
+0
+
+I2C_DR
+
+0
+
+ADD2[7:1]
+
+Reset value
+
+0x14
+
+0
+
+Reserved
+
+Reset value
+0x10
+
+0
+
+FREQ[5:0]
+
+ADD[9:8]
+
+Reserved
+
+0
+
+ENDUAL
+
+0
+
+PE
+
+ENARP
+
+SMBTYPE
+
+0
+
+SMBUS
+
+ENPEC
+
+0
+
+Reserved
+
+7
+6
+5
+4
+3
+2
+1
+0
+ENGC
+
+0
+
+Reserved
+
+ITERREN
+
+8
+
+ITEVTEN
+
+START
+
+STOP
+
+ITBUFEN
+
+0
+
+0
+
+I2C_OAR2
+
+NOSTRETCH
+
+ACK
+
+0
+
+DUALF
+
+0x0C
+
+0
+
+0
+
+BUSY
+
+Reset value
+
+0
+
+0
+
+ADD10
+
+Reserved
+
+0
+
+0
+
+Reserved
+
+ADDMODE
+
+I2C_OAR1
+
+0
+
+0
+
+Reset value
+
+0x08
+
+0
+
+PEC
+
+I2C_CR2
+
+0
+
+POS
+
+0x04
+
+0
+
+DMAEN
+
+Reset value
+
+ALERT
+
+Reserved
+
+LAST
+
+I2C_CR1
+
+SWRST
+
+0x00
+
+Register
+
+Reserved
+
+Offset
+
+31
+30
+29
+28
+27
+26
+25
+24
+23
+22
+21
+20
+19
+18
+17
+16
+15
+14
+13
+12
+11
+10
+9
+
+Table 190. I2C register map and reset values
+
+0
+
+0
+
+0
+
+0
+
+1
+
+0
+
+Refer to Table 3: Register boundary addresses for the register boundary addresses table.
+
+756/1096
+
+Doc ID 13902 Rev 14
+
+RM0008
+
+27
+
+Universal synchronous asynchronous receiver transmitter (USART)
+
+Universal synchronous asynchronous receiver
+transmitter (USART)
+Low-density devices are STM32F101xx, STM32F102xx and STM32F103xx
+microcontrollers where the Flash memory density ranges between 16 and 32 Kbytes.
+Medium-density devices are STM32F101xx, STM32F102xx and STM32F103xx
+microcontrollers where the Flash memory density ranges between 64 and 128 Kbytes.
+High-density devices are STM32F101xx and STM32F103xx microcontrollers where the
+Flash memory density ranges between 256 and 512 Kbytes.
+XL-density devices are STM32F101xx and STM32F103xx microcontrollers where the
+Flash memory density ranges between 768 Kbytes and 1 Mbyte.
+Connectivity line devices are STM32F105xx and STM32F107xx microcontrollers.
+This Section applies to the whole STM32F10xxx family, unless otherwise specified.
+
+27.1
+
+USART introduction
+The universal synchronous asynchronous receiver transmitter (USART) offers a flexible
+means of full-duplex data exchange with external equipment requiring an industry standard
+NRZ asynchronous serial data format. The USART offers a very wide range of baud rates
+using a fractional baud rate generator.
+It supports synchronous one-way communication and half-duplex single wire
+communication. It also supports the LIN (local interconnection network), Smartcard Protocol
+and IrDA (infrared data association) SIR ENDEC specifications, and modem operations
+(CTS/RTS). It allows multiprocessor communication.
+High speed data communication is possible by using the DMA for multibuffer configuration.
+
+Doc ID 13902 Rev 14
+
+757/1096
+
+Universal synchronous asynchronous receiver transmitter (USART)
+
+27.2
+
+USART main features
+●
+
+Full duplex, asynchronous communications
+
+●
+
+NRZ standard format (Mark/Space)
+
+●
+
+Fractional baud rate generator systems
+–
+
+A common programmable transmit and receive baud rates up to 4.5 MBits/s
+
+●
+
+Programmable data word length (8 or 9 bits)
+
+●
+
+Configurable stop bits - support for 1 or 2 stop bits
+
+●
+
+LIN Master Synchronous Break send capability and LIN slave break detection
+capability
+–
+
+13-bit break generation and 10/11 bit break detection when USART is hardware
+configured for LIN
+
+●
+
+Transmitter clock output for synchronous transmission
+
+●
+
+IrDA SIR Encoder Decoder
+–
+
+●
+
+Support for 3/16 bit duration for normal mode
+
+Smartcard Emulation Capability
+–
+
+The Smartcard interface supports the asynchronous protocol Smartcards as
+defined in ISO 7816-3 standards
+
+–
+
+0.5, 1.5 Stop Bits for Smartcard operation
+
+●
+
+Single wire half duplex communication
+
+●
+
+Configurable multibuffer communication using DMA (direct memory access)
+–
+
+●
+
+758/1096
+
+RM0008
+
+Buffering of received/transmitted bytes in reserved SRAM using centralized DMA
+
+Separate enable bits for Transmitter and Receiver
+
+Doc ID 13902 Rev 14
+
+RM0008
+
+Universal synchronous asynchronous receiver transmitter (USART)
+●
+
+●
+
+●
+
+●
+
+27.3
+
+Transfer detection flags:
+–
+
+Receive buffer full
+
+–
+
+Transmit buffer empty
+
+–
+
+End of Transmission flags
+
+Parity control:
+–
+
+Transmits parity bit
+
+–
+
+Checks parity of received data byte
+
+Four error detection flags:
+–
+
+Overrun error
+
+–
+
+Noise error
+
+–
+
+Frame error
+
+–
+
+Parity error
+
+Ten interrupt sources with flags:
+–
+
+CTS changes
+
+–
+
+LIN break detection
+
+–
+
+Transmit data register empty
+
+–
+
+Transmission complete
+
+–
+
+Receive data register full
+
+–
+
+Idle line received
+
+–
+
+Overrun error
+
+–
+
+Framing error
+
+–
+
+Noise error
+
+–
+
+Parity error
+
+●
+
+Multiprocessor communication - enter into mute mode if address match does not occur
+
+●
+
+Wake up from mute mode (by idle line detection or address mark detection)
+
+●
+
+Two receiver wakeup modes: Address bit (MSB, 9th bit), Idle line
+
+USART functional description
+The interface is externally connected to another device by three pins (see Figure 277). Any
+USART bidirectional communication requires a minimum of two pins: Receive Data In (RX)
+and Transmit Data Out (TX):
+RX: Receive Data Input is the serial data input. Oversampling techniques are used for data
+recovery by discriminating between valid incoming data and noise.
+TX: Transmit Data Output. When the transmitter is disabled, the output pin returns to its IO
+port configuration. When the transmitter is enabled and nothing is to be transmitted, the TX
+pin is at high level. In single-wire and smartcard modes, this IO is used to transmit and
+receive the data (at USART level, data are then received on SW_RX).
+
+Doc ID 13902 Rev 14
+
+759/1096
+
+Universal synchronous asynchronous receiver transmitter (USART)
+
+RM0008
+
+Through these pins, serial data is transmitted and received in normal USART mode as
+frames comprising:
+●
+
+An Idle Line prior to transmission or reception
+
+●
+
+A start bit
+
+●
+
+A data word (8 or 9 bits) least significant bit first
+
+●
+
+0.5,1, 1.5, 2 Stop bits indicating that the frame is complete
+
+●
+
+This interface uses a fractional baud rate generator - with a 12-bit mantissa and 4-bit
+fraction
+
+●
+
+A status register (USART_SR)
+
+●
+
+Data register (USART_DR)
+
+●
+
+A baud rate register (USART_BRR) - 12-bit mantissa and 4-bit fraction.
+
+●
+
+A Guardtime Register (USART_GTPR) in case of Smartcard mode.
+
+Refer to Section 27.6: USART registers on page 789 for the definitions of each bit.
+The following pin is required to interface in synchronous mode:
+●
+
+CK: Transmitter clock output. This pin outputs the transmitter data clock for
+synchronous transmission corresponding to SPI master mode (no clock pulses on start
+bit and stop bit, and a software option to send a clock pulse on the last data bit). In
+parallel data can be received synchronously on RX. This can be used to control
+peripherals that have shift registers (e.g. LCD drivers). The clock phase and polarity
+are software programmable. In smartcard mode, CK can provide the clock to the
+smartcard.
+
+The following pins are required in Hardware flow control mode:
+
+760/1096
+
+●
+
+nCTS: Clear To Send blocks the data transmission at the end of the current transfer
+when high
+
+●
+
+nRTS: Request to send indicates that the USART is ready to receive a data (when
+low).
+
+Doc ID 13902 Rev 14
+
+RM0008
+
+Universal synchronous asynchronous receiver transmitter (USART)
+
+Figure 277. USART block diagram
+PWDATA
+
+PRDATA
+Write
+
+Read
+(CPU or DMA)
+
+(CPU or DMA)
+
+Receive Data Register (RDR)
+
+Transmit Data Register (TDR)
+TX
+RX
+SW_RX
+
+IrDA
+SIR
+ENDEC
+BLOCK
+
+(DATA REGISTER) DR
+
+Receive Shift Register
+
+Transmit Shift Register
+
+GTPR
+GT
+
+PSC
+
+CR3
+
+CK CONTROL
+
+DMAT DMAR SCEN NACK HD IRLP IREN
+
+LINE
+
+STOP[1:0] CKEN CPOL CPHA LBCL
+
+CR2
+
+CR1
+UE
+
+USART Address
+
+nRTS
+nCTS
+
+CK
+
+CR2
+
+M
+
+WAKE PCE
+
+PS
+
+PEIE
+
+Hardware
+flow
+controller
+TRANSMIT
+
+WAKE
+UP
+
+CONTROL
+
+UNIT
+
+RECEIVER
+CLOCK
+
+RECEIVER
+CONTROL
+
+SR
+
+CR1
+IDLE TE
+TXEIE TCIE RXNE
+IE
+IE
+
+CTS LBD
+
+RE RWU SBK
+
+TXE TC RXNE IDLE ORE NE FE PE
+
+USART
+INTERRUPT
+CONTROL
+
+USART_BRR
+TRANSMITTER RATE
+CONTROL
+
+TE
+
+TRANSMITTER
+CLOCK
+
+/16
+
+/USARTDIV
+DIV_Mantissa
+15
+
+fPCLKx(x=1,2)
+
+DIV_Fraction
+4
+
+0
+
+RECEIVER RATE
+CONTROL
+
+RE
+
+CONVENTIONAL BAUD RATE GENERATOR
+
+USARTDIV = DIV_Mantissa + (DIV_Fraction / 16)
+
+Doc ID 13902 Rev 14
+
+761/1096
+
+Universal synchronous asynchronous receiver transmitter (USART)
+
+27.3.1
+
+RM0008
+
+USART character description
+Word length may be selected as being either 8 or 9 bits by programming the M bit in the
+USART_CR1 register (see Figure 278).
+The TX pin is in low state during the start bit. It is in high state during the stop bit.
+An Idle character is interpreted as an entire frame of “1”s followed by the start bit of the next
+frame which contains data (The number of “1” ‘s will include the number of stop bits).
+A Break character is interpreted on receiving “0”s for a frame period. At the end of the
+break frame the transmitter inserts either 1 or 2 stop bits (logic “1” bit) to acknowledge the
+start bit.
+Transmission and reception are driven by a common baud rate generator, the clock for each
+is generated when the enable bit is set respectively for the transmitter and receiver.
+The details of each block is given below.
+Figure 278. Word length programming
+9-bit word length (M bit is set), 1 stop bit
+Possible
+parity
+bit
+
+Data frame
+Start
+bit
+
+Bit0
+
+Bit2
+
+Bit1
+
+Bit3
+
+Bit4
+
+Bit5
+
+Bit6
+
+Bit7
+
+Bit8
+
+Clock
+
+Next data frame
+Next
+Stop Start
+bit
+bit
+
+**
+
+Idle frame
+
+Start
+bit
+
+Break frame
+
+Stop
+bit
+
+Start
+bit
+
+** LBCL bit controls last data clock pulse
+
+8-bit word length (M bit is reset), 1 stop bit
+Possible
+Parity
+Bit
+
+Data frame
+Start
+Bit
+
+Bit0
+
+Bit1
+
+Bit2
+
+Bit3
+
+Bit4
+
+Bit5
+
+Clock
+
+Bit6
+
+Bit7
+
+Next data frame
+Stop
+Bit
+
+Next
+Start
+Bit
+
+****
+**
+
+Idle frame
+
+Start
+bit
+
+Break frame
+
+Stop
+bit
+
+Start
+bit
+
+** LBCL bit controls last data clock pulse
+
+762/1096
+
+Doc ID 13902 Rev 14
+
+RM0008
+
+27.3.2
+
+Universal synchronous asynchronous receiver transmitter (USART)
+
+Transmitter
+The transmitter can send data words of either 8 or 9 bits depending on the M bit status.
+When the transmit enable bit (TE) is set, the data in the transmit shift register is output on
+the TX pin and the corresponding clock pulses are output on the CK pin.
+
+Character transmission
+During a USART transmission, data shifts out least significant bit first on the TX pin. In this
+mode, the USART_DR register consists of a buffer (TDR) between the internal bus and the
+transmit shift register (see Figure 277).
+Every character is preceded by a start bit which is a logic level low for one bit period. The
+character is terminated by a configurable number of stop bits.
+The following stop bits are supported by USART: 0.5, 1, 1.5 and 2 stop bits.
+Note:
+
+1
+
+The TE bit should not be reset during transmission of data. Resetting the TE bit during the
+transmission will corrupt the data on the TX pin as the baud rate counters will get frozen.
+The current data being transmitted will be lost.
+
+2
+
+An idle frame will be sent after the TE bit is enabled.
+
+Configurable stop bits
+The number of stop bits to be transmitted with every character can be programmed in
+Control register 2, bits 13,12.
+1.
+
+1 stop bit: This is the default value of number of stop bits.
+
+2.
+
+2 Stop bits: This is supported by normal USART, single-wire and modem modes.
+
+3.
+
+0.5 stop bit: To be used when receiving data in Smartcard mode.
+
+4.
+
+1.5 stop bits: To be used when transmitting and receiving data in Smartcard mode.
+
+An idle frame transmission will include the stop bits.
+A break transmission will be 10 low bits followed by the configured number of stop bits
+(when m = 0) and 11 low bits followed by the configured number of stop bits (when m = 1). It
+is not possible to transmit long breaks (break of length greater than 10/11 low bits).
+
+Doc ID 13902 Rev 14
+
+763/1096
+
+Universal synchronous asynchronous receiver transmitter (USART)
+
+RM0008
+
+Figure 279. Configurable stop bits
+8-bit Word length (M bit is reset)
+Possible
+Parity
+Bit
+
+Data Frame
+Start
+Bit
+
+Bit0
+
+Bit1
+
+Bit2
+
+Bit3
+
+Bit4
+
+Bit5
+
+Bit6
+
+Next Data Frame
+Stop
+Bit
+
+Bit7
+
+CLOCK
+
+Next
+Start
+Bit
+
+****
+**
+** LBCL bit controls last data clock pulse
+
+a) 1 Stop Bit
+Possible
+Parity
+Bit
+
+Data Frame
+Start
+Bit
+
+Bit0
+
+Bit1
+
+Bit2
+
+Bit3
+
+Bit4
+
+Bit5
+
+Bit6
+
+1 1/2 stop bits
+Possible
+Parity
+Bit
+
+Data Frame
+Bit0
+
+c) 2 Stop Bits
+Start
+Bit
+
+Bit0
+
+Next
+Start
+Bit
+
+Bit7
+
+b) 1 1/2 stop Bits
+
+Start
+Bit
+
+Next Data Frame
+
+Bit1
+
+Bit2
+
+Bit3
+
+Bit4
+
+Bit5
+
+Bit6
+
+Bit2
+
+Bit3
+
+2 Stop
+Bits
+
+Bit7
+Possible
+Parity
+Bit
+
+Data Frame
+Bit1
+
+Next Data Frame
+
+Bit4
+
+Bit5
+
+Bit6
+
+Next
+Start
+Bit
+
+Next Data Frame
+Next
+Start
+Bit
+
+Bit7
+
+1/2 stop bit
+
+d) 1/2 Stop Bit
+
+Procedure:
+1.
+
+Enable the USART by writing the UE bit in USART_CR1 register to 1.
+
+2.
+
+Program the M bit in USART_CR1 to define the word length.
+
+3.
+
+Program the number of stop bits in USART_CR2.
+
+4.
+
+Select DMA enable (DMAT) in USART_CR3 if Multi buffer Communication is to take
+place. Configure the DMA register as explained in multibuffer communication.
+
+5.
+
+Select the desired baud rate using the USART_BRR register.
+
+6.
+
+Set the TE bit in USART_CR1 to send an idle frame as first transmission.
+
+7.
+
+Write the data to send in the USART_DR register (this clears the TXE bit). Repeat this
+for each data to be transmitted in case of single buffer.
+
+8.
+
+After writing the last data into the USART_DR register, wait until TC=1. This indicates
+that the transmission of the last frame is complete. This is required for instance when
+the USART is disabled or enters the Halt mode to avoid corrupting the last
+transmission.
+
+Single byte communication
+The TXE bit is always cleared by a write to the data register.
+The TXE bit is set by hardware and it indicates:
+●
+
+The data has been moved from TDR to the shift register and the data transmission has
+started.
+
+●
+
+The TDR register is empty.
+
+●
+
+The next data can be written in the USART_DR register without overwriting the
+previous data.
+
+This flag generates an interrupt if the TXEIE bit is set.
+
+764/1096
+
+Doc ID 13902 Rev 14
+
+RM0008
+
+Universal synchronous asynchronous receiver transmitter (USART)
+When a transmission is taking place, a write instruction to the USART_DR register stores
+the data in the TDR register and which is copied in the shift register at the end of the current
+transmission.
+When no transmission is taking place, a write instruction to the USART_DR register places
+the data directly in the shift register, the data transmission starts, and the TXE bit is
+immediately set.
+If a frame is transmitted (after the stop bit) and the TXE bit is set, the TC bit goes high. An
+interrupt is generated if the TCIE bit is set in the USART_CR1 register.
+After writing the last data into the USART_DR register, it is mandatory to wait for TC=1
+before disabling the USART or causing the microcontroller to enter the low power mode (see
+Figure 280: TC/TXE behavior when transmitting).
+The TC bit is cleared by the following software sequence:
+
+Note:
+
+1.
+
+A read from the USART_SR register
+
+2.
+
+A write to the USART_DR register
+
+The TC bit can also be cleared by writing a ‘0’ to it. This clearing sequence is recommended
+only for Multibuffer communication.
+
+Figure 280. TC/TXE behavior when transmitting
+Idle preamble
+
+Frame 2
+
+Frame 1
+
+Frame 3
+
+TX line
+set by hardware
+cleared by software
+
+TXE flag
+
+USART_DR
+
+F1
+
+set by hardware
+cleared by software
+
+F2
+
+set by hardware
+
+F3
+
+set
+by hardware
+
+TC flag
+software
+enables the
+USART
+
+software waits until TXE=1
+and writes F2 into DR
+
+software waits until TXE=1
+and writes F1 into DR
+
+TC is not set
+because TXE=0
+
+software waits until TXE=1
+and writes F3 into DR
+
+TC is not set
+because TXE=0
+
+TC is set because
+TXE=1
+
+software waits until TC=1
+
+ai17121b
+
+Break characters
+Setting the SBK bit transmits a break character. The break frame length depends on the M
+bit (see Figure 278).
+If the SBK bit is set to ‘1’ a break character is sent on the TX line after completing the current
+character transmission. This bit is reset by hardware when the break character is completed
+(during the stop bit of the break character). The USART inserts a logic 1 bit at the end of the
+last break frame to guarantee the recognition of the start bit of the next frame.
+Note:
+
+If the software resets the SBK bit before the commencement of break transmission, the
+break character will not be transmitted. For two consecutive breaks, the SBK bit should be
+set after the stop bit of the previous break.
+
+Idle characters
+Setting the TE bit drives the USART to send an idle frame before the first data frame.
+
+Doc ID 13902 Rev 14
+
+765/1096
+
+
