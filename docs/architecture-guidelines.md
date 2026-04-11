@@ -504,3 +504,64 @@ Can/
 | `*_api.h` | 公共接口层 | 函数原型声明 | 实现代码、`_ll.h`/`_reg.h` include |
 | `*_types.h` | 基础类型层 | 枚举、结构体、错误码 | 函数、寄存器引用、动态内存 |
 | `*_cfg.h` | 编译期配置层 | `#define` 配置宏 | 类型定义、函数、项目 include |
+
+---
+
+## AI 代码生成常见违规速查表
+
+> 本节汇总 AI 在自动生成驱动代码时最容易犯的错误。`reviewer-agent` 和 `scripts/check-arch.sh` 会自动检查这些项目。所有条目均来自已发生的实际违规案例。
+
+### 硬件操作类违规
+
+| ID | 违规描述 | 为什么危险 | 正确做法 | 自动检查 |
+|:--:|---------|-----------|---------|:--------:|
+| HW-01 | **W1C 寄存器用 `\|=` 操作** | `\|=` 先读后写，读回的已 pending 标志位会被写回 1，导致意外清除 | 直接赋值 `REG = FLAG_Msk;` | check #4 |
+| HW-02 | **`_Pos` 宏误用为位掩码** | `_Pos` 是位偏移量（如 2），`_Msk` 才是掩码（如 `1<<2`），`cr1 \|= XXX_Pos` 会写入错误的位 | 位操作统一用 `_Msk`，移位操作用 `_Pos` | check #5 |
+| HW-03 | **空循环延时** | 依赖编译器优化等级，`-O0` 和 `-O2` 下延时差异巨大，不可靠 | 使用硬件定时器或 LL 封装延时 | check #7 |
+| HW-04 | **魔法数字操作寄存器位** | `REG \|= (1UL << 11UL)` 可读性差，无法追溯含义 | 使用 `_Msk` 宏并注释手册来源 | 人工审查 |
+
+### 架构分层类违规
+
+| ID | 违规描述 | 为什么危险 | 正确做法 | 自动检查 |
+|:--:|---------|-----------|---------|:--------:|
+| AR-01 | **Driver 层直接访问寄存器 (`->REG`)** | 绕过 LL 层的 W1C 封装、内存屏障、原子性保护 | 所有硬件操作通过 `_LL_xxx()` 函数 | check #1 |
+| AR-02 | **`_api.h` include `_ll.h` 或 `_reg.h`** | 实现细节泄漏到接口层，上层模块可能绕过封装直接操作硬件 | `_api.h` 只 include `_types.h` 和 `_cfg.h` | check #2 |
+| AR-03 | **`_ll.h` include `_api.h` 或 `_drv.h`** | 向上依赖，破坏单向依赖链，导致循环依赖 | `_ll.h` 只 include `_reg.h` 和 `_types.h` | check #2 |
+| AR-04 | **跨模块直接访问底层** | `spi_drv.c` 直接 include `gpio_ll.h` 操作 GPIO 寄存器 | 跨模块只能通过对方的 `_api.h` | check #2 |
+| AR-05 | **缺少 DeInit 函数** | 功能安全要求模块可安全关闭和重启，无 DeInit 则资源无法释放 | 每个模块 Init/DeInit 配对 | check #8 |
+| AR-06 | **LL 函数依赖调用者满足硬件前置条件** | LL 层是硬件抽象底端，可能被任何上层路径触达；依赖隐式契约则调用路径上任何一处失守即 UB。例：`SPI_LL_Configure()` 写 BR/CPOL/CPHA 前不清 SPE，若先 Enable 后 Configure 即违反 RM0090 §28.3.3 | IR 中 LOCK 型不变式 (`<guard> implies !writable(REG.FIELD)`) 必须由 code-gen 消费，在 LL 函数入口注入守卫：`scope=always` → 自清 guard 字段；`scope=before_disable` → 入口 wait-for-ready；生成后运行 `check-invariants.py` 自验证 | `scripts/check-invariants.py` |
+
+**关于 AR-06 的设计原则**：LL 函数可能被 `*_drv.c`、ISR、其它模块的调用链触达。若依赖"调用者已进入某硬件状态"的隐式契约，任一失守即 UB。正确姿势按 **(a) `functional_model.invariants[].scope`** 和 **(b) 守卫代码本身是否含 busy-wait** 两个维度决定：
+
+1. **LL 自守 — 单次原子操作**（`scope=always`/`during_init`，守卫是单次清/置位）：LL 函数入口主动清除/判断 guard 字段。例 `SPI_LL_Configure()` 首行 `SPIx->CR1 &= ~SPI_CR1_SPE_Msk;`
+2. **Driver 层外守 — 含 busy-wait**（`scope=before_disable`，或守卫需要等待某状态）：**守卫代码必须放在 driver 层**的包装函数（如 `Spi_Disable()` / `Spi_DeInit()`）中，组合 LL 的查询原语（`Xxx_LL_IsBusy`、`Xxx_LL_IsTxEmpty`）实现等待循环，再调用 `Xxx_LL_Disable`。**严禁在 `*_ll.h` 的 `static inline` 函数中出现 `while` 等待循环**——这违反 LL 层"原子操作 only"的职责边界（line 501 规范）
+3. **显式契约 + 断言**（少数 `scope=during_init` 场景）：函数文档标注前置条件，debug 版本加 `assert(...)`，reviewer-agent 验证所有调用点均在守卫之后
+4. **命名标注**：无法自守且无 driver 包装的函数加后缀 `_Unsafe`（如 `SPI_LL_ConfigureUnsafe`），强制调用者显式承担责任
+
+**决策表**（code-gen 生成时必须遵循）：
+
+| invariant.scope | 守卫是否含 busy-wait | 采用姿势 | 注入层 |
+|---|:--:|---|---|
+| `always` | 否 | #1 LL 自守 | `_ll.h` |
+| `during_init` | 否 | #1 LL 自守 或 #3 契约+断言 | `_ll.h` / `_drv.c` 初始化序列 |
+| `before_disable` | **是** | **#2 Driver 外守** | **`_drv.c`** |
+| `before_disable` | 否（罕见） | #1 LL 自守 | `_ll.h` |
+| 任意（复杂依赖） | 是 | #4 `_Unsafe` 后缀 + 文档 | `_ll.h` + 调用点校验 |
+
+### 编码规范类违规
+
+| ID | 违规描述 | 为什么危险 | 正确做法 | 自动检查 |
+|:--:|---------|-----------|---------|:--------:|
+| CS-01 | **使用裸 `int`/`short`/`long`** | 不同平台宽度不同（ILP32 vs LP64），行为不可预测 | `<stdint.h>` 定长类型（`uint32_t`） | check #3 |
+| CS-02 | **`(void*)0` 替代 `NULL`** | 编码规范一致性，隐式类型转换风险 | 统一使用 `NULL` 宏 | check #6 |
+| CS-03 | **寄存器操作无手册来源注释** | 无法追溯配置依据，维护时无法判断是否正确 | `/* RM0090 §32.7.7 */` | 人工审查 |
+| CS-04 | **全局变量缺少 `g_` 前缀** | 命名规范不一致，难以区分局部/全局作用域 | `g_can_txCount` | 人工审查 |
+
+### 功能安全类违规
+
+| ID | 违规描述 | 为什么危险 | 正确做法 | 自动检查 |
+|:--:|---------|-----------|---------|:--------:|
+| FS-01 | **ISR 中调用阻塞 OS API** | 导致死锁或 WCET 不可确定 | ISR 只用 `FromISR` 变体 | 人工审查 |
+| FS-02 | **Driver 层用 `__disable_irq()` 关全局中断** | 破坏系统实时性，屏蔽所有中断 | 使用 OS 临界区 API | 人工审查 |
+| FS-03 | **函数返回裸 `void`（公共 API）** | 调用方无法判断操作是否成功，影响安全可追溯性 | 返回错误码枚举 | 人工审查 |
+| FS-04 | **公共 API 缺少 NULL 指针校验** | 空指针解引用导致 HardFault | 函数入口 `if (ptr == NULL) return ERR` | 人工审查 |

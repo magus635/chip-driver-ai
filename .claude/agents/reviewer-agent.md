@@ -104,6 +104,39 @@ grep "CMSIS_HEADER_PATH" config/project.env 2>/dev/null || echo "NO_CMSIS_CONFIG
 - 外设时钟是否在规格允许范围内
 - APB 分频是否正确考虑
 
+### 6.5 硬件不变式静态校验（V2.1 新增 · 强制）
+
+**触发条件**：存在 `docs/<module>_ir.json` 且其 `functional_model.invariants[]` 非空。
+
+**执行命令**：
+```bash
+python3 scripts/check-invariants.py docs/<module>_ir.json \
+    src/drivers/<Module>/include/*_ll.h \
+    src/drivers/<Module>/src/*.c
+```
+
+**语义**：
+- 从 IR 加载所有 `enforced_by` 包含 `reviewer-agent:static` 的不变式
+- 分类处理：
+  - **LOCK 型**（`<guard> implies !writable(REG.FIELD)`）：扫描目标文件对 `REG.FIELD` 的直接写入，检查同函数内是否存在清除/判断 guard 的代码
+  - **CONSISTENCY 型**（`A==v1 && B==v2 implies C==v3`）：扫描同时设置 A 和 B 的语句，验证 C 也被设置
+  - **ADVISORY**：其它无法静态化的不变式，列出但不阻断
+
+**失败处理**：
+- `LOCK_UNGUARDED` / `CONSISTENCY_MISSING` → **REVIEW_FAILED**，打回 code-gen
+- 报告中列出：不变式 ID、文件:行、所在函数、受影响字段列表、手册引用
+- 同一违规位点多字段自动聚合为一条报告
+
+**已知限制**：
+- 基于函数级文本窗口 + 正则，非完整 C AST
+- 仅检测直接寄存器访问（`REG->FIELD = / |= / &=`），不跨 LL 函数传播
+- 自赋值（`REG = REG`）被识别为无副作用写入（如 MODF 清除），不报违规
+
+**与现有检查的关系**：
+- `check-arch.sh` = 结构层（分层依赖、直接寄存器访问）
+- `check-invariants.py` = 语义层（硬件前置条件、字段互斥、时序约束）
+- 两者互补，reviewer-agent 必须都通过才能 `REVIEW_PASSED`
+
 ### 7. JSON 格式验证（新增）
 
 验证 `.claude/doc-summary.json` 的结构完整性：

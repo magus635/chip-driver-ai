@@ -23,8 +23,8 @@
 | 参数 | 说明 | 默认值 |
 |------|------|--------|
 | `module` | 模块名称（can_bus, spi, uart, i2c, adc, tim） | 必填 |
-| `doc_summary_json` | JSON 格式文档摘要 | `.claude/doc-summary.json` |
-| `doc_summary_md` | Markdown 格式文档摘要 | `.claude/doc-summary.md` |
+| `ir_json` | IR JSON 文件（唯一机器数据源） | `docs/<module>_ir.json` |
+| `doc_summary_md` | Markdown 格式文档摘要（人类可读补充） | `.claude/doc-summary.md` |
 | `target_dir` | 目标代码目录 | `src/drivers/{Module}/` |
 | `mode` | 生成模式：`full` / `incremental` / `stub` | `full` |
 | `missing_symbols` | 需要补充实现的符号列表（incremental模式） | `[]` |
@@ -84,10 +84,17 @@
 ### Phase 1: 上下文加载
 
 ```
-1. 读取 $doc_summary_json（优先）
-   - 提取 registers[], init_sequence[], errors[], errata[]
+1. 读取 docs/<module>_ir.json（V2.0 · 唯一数据源）
+   - 提取 registers[], instances[], clock[], interrupts[], dma_channels[]
+   - 提取 atomic_sequences[], errors[], gpio_config[]
+   - 提取 functional_model.invariants[] — 硬件不变式契约
+   - 提取 functional_model.init_sequence[]（注意每步的 layer 字段）
+   - 提取 errata[]
+   - 建立"受保护字段表" locked_fields_map: {(REG,FIELD) -> [INV_ID]}
+   - 建立"一致性约束表" consistency_map: {(REG,FIELD) 集合 -> 必须同时设置的 FIELD}
+   - 这两张表在 Phase 2.3 生成 LL 函数时**必须查询**
 
-2. 读取 $doc_summary_md（补充上下文）
+2. 读取 .claude/doc-summary.md（补充人类可读上下文）
    - 理解时序约束、特殊注意事项
 
 3. 读取 docs/embedded-c-coding-standard.md
@@ -102,7 +109,7 @@
 #### 2.1 生成 Layer 0: _types.h
 
 ```c
-/* 从 doc_summary_json 提取 */
+/* 从 ir.json 的 errors[] 提取 */
 typedef enum {
     {MODULE}_OK          = 0,
     {MODULE}_ERR_BUSY    = 1,
@@ -118,7 +125,7 @@ typedef struct {
 #### 2.2 生成 Layer 1: _reg.h
 
 ```c
-/* 直接从 doc_summary_json.registers[] 生成 */
+/* 直接从 ir.json 的 registers[] 生成 */
 typedef struct {
     __IO uint32_t {REG_NAME};  /* Offset: 0x{offset} */
     // ...
@@ -131,8 +138,10 @@ typedef struct {
 
 #### 2.3 生成 Layer 2: _ll.h
 
+**生成规则必须严格遵循 `ir-specification.md` §6.2 的 access type 映射表**。
+
 ```c
-/* 每个寄存器操作封装为 static inline */
+/* RW 位：生成 Set/Clear/Toggle/Get */
 static inline void {MODULE}_LL_Enable({MODULE}_TypeDef *{module}x)
 {
     {module}x->{CR} |= {MODULE}_{CR}_EN_Msk;
@@ -143,12 +152,134 @@ static inline bool {MODULE}_LL_IsEnabled(const {MODULE}_TypeDef *{module}x)
     return (({module}x->{CR} & {MODULE}_{CR}_EN_Msk) != 0U);
 }
 
-/* W1C 位清除封装 */
+/* W1C 位清除：直接赋值，禁止 |= */
 static inline void {MODULE}_LL_ClearFlag_{FLAG}({MODULE}_TypeDef *{module}x)
 {
-    {module}x->{SR} = {MODULE}_{SR}_{FLAG}_Msk;  /* W1C */
+    {module}x->{SR} = {MODULE}_{SR}_{FLAG}_Msk;  /* W1C: write-1-to-clear */
+}
+
+/* W0C 位清除：写 0 清除目标位 */
+static inline void {MODULE}_LL_ClearFlag_{FLAG}({MODULE}_TypeDef *{module}x)
+{
+    /* W0C: write-0-to-clear. 若同寄存器含 W1C 位，W1C 位写回 0（安全值） */
+    {module}x->{SR} = ~{MODULE}_{SR}_{FLAG}_Msk;
+}
+
+/* RC_SEQ 位清除：严格按 atomic_sequences 步骤生成 */
+static inline void {MODULE}_LL_Clear{FLAG}({MODULE}_TypeDef *{module}x)
+{
+    /* RC_SEQ: SEQ_{FLAG}_CLEAR — {source} */
+    (void){module}x->{step1_target};   /* step 1: READ {target} */
+    (void){module}x->{step2_target};   /* step 2: READ {target} */
+    __DSB();                           /* barrier_required == true */
+}
+
+/* WO_TRIGGER 位：只生成 Trigger，无需读回 */
+static inline void {MODULE}_LL_Trigger{ACTION}({MODULE}_TypeDef *{module}x)
+{
+    {module}x->{REG} = {MODULE}_{REG}_{FIELD}_Msk;  /* WO_TRIGGER */
+}
+
+/* mixed 寄存器：禁止生成整体 RMW 函数，只按 bitfield 粒度生成 */
+/* 若需修改 mixed 寄存器中的 RW 位，写回值中 W1C 位置 0、W0C 位置 1 */
+static inline void {MODULE}_LL_Set{FIELD}({MODULE}_TypeDef *{module}x)
+{
+    uint32_t tmp = {module}x->{REG};
+    tmp &= ~({W1C_BITS_Msk});          /* 确保 W1C 位为 0，不触发意外清除 */
+    tmp |= ({W0C_BITS_Msk});           /* 确保 W0C 位为 1，不触发意外清除 */
+    tmp |= {MODULE}_{REG}_{FIELD}_Msk; /* 设置目标 RW 位 */
+    {module}x->{REG} = tmp;
 }
 ```
+
+##### 2.3.1 不变式守卫注入 (Invariant Guard Injection · 强制)
+
+> **核心原则**：LL 层函数**不得假设调用上下文已满足硬件前置条件**。每生成一个写入寄存器字段 `REG.FIELD` 的函数前，必须执行以下决策：
+
+**Step 1 — 查表**：在 Phase 1 构建的 `locked_fields_map` 中查找 `(REG, FIELD)`。若命中 LOCK 型不变式 `<guard> implies !writable(REG.FIELD)`，继续 Step 2。
+
+**Step 2 — 按 scope 和守卫类型决定分层位置**：
+
+> **关键分层原则**：LL 层职责是"**static inline 原子操作 + W1C 封装 + 内存屏障**"（见 `docs/architecture-guidelines.md` line 501）。**任何 busy-wait、状态机、协议逻辑必须在 driver 层**。所以守卫注入位置不仅取决于 `scope`，更取决于守卫代码本身是否含等待循环。
+
+| invariant.scope | 守卫代码类型 | **注入层** | **注入位置** | 守卫代码模式 |
+|---|---|---|---|---|
+| `always` | 单次原子清/置位 | **LL 层** | LL 函数入口第一条语句 | `REG &= ~GUARD_FIELD_Msk;` (guard_value==1) 或 `REG \|= GUARD_FIELD_Msk;` (guard_value==0) |
+| `during_init` | 单次原子清/置位 | **LL 层** | 同上 | 同上 |
+| `before_disable` | **含 busy-wait** | **Driver 层** | `<Module>_Disable()` / `<Module>_DeInit()` 内，调用 `<Module>_LL_Disable()` 之前 | 调用 LL 查询原语组装等待循环，如 `while (<Module>_LL_IsBusy(x) || !<Module>_LL_IsTxEmpty(x)) { if (--timeout==0) return ERR_TIMEOUT; }` |
+| `before_disable` | 单次原子清/置位 | **LL 层** | LL Disable 函数入口 | 同 `always` |
+
+**禁止**：
+- ❌ 把 `while` 等待循环放进 `_ll.h` 的 `static inline` 函数 — 违反 AR-01/AR-06
+- ❌ 在 LL 层引入 `return ERR_TIMEOUT` 之类的返回语义 — LL 原子操作应返回值语义干净（void 或原始寄存器值）
+- ❌ 在 LL 层引用 driver 层的错误码枚举 — 单向依赖违反
+
+**Step 2 决策伪代码**：
+```
+for each LL write site (REG.FIELD):
+    inv = lookup locked_fields_map[REG.FIELD]
+    if inv is None: continue
+    if inv.scope in ("always", "during_init"):
+        inject single-op guard at LL function entry
+    elif inv.scope == "before_disable":
+        if guard is single atomic op:
+            inject at LL function entry
+        else (guard contains busy-wait):
+            DO NOT modify LL function;
+            instead, ensure driver-layer wrapper (Xxx_Disable/DeInit) contains
+            the wait loop BEFORE it calls Xxx_LL_Disable
+```
+
+**Step 3 — 注释标注**：每条守卫后必须跟注释 `/* Guard: INV_<MOD>_<NNN> — RM0xxx §y.z */`，便于 reviewer-agent 追溯。
+
+**示例 A**（LL 层自守，命中 INV_SPI_002：`SPE==1 implies !writable(CR1.BR/...)`，scope=always，单原子清位）：
+
+```c
+/* spi_ll.h */
+static inline void SPI_LL_Configure(SPI_TypeDef *SPIx, const Spi_ConfigType *Config)
+{
+    /* Guard: INV_SPI_002 — RM0090 §28.3.3 */
+    SPIx->CR1 &= ~SPI_CR1_SPE_Msk;
+
+    uint32_t cr1 = 0U;
+    cr1 |= ((uint32_t)Config->baudrate_prescaler << SPI_CR1_BR_Pos) & SPI_CR1_BR_Msk;
+    /* ... */
+    SPIx->CR1 = cr1;
+}
+```
+
+**示例 B**（Driver 层守卫，命中 INV_SPI_003：`SR.BSY==1 || SR.TXE==0 implies !writable(CR1.SPE)`，scope=before_disable，含 busy-wait）：
+
+```c
+/* spi_ll.h — LL 层保持纯原子操作，不引入等待 */
+static inline void SPI_LL_Disable(SPI_TypeDef *SPIx)
+{
+    SPIx->CR1 &= ~SPI_CR1_SPE_Msk;
+}
+
+/* spi_drv.c — 等待循环在 driver 层组装 */
+Spi_ReturnType Spi_Disable(Spi_HandleType *handle)
+{
+    /* Guard: INV_SPI_003 — RM0090 §28.3.8, wait for in-flight frame */
+    uint32_t timeout = SPI_DISABLE_TIMEOUT_CYCLES;
+    while ((!SPI_LL_IsTxEmpty(handle->reg) || SPI_LL_IsBusy(handle->reg)))
+    {
+        if (--timeout == 0U) {
+            return SPI_ERR_TIMEOUT;
+        }
+    }
+    SPI_LL_Disable(handle->reg);
+    return SPI_OK;
+}
+```
+
+**Step 4 — 一致性约束**：在组装字段写入表达式时，查 `consistency_map`。例如 INV_SPI_001 要求 `MSTR==1 && SSM==1 implies SSI==1`：任何同时设置 MSTR 和 SSM 的代码路径必须同一条赋值中包含 SSI_Msk。
+
+**Step 5 — 自验证**：生成完 LL 层所有函数后，强制运行：
+```bash
+python3 scripts/check-invariants.py docs/<module>_ir.json src/drivers/<Module>/include/*_ll.h
+```
+若报出任何 LOCK_UNGUARDED / CONSISTENCY_MISSING，必须回到 Step 2 修复，禁止带违规代码交付到 reviewer-agent。
 
 #### 2.4 生成 Layer 3: _drv.c
 
@@ -202,9 +333,88 @@ static {Module}_ReturnType handle_error(uint32_t status)
 #endif
 ```
 
+#### 2.6 生成 ISR 层: _isr.c（强制）
+
+> **痛点**：中断服务函数与主流程状态机混在 `_drv.c` 会使 ISR 上下文（禁止阻塞、禁用中断） 与普通函数上下文难以区分，且 `<chip>_irq.h` 中声明的弱符号 ISR 入口找不到落点。
+> **规则**：每个具备中断能力的外设模块**必须**生成 `<module>_isr.c`，作为向量表的落点。若外设无中断（罕见，如纯 DMA 轮询），可省略，但需在生成报告中声明"无 ISR 需求"。
+
+**职责分工**：
+- `_isr.c`：ISR 入口函数，名字匹配 `<chip>_irq.h` 的弱符号声明（如 `void SPI1_IRQHandler(void)`）；读取外设状态寄存器，分发到 `_drv.c` 的 handler 函数；清除中断标志（通过 LL 层 W1C 封装）
+- `_drv.c`：暴露 `static` handler 函数（或通过 `_drv.h` 私有头文件）给 `_isr.c` 调用；状态机推进逻辑
+- **严禁** ISR 直接访问寄存器，必须通过 `_LL_` 查询/清除函数
+
+**生成模式**：
+```c
+/* spi_isr.c */
+#include "spi_ll.h"
+#include "spi_reg.h"
+#include "chip/Device/include/<chip>_irq.h"
+
+extern void Spi_HandleInterrupt(SPI_TypeDef *SPIx);   /* 在 spi_drv.c 实现 */
+
+void SPI1_IRQHandler(void)
+{
+    Spi_HandleInterrupt(SPI1);
+}
+
+void SPI2_IRQHandler(void)
+{
+    Spi_HandleInterrupt(SPI2);
+}
+```
+
+```c
+/* spi_drv.c 中的 handler */
+void Spi_HandleInterrupt(SPI_TypeDef *SPIx)
+{
+    uint32_t flags = SPI_LL_GetStatusFlags(SPIx);
+
+    if ((flags & SPI_SR_RXNE_Msk) != 0U) {
+        g_rx_buffer[g_rx_idx++] = SPI_LL_ReadData(SPIx);
+    }
+    if ((flags & SPI_SR_OVR_Msk) != 0U) {
+        SPI_LL_ClearOverrun(SPIx);
+        g_state = SPI_STATE_ERROR;
+    }
+    /* ... 其它标志分发 */
+}
+```
+
+**ISR 生成规则**：
+- 一个实例一个 `*_IRQHandler` 入口（如 SPI1/SPI2/SPI3 → 三个入口），即使它们分派到同一个 `Spi_HandleInterrupt()`
+- 函数名必须从 `doc_summary.json` 的 `interrupts[].name` 字段读取，禁止硬编码
+- ISR 函数体不得超过 10 行，所有业务逻辑必须下沉到 drv 层
+- 禁止在 ISR 中调用 `malloc` / OS 同步原语 / 阻塞等待
+
+#### 2.7 必交付文件清单（生成完成后强制校验）
+
+生成流程结束前，**必须**校验每个模块目录下存在以下文件。缺失任何一项视为生成失败，禁止进入 reviewer-agent 阶段。
+
+| 文件 | 位置 | 必须性 | 说明 |
+|---|---|:--:|---|
+| `<module>_reg.h` | `include/` | 必须 | 寄存器映射 |
+| `<module>_ll.h` | `include/` | 必须 | LL 层 static inline |
+| `<module>_types.h` | `include/` | 必须 | 类型定义 |
+| `<module>_cfg.h` | `include/` | 必须 | 编译期配置 |
+| `<module>_api.h` | `include/` | 必须 | 对外接口 |
+| `<module>_drv.c` | `src/` | 必须 | 驱动逻辑 |
+| `<module>_isr.c` | `src/` | 必须（除非模块无中断） | ISR 入口，无中断时需显式声明豁免 |
+| `<module>_ll.c` | `src/` | 可选 | LL 非 inline 实现（仅当存在非 inline LL 函数时生成） |
+
+**禁止的文件命名**：
+- ❌ `<module>_api.c`（API 层是纯头文件声明，实现在 `_drv.c`）
+- ❌ `<module>_reg.c`（寄存器层仅有结构体和宏，无实现代码）
+- ❌ `<module>.c` / `<module>.h`（不分层的扁平命名）
+
+**校验命令**：
+```bash
+bash scripts/check-arch.sh
+```
+该脚本会执行文件清单检查（见脚本 check #9），不通过则阻断流程。
+
 ### Phase 3: Errata Workaround 注入
 
-如果 `doc_summary_json.errata[]` 非空：
+如果 `ir.json` 的 `errata[]` 非空：
 
 ```c
 /* 在相关位置插入 workaround */
@@ -259,7 +469,7 @@ static {Module}_ReturnType handle_error(uint32_t status)
    - 超时值来自 _cfg.h 或 ConfigType
 
 3. **全量错误处理**
-   - doc_summary_json.errors[] 中的每种错误必须有处理逻辑
+   - ir.json 的 errors[] 中的每种错误必须有处理逻辑
    - 提供 GetStatus API 暴露错误状态
 
 4. **资源最大化利用**

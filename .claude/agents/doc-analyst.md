@@ -187,7 +187,7 @@ Read PDF: docs/RM0090.pdf, pages: "680-750"
 - 单bit：`[N]NAME`
 - 多bit：`[M:N]NAME`
 - 保留位：`[N]Reserved` 或 `[M:N]Reserved`
-- 访问类型：`RW`(读写) / `RO`(只读) / `W1C`(写1清零) / `RC`(读清零) / `W1S`(写1置位)
+- 访问类型（必须与 `docs/ir-specification.md` §4.3 一致）：`RW`(读写) / `RO`(只读) / `WO`(只写) / `W1C`(写1清零) / `W0C`(写0清零) / `W1S`(写1置位) / `RC`(读清零-单步) / `RC_SEQ`(读清零-多步序列，需定义 atomic_sequence) / `WO_TRIGGER`(只写触发位) / `mixed`(寄存器级，各位域独立)
 
 #### C. 时序与状态机模型 (State Transition)
 ```markdown
@@ -302,6 +302,53 @@ END_SEQUENCE
 - 必须标注约束条件
 - 涉及等待的序列必须有超时参数
 
+#### F.2 硬件不变式提取 (Invariants · 强制)
+
+> **痛点**：自然语言约束如"BR 只能在 SPE=0 时修改"对 codegen-agent 是黑盒，无法静态校验。
+> **解决**：把所有"必须为真"的硬件约束提取为机器可解析的布尔表达式，写入 IR 的 `functional_model.invariants[]`。
+
+**触发场景** —— 在以下手册描述中必须提取 invariant：
+- "must be set when X is disabled" / "only writable when..."
+- "X bit must be 1 before Y" / "X requires Y"
+- "do not change X while Y" / "writing X is not allowed when..."
+- "X and Y are mutually exclusive"
+- "before disabling, wait for X"
+- 任何引发 MODF/Bus-Off/Undefined 行为的前置条件
+
+**输出格式**（写入 `functional_model.invariants[]`）：
+
+```json
+{
+  "id": "INV_<MOD>_<NNN>",
+  "expr": "<布尔表达式，见语法>",
+  "description": "<人类可读说明>",
+  "scope": "always | during_init | during_transfer | before_disable",
+  "violation_effect": "<硬件实际行为>",
+  "enforced_by": ["code-gen:precondition", "reviewer-agent:static", "runtime:assert"],
+  "source": "RM0xxx §y.z",
+  "confidence": 0.0~1.0
+}
+```
+
+**表达式语法**（最小子集，参见 `docs/ir-specification.md` §4.6.1）：
+- 字段引用：`REG.FIELD`（如 `CR1.SPE`）
+- 比较：`==` `!=` `<` `>` `<=` `>=`
+- 逻辑：`&&` `||` `!` `implies`
+- 谓词：`writable(REG.FIELD)` `readable(REG.FIELD)`
+
+**示例**（SPI）：
+```
+"CR1.MSTR==1 && CR1.SSM==1 implies CR1.SSI==1"
+"CR1.SPE==1 implies !writable(CR1.BR)"
+"SR.BSY==1 || SR.TXE==0 implies !writable(CR1.SPE)"
+```
+
+**强制要求**：
+- 每个寄存器章节读完后，必须自问"本章描述了哪些前置条件/互斥/时序约束？"，逐条转为 invariant
+- `enforced_by` 至少包含一项；静态可判定的（基于寄存器值）必须包含 `reviewer-agent:static`
+- `confidence < 0.85` 的 invariant 必须同时写入 `pending_reviews`，列出多种解读
+- 提取的 invariant 数量 ≥ 该外设寄存器章节中"must"/"only"/"before"/"not allowed" 等关键词出现次数的 60%（粗略覆盖率指标）
+
 #### G. 高级并发特性 (Advanced Concurrent Features)
 - **多缓冲区/多邮箱管理**：提取所有硬件缓存（如 CAN 的 3 个 TX 邮箱优先级仲裁机制）。
 - **DMA 高级模式**：提取双缓冲（Double Buffer）、循环模式（Circular）、外设流控（Flow Control）属性。
@@ -327,248 +374,32 @@ END_SEQUENCE
 若某项内容在文档中未找到，明确标注 `[未在文档中找到，需人工确认]`，
 不得凭推测填写寄存器地址或位域定义。
 
-#### 4.2 JSON 结构化输出（V2.1 增强 · 机器级契约）
+#### 4.2 JSON 结构化输出（降级为参考性输出）
 
-同时生成 `.claude/doc-summary.json`，格式如下：
+> **V2.0 变更**：`doc-summary.json` 不再作为机器级契约。`codegen-agent` 和 `check-invariants.py` 统一从 `docs/<module>_ir.json` 读取数据。`doc-summary.json` 仅供人工调试参考，可选生成。
+
+若仍需生成 `.claude/doc-summary.json`，格式沿用原有 schema（见下方示例），但**不得**作为下游 agent 的数据源。
 
 ```json
 {
   "meta": {
     "schema_version": "2.1.0",
-    "chip": "STM32F103",
-    "chip_family": "STM32F1",
-    "peripheral": "SPI",
-    "generated_at": "2026-04-01T10:30:00Z",
-    "source_docs": [
-      {"name": "RM0008.pdf", "sections": ["§25.1-25.5"]},
-      {"name": "DS5319.pdf", "sections": ["Table 5", "Table 42"]},
-      {"name": "ES096.pdf", "sections": ["§2.8"]}
-    ],
-    "docs_hash": "a1b2c3d4...",
-    "confidence": "high"
-  },
-
-  "instances": [
-    {
-      "name": "SPI1",
-      "base_address": "0x40013000",
-      "bus": "APB2",
-      "clock_enable": {
-        "register": "RCC_APB2ENR",
-        "bit_position": 12,
-        "source": "RM0008 §7.3.7"
-      },
-      "clock_source_mux": {
-        "register": "RCC_CCIPR",
-        "field_name": "SPI1SEL",
-        "description": "00:PCLK, 01:PLLQ, 10:HSE...",
-        "value_used": "00"
-      },
-      "reset": {
-        "register": "RCC_APB2RSTR",
-        "bit_name": "SPI1RST",
-        "bit_position": 12
-      }
-    },
-    {
-      "name": "SPI2",
-      "base_address": "0x40003800",
-      "bus": "APB1",
-      "clock_enable": {
-        "register": "RCC_APB1ENR",
-        "bit_name": "SPI2EN",
-        "bit_position": 14,
-        "source": "RM0008 §7.3.8"
-      },
-      "reset": {
-        "register": "RCC_APB1RSTR",
-        "bit_name": "SPI2RST",
-        "bit_position": 14
-      }
-    }
-  ],
-
-  "gpio_config": [
-    {
-      "instance": "SPI1",
-      "pins": [
-        {"function": "SCK",  "default_pin": "PA5", "alt_pin": "PB3", "af": 0, "mode": "AF_PP", "pull": "NONE", "speed": "HIGH", "conflict": "None"},
-        {"function": "MISO", "default_pin": "PA6", "alt_pin": "PB4", "af": 0, "mode": "INPUT", "pull": "PULL_UP", "speed": null, "conflict": "Potential SWD overlap if remap"},
-        {"function": "MOSI", "default_pin": "PA7", "alt_pin": "PB5", "af": 0, "mode": "AF_PP", "pull": "NONE", "speed": "HIGH", "conflict": "None"},
-        {"function": "NSS",  "default_pin": "PA4", "alt_pin": "PA15", "af": 0, "mode": "AF_PP", "pull": "NONE", "speed": "HIGH", "conflict": "Potential JTAG conflict"}
-      ],
-      "constraints": ["SPI1 在 APB2，最高 36MHz", "MISO 必须配置上拉防止浮空"],
-      "source": "DS5319 Table 5"
-    }
-  ],
-
-  "registers": [
-    {
-      "name": "CR1",
-      "offset": "0x00",
-      "width": 32,
-      "reset_value": "0x0000",
-      "access": "RW",
-      "fields": [
-        {"name": "BIDIMODE", "position": 15, "width": 1, "access": "RW", "description": "双向模式使能"},
-        {"name": "BIDIOE",   "position": 14, "width": 1, "access": "RW", "description": "双向输出使能"},
-        {"name": "CRCEN",    "position": 13, "width": 1, "access": "RW", "description": "CRC使能"},
-        {"name": "CRCNEXT",  "position": 12, "width": 1, "access": "RW", "description": "下一帧CRC"},
-        {"name": "DFF",      "position": 11, "width": 1, "access": "RW", "description": "数据帧格式(0=8bit,1=16bit)"},
-        {"name": "RXONLY",   "position": 10, "width": 1, "access": "RW", "description": "仅接收模式"},
-        {"name": "SSM",      "position": 9,  "width": 1, "access": "RW", "description": "软件从机管理"},
-        {"name": "SSI",      "position": 8,  "width": 1, "access": "RW", "description": "内部从机选择"},
-        {"name": "LSBFIRST", "position": 7,  "width": 1, "access": "RW", "description": "LSB先发"},
-        {"name": "SPE",      "position": 6,  "width": 1, "access": "RW", "description": "SPI使能"},
-        {"name": "BR",       "position": 3,  "width": 3, "access": "RW", "description": "波特率分频(0=/2,7=/256)"},
-        {"name": "MSTR",     "position": 2,  "width": 1, "access": "RW", "description": "主模式选择"},
-        {"name": "CPOL",     "position": 1,  "width": 1, "access": "RW", "description": "时钟极性"},
-        {"name": "CPHA",     "position": 0,  "width": 1, "access": "RW", "description": "时钟相位"}
-      ],
-      "modification_constraints": ["BR/CPOL/CPHA 只能在 SPE=0 时修改"],
-      "source": "RM0008 §25.5.1"
-    },
-    {
-      "name": "SR",
-      "offset": "0x08",
-      "reset_value": "0x0002",
-      "access": "Mixed",
-      "fields": [
-        {"name": "BSY",    "position": 7, "width": 1, "access": "RO", "description": "忙标志"},
-        {"name": "OVR",    "position": 6, "width": 1, "access": "RC", "description": "溢出标志", "clear_sequence": "SEQ_OVR_CLEAR"},
-        {"name": "MODF",   "position": 5, "width": 1, "access": "RC", "description": "模式故障", "clear_sequence": "SEQ_MODF_CLEAR"},
-        {"name": "CRCERR", "position": 4, "width": 1, "access": "W1C", "description": "CRC错误"},
-        {"name": "UDR",    "position": 3, "width": 1, "access": "RO", "description": "下溢(仅I2S)"},
-        {"name": "CHSIDE", "position": 2, "width": 1, "access": "RO", "description": "通道侧(仅I2S)"},
-        {"name": "TXE",    "position": 1, "width": 1, "access": "RO", "description": "发送缓冲空"},
-        {"name": "RXNE",   "position": 0, "width": 1, "access": "RO", "description": "接收缓冲非空"}
-      ],
-      "source": "RM0008 §25.5.3"
-    }
-  ],
-
-  "atomic_sequences": [
-    {
-      "id": "SEQ_OVR_CLEAR",
-      "name": "Overrun清除序列",
-      "source": "RM0008 §25.3.6",
-      "steps": [
-        {"order": 1, "operation": "READ", "target": "DR", "comment": "读DR丢弃数据"},
-        {"order": 2, "operation": "READ", "target": "SR", "comment": "读SR完成清除"}
-      ],
-      "constraints": ["顺序不可调换", "两次读之间不可插入其他操作"],
-      "barrier_required": true
-    },
-    {
-      "id": "SEQ_MODF_CLEAR",
-      "name": "ModeFault清除序列",
-      "source": "RM0008 §25.3.6",
-      "steps": [
-        {"order": 1, "operation": "READ", "target": "SR", "comment": "读SR"},
-        {"order": 2, "operation": "WRITE", "target": "CR1", "value": "current", "comment": "写CR1完成清除"}
-      ]
-    },
-    {
-      "id": "SEQ_DISABLE_SPI",
-      "name": "正确禁用SPI序列",
-      "source": "RM0008 §25.3.8",
-      "steps": [
-        {"order": 1, "operation": "WAIT_FLAG", "target": "SR.TXE", "value": 1, "timeout_required": true},
-        {"order": 2, "operation": "WAIT_FLAG", "target": "SR.BSY", "value": 0, "timeout_required": true},
-        {"order": 3, "operation": "CLEAR_BIT", "target": "CR1.SPE"}
-      ],
-      "constraints": ["必须等待TXE=1和BSY=0才能禁用，否则可能丢数据"]
-    }
-  ],
-
-  "init_sequence": [
-    {"step": 1, "action": "使能GPIO时钟",   "code": "RCC->APB2ENR |= RCC_APB2ENR_IOPAEN", "source": "RM0008 §7.3.7"},
-    {"step": 2, "action": "配置GPIO引脚",   "code": "/* PA5=AF_PP, PA6=Input, PA7=AF_PP */", "source": "DS5319 Table 5"},
-    {"step": 3, "action": "使能SPI时钟",    "code": "RCC->APB2ENR |= RCC_APB2ENR_SPI1EN", "source": "RM0008 §7.3.7"},
-    {"step": 4, "action": "配置CR1(SPE=0)", "code": "SPI1->CR1 = MSTR | BR_DIV8 | SSM | SSI", "constraint": "SPE必须为0"},
-    {"step": 5, "action": "使能SPI",        "code": "SPI1->CR1 |= SPI_CR1_SPE"}
-  ],
-
-  "timing_constraints": {
-    "init_timeout_ms": 10,
-    "max_apb2_clock_mhz": 72,
-    "max_spi_clock_mhz": 18,
-    "min_nss_setup_ns": 50,
-    "source": "DS5319 Table 43"
-  },
-
-  "errors": [
-    {
-      "type": "Overrun",
-      "flag": "SR.OVR",
-      "flag_access": "RC",
-      "effect": "新数据覆盖未读数据，后续接收阻塞",
-      "recovery_sequence": "SEQ_OVR_CLEAR",
-      "prevention": "确保及时读取DR"
-    },
-    {
-      "type": "ModeFault",
-      "flag": "SR.MODF",
-      "flag_access": "RC",
-      "effect": "MSTR位被硬件清零，SPI变为从机",
-      "recovery_sequence": "SEQ_MODF_CLEAR",
-      "prevention": "主模式下设置SSM=1和SSI=1"
-    }
-  ],
-
-  "errata": [
-    {
-      "id": "ES096 2.8.1",
-      "title": "I2C锁死",
-      "description": "I2C总线可能在特定时序下锁死",
-      "affected_peripheral": "I2C",
-      "workaround": "检测SDA卡死后用GPIO模拟9个时钟脉冲",
-      "workaround_code": "/* 见ES096 §2.8.1 */",
-      "affected_revisions": ["Rev A", "Rev B", "Rev Z"],
-      "source": "ES096 §2.8.1"
-    }
-  ],
-
-  "dma": {
-    "supported": true,
-    "channels": [
-      {
-        "direction": "TX",
-        "controller": "DMA1",
-        "channel": 3,
-        "request": null,
-        "priority_recommendation": "HIGH",
-        "source": "RM0008 Table 78"
-      },
-      {
-        "direction": "RX",
-        "controller": "DMA1",
-        "channel": 2,
-        "request": null,
-        "priority_recommendation": "VERY_HIGH",
-        "source": "RM0008 Table 78"
-      }
-    ],
-    "enable_bits": {
-      "tx": "CR2.TXDMAEN",
-      "rx": "CR2.RXDMAEN"
-    }
-  },
-
-  "interrupts": [
-    {
-      "name": "SPI1_IRQn",
-      "vector_number": 35,
-      "enable_bits": ["CR2.TXEIE", "CR2.RXNEIE", "CR2.ERRIE"],
-      "flags": ["SR.TXE", "SR.RXNE", "SR.OVR", "SR.MODF", "SR.CRCERR"],
-      "priority_recommendation": {"preempt": 2, "sub": 0},
-      "source": "DS5319 Table 63"
-    }
-  ]
+    "note": "此文件仅供人工调试参考，机器消费请使用 docs/<module>_ir.json"
+  }
 }
 ```
 
-**JSON 输出约束（V2.1 强化）**：
+#### 4.3 IR JSON 输出（V2.0 新增 · 唯一机器消费源 · 强制）
+
+**必须**按照 `docs/ir-specification.md` v2.0 规范输出 `docs/<module>_ir.json`。
+
+**关键要求**：
+- IR JSON 是 `codegen-agent`、`reviewer-agent`、`check-invariants.py` 的**唯一数据输入**
+- 结构必须严格遵循 `ir-specification.md` §3 顶层结构
+- access type 必须使用 §4.3 定义的枚举值，忠实反映芯片手册标注
+- 所有 `RC_SEQ` 位域必须在 `atomic_sequences[]` 中有对应定义
+- `init_sequence` 每步必须包含 `layer` 字段（`"ll"` 或 `"drv"`）
+- `clock[]` 必须为数组，每个实例一条
 - 所有数值字段使用实际数值（非字符串），除非是十六进制地址
 - **每个关键字段必须有 `source` 标注**（文档名 + 章节/表格号）
 - `confidence` 字段范围 0.0-1.0，基于文档提取确定性
@@ -608,14 +439,15 @@ cp /tmp/docs_hash_new.txt .claude/doc-cache.hash
 - [ ] **DMA 通道**：是否从 DS 的 DMA Request Mapping 确认了具体通道号
 
 ### 原子操作（V2.1 新增）
-- [ ] **所有 RC/W1C 位**：是否都有对应的 `atomic_sequences` 定义
+- [ ] **所有 RC_SEQ 位**：是否都定义了 `atomic_sequences` 且 bitfield 中有 `clear_sequence` 引用
 - [ ] **序列格式**：是否使用伪代码格式，而非模糊的自然语言
 - [ ] **超时要求**：等待类序列是否标注了 `timeout_required: true`
 
 ### 机器可解析性
-- [ ] JSON 输出是否可被 `jq .` 正确解析
+- [ ] IR JSON 输出是否可被 `jq .` 正确解析
 - [ ] **source 标注**：关键字段是否都有 `source: "RM0008 §25.3"` 格式的来源标注
 - [ ] **无猜测**：未找到的字段是否设为 `null`（而非凭记忆填写）
+- [ ] **access type 准确**：是否忠实反映手册标注（而非强行归类）
 
 ### 边界资源（V2.1 强化）
 - [ ] **Errata 必检**：是否检查了勘误表（即使为空也需声明 "未发现相关勘误"）
@@ -623,26 +455,39 @@ cp /tmp/docs_hash_new.txt .claude/doc-cache.hash
 
 ### 最终校验
 ```bash
-# JSON 语法验证
-jq . .claude/doc-summary.json > /dev/null && echo "✓ JSON 有效" || echo "✗ JSON 无效"
+# IR JSON 语法验证（唯一机器消费源）
+jq . docs/${module}_ir.json > /dev/null && echo "✓ IR JSON 有效" || echo "✗ IR JSON 无效"
 
-# 必需字段检查
-jq -e '.instances | length > 0' .claude/doc-summary.json && echo "✓ 有实例定义"
-jq -e '.gpio_config | length > 0' .claude/doc-summary.json && echo "✓ 有GPIO配置"
-jq -e '.atomic_sequences | length > 0' .claude/doc-summary.json && echo "✓ 有原子序列"
+# IR JSON 必需字段检查
+jq -e '.peripheral.instances | length > 0' docs/${module}_ir.json && echo "✓ 有实例定义"
+jq -e '.peripheral.gpio_config | length > 0' docs/${module}_ir.json && echo "✓ 有GPIO配置"
+jq -e '.peripheral.atomic_sequences | length > 0' docs/${module}_ir.json && echo "✓ 有原子序列"
+jq -e '.peripheral.interrupts | length > 0' docs/${module}_ir.json && echo "✓ 有中断定义"
+jq -e '.peripheral.clock | length > 0' docs/${module}_ir.json && echo "✓ 有时钟配置"
+jq -e '.peripheral.errors | length > 0' docs/${module}_ir.json && echo "✓ 有错误定义"
+
+# RC_SEQ 引用完整性检查
+jq -e '[.peripheral.registers[].bitfields[] | select(.access == "RC_SEQ") | .clear_sequence] - [.peripheral.atomic_sequences[].id] | length == 0' docs/${module}_ir.json && echo "✓ RC_SEQ 引用完整" || echo "✗ 存在悬空的 clear_sequence 引用"
+
+# clock 与 instances 数量匹配
+jq -e '(.peripheral.instances | length) == (.peripheral.clock | length)' docs/${module}_ir.json && echo "✓ clock/instances 匹配" || echo "✗ clock/instances 不匹配"
+
+# doc-summary.json 语法验证（可选）
+[ -f .claude/doc-summary.json ] && jq . .claude/doc-summary.json > /dev/null && echo "✓ doc-summary.json 有效（参考性输出）"
 ```
 
 ---
 
 ## 输出理念指导（契约原则）
 
-> **核心定位**：`.claude/doc-summary.json` 是后续 `codegen-agent` 的**严格契约（Contract）**，而非人类阅读的说明文档。
+> **核心定位**：`docs/<module>_ir.json` 是后续 `codegen-agent` 的**严格契约（Contract）**，而非人类阅读的说明文档。`.claude/doc-summary.md` 供人类参考，`.claude/doc-summary.json` 已降级为可选调试输出。
 >
 > **设计原则**：
 > 1. **零幻觉**：codegen-agent 必须能直接使用每个字段生成代码，不需要猜测或推断
 > 2. **可追溯**：每个关键数值都有 `source` 标注，出问题可以回到原始文档核实
 > 3. **机器优先**：标准化表格 + JSON 结构 > 自然语言描述
 > 4. **原子可引用**：清除序列、初始化步骤都有唯一 ID，可被其他地方引用
+> 5. **单一真值源**：`docs/<module>_ir.json` 是唯一机器消费入口，禁止从多个 JSON 拼接数据
 >
 > **初始化链式表达示例**：
 > ```
@@ -650,5 +495,5 @@ jq -e '.atomic_sequences | length > 0' .claude/doc-summary.json && echo "✓ 有
 >   -> write(CR1: MSTR|BR_DIV8|SSM|SSI) -> set(CR1.SPE=1)
 > ```
 >
-> 这份输出**不会被提交进 Git**（在 .gitignore 中），它是 AI 工作流的瞬态中间件。
+> IR JSON **会被提交进 Git**（在 `docs/` 目录下），它是可审计的工程产物。
 > 因此，请极大程度采用**结构化数据**，减少无意义的解释性散文。

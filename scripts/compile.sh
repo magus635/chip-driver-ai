@@ -40,6 +40,33 @@ LAST_COMPILE_LOG="${BUILD_DIR:-build}/last-compile.log"
 
 mkdir -p "$BUILD_DIR"
 
+# ═══════════════════════════════════════════════════════════════════════════
+# 编译前架构合规性检查（Quality Gate）
+# ═══════════════════════════════════════════════════════════════════════════
+
+ARCH_CHECK_SCRIPT="$SCRIPT_DIR/check-arch.sh"
+SKIP_ARCH_CHECK="${SKIP_ARCH_CHECK:-false}"
+
+if [[ "$SKIP_ARCH_CHECK" != "true" && -x "$ARCH_CHECK_SCRIPT" ]]; then
+    echo "═══════════════════════════════════════"
+    echo " [预检] 架构合规性检查"
+    echo "═══════════════════════════════════════"
+
+    if ! bash "$ARCH_CHECK_SCRIPT"; then
+        echo ""
+        echo "═══════════════════════════════════════"
+        echo " [编译中止] 架构合规性检查未通过"
+        echo " 请先修复所有 FAIL 项，再重新编译"
+        echo " 如需跳过检查: SKIP_ARCH_CHECK=true bash scripts/compile.sh"
+        echo "═══════════════════════════════════════"
+        exit 1
+    fi
+
+    echo ""
+fi
+
+# ═══════════════════════════════════════════════════════════════════════════
+
 echo "═══════════════════════════════════════"
 echo " [编译轮次 $ITERATION] 开始 · $(date '+%Y-%m-%d %H:%M:%S')"
 echo " 目标芯片: ${CHIP_MODEL:-unknown}"
