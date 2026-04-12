@@ -73,8 +73,8 @@ source config/project.env && bash scripts/check-env.sh
 ```
 module=$ARGUMENTS
 docs_dir=docs/
-output=.claude/doc-summary.md
-output_json=.claude/doc-summary.json
+output=ir/{module}_ir_summary.md
+output_json=ir/{module}_ir_summary.json
 ```
 
 **处理返回状态：**
@@ -82,7 +82,7 @@ output_json=.claude/doc-summary.json
 - `DOC_ANALYSIS_COMPLETE`：正常完成，继续流程
 - `DOC_INCOMPLETE`：文档不足，列出缺失项，询问用户是否继续
 
-等待 agent 完成后，读取 `.claude/doc-summary.md` 和 `.claude/doc-summary.json`，确认以下内容已提取：
+等待 agent 完成后，读取 `ir/{module}_ir_summary.md` 和 `ir/{module}_ir_summary.json`，确认以下内容已提取：
 - [ ] 外设基地址和寄存器偏移表
 - [ ] 初始化序列（寄存器写入顺序）
 - [ ] 关键时序参数
@@ -94,8 +94,8 @@ output_json=.claude/doc-summary.json
 
 使用 Task 工具启动 `reviewer-agent` agent 进行多维度质量审查：
 ```
-doc_summary=.claude/doc-summary.md
-doc_summary_json=.claude/doc-summary.json
+doc_summary=ir/{module}_ir_summary.md
+doc_summary_json=ir/{module}_ir_summary.json
 module=$ARGUMENTS
 review_level=${REVIEW_LEVEL:-strict}
 cmsis_header=${CMSIS_HEADER_PATH:-auto}
@@ -132,8 +132,8 @@ cmsis_header=${CMSIS_HEADER_PATH:-auto}
   ║  ✓ CMSIS 交叉验证：[已执行/已跳过]                             ║
   ╠══════════════════════════════════════════════════════════════╣
   ║  请扫视以下文件确认无误：                                      ║
-  ║  • .claude/doc-summary.md    — 人类可读摘要                   ║
-  ║  • .claude/doc-summary.json  — 机器解析格式                   ║
+  ║  • ir/{module}_ir_summary.md    — 人类可读摘要                   ║
+  ║  • ir/{module}_ir_summary.json  — 机器解析格式                   ║
   ║  • .claude/review-report.md  — 审查报告详情                   ║
   ╠══════════════════════════════════════════════════════════════╣
   ║  回复 "继续" 或 "Continue" 进入代码生成阶段                    ║
@@ -149,8 +149,8 @@ cmsis_header=${CMSIS_HEADER_PATH:-auto}
 使用 Agent 工具启动 `codegen-agent` agent：
 ```
 module=$ARGUMENTS
-doc_summary_json=.claude/doc-summary.json
-doc_summary_md=.claude/doc-summary.md
+doc_summary_json=ir/{module}_ir_summary.json
+doc_summary_md=ir/{module}_ir_summary.md
 target_dir=src/drivers/{Module}/
 mode=full
 ```
@@ -207,8 +207,8 @@ log_file=.claude/repair-log.md
 ```
 flash_script=scripts/flash.sh
 debug_script=scripts/debug-snapshot.sh
-doc_summary=.claude/doc-summary.md
-doc_summary_json=.claude/doc-summary.json
+doc_summary=ir/{module}_ir_summary.md
+doc_summary_json=ir/{module}_ir_summary.json
 session_file=.claude/debug-session.md
 max_rounds=8
 ```
@@ -241,8 +241,8 @@ max_rounds=8
 ║   修改文件：file1, file2, ...                                  ║
 ╠══════════════════════════════════════════════════════════════╣
 ║   生成产物：                                                   ║
-║   • .claude/doc-summary.md      — 文档摘要                    ║
-║   • .claude/doc-summary.json    — 结构化数据                  ║
+║   • ir/{module}_ir_summary.md      — 文档摘要                    ║
+║   • ir/{module}_ir_summary.json    — 结构化数据                  ║
 ║   • .claude/review-report.md    — 审查报告                    ║
 ║   • .claude/repair-log.md       — 修复历史                    ║
 ╚══════════════════════════════════════════════════════════════╝

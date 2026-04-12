@@ -3,7 +3,7 @@
 **调用方式：** `/flash-debug [--criteria "<验证条件>"]`
 
 烧录固件到目标板，捕获运行输出，AI 分析验证正确性。
-`--criteria` 可指定自定义验证条件，否则从 `.claude/doc-summary.md` 中推断。
+`--criteria` 可指定自定义验证条件，否则从 `ir/{module}_ir_summary.md` 中推断。
 
 ---
 
@@ -35,7 +35,7 @@ bash scripts/debug-snapshot.sh | tee .claude/runtime-output.txt
 
 读取以下上下文：
 1. `.claude/runtime-output.txt`（本次运行快照）
-2. `.claude/doc-summary.md`（期望行为描述）
+2. `ir/{module}_ir_summary.md`（期望行为描述）
 3. `src/` 中相关驱动源文件（对照代码逻辑）
 4. `--criteria` 参数（用户自定义验证条件）
 

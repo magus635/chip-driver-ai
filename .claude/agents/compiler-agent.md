@@ -150,7 +150,7 @@ bash scripts/compile.sh
 2. 检查 repair-strategies.json 的 common_mappings
    → 如 uint32_t → stdint.h
 
-3. 检查 .claude/doc-summary.json
+3. 检查 ir/{module}_ir_summary.json
    → 如果符号应该在生成的代码中，报告给 codegen-agent
 
 4. 升级为 COMPILE_STUCK，请求人工确认

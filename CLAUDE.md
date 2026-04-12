@@ -124,7 +124,7 @@ AI推荐: <推荐选项编号及理由>
 
 | Agent | 职责 |
 |---|---|
-| `doc-analyst` | 读取并结构化芯片手册，按 `docs/ir-specification.md` 规范输出外设 IR JSON（含寄存器 access type、W1C 标注、endinit 保护、来源引用），存放于 `docs/<module>_ir.json` |
+| `doc-analyst` | 读取并结构化芯片手册，按 `docs/ir-specification.md` 规范输出外设 IR JSON（含寄存器 access type、W1C 标注、endinit 保护、来源引用），存放于 `ir/<module>_ir.json` |
 | `code-gen` | 读取 doc-analyst 产出的 IR JSON，按架构分层和编码规范生成驱动代码。寄存器层从 IR 直接映射（确定性），驱动逻辑层由 AI 推理生成 |
 | `reviewer-agent` | **编译前合规审查**（质量关卡）：执行 `scripts/check-arch.sh` 自动检查 + R8 反模式逐条人工审查。不通过则打回 code-gen 修改，禁止带违规代码进入编译 |
 | `compiler-agent` | 执行编译→捕获错误→定位→修复，循环至成功 |

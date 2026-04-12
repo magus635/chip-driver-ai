@@ -361,7 +361,7 @@ END_SEQUENCE
 
 #### 4.1 Markdown 摘要（人类可读）
 
-将以上内容写入 `$output`（`.claude/doc-summary.md`），
+将以上内容写入 `$output`（`ir/{module}_ir_summary.md`），
 在文件头部注明：
 ```
 # 文档摘要 · <module>
@@ -376,22 +376,22 @@ END_SEQUENCE
 
 #### 4.2 JSON 结构化输出（降级为参考性输出）
 
-> **V2.0 变更**：`doc-summary.json` 不再作为机器级契约。`codegen-agent` 和 `check-invariants.py` 统一从 `docs/<module>_ir.json` 读取数据。`doc-summary.json` 仅供人工调试参考，可选生成。
+> **V2.0 变更**：`doc-summary.json` 不再作为机器级契约。`codegen-agent` 和 `check-invariants.py` 统一从 `ir/<module>_ir.json` 读取数据。`doc-summary.json` 仅供人工调试参考，可选生成。
 
-若仍需生成 `.claude/doc-summary.json`，格式沿用原有 schema（见下方示例），但**不得**作为下游 agent 的数据源。
+若仍需生成 `ir/{module}_ir_summary.json`，格式沿用原有 schema（见下方示例），但**不得**作为下游 agent 的数据源。
 
 ```json
 {
   "meta": {
     "schema_version": "2.1.0",
-    "note": "此文件仅供人工调试参考，机器消费请使用 docs/<module>_ir.json"
+    "note": "此文件仅供人工调试参考，机器消费请使用 ir/<module>_ir.json"
   }
 }
 ```
 
 #### 4.3 IR JSON 输出（V2.0 新增 · 唯一机器消费源 · 强制）
 
-**必须**按照 `docs/ir-specification.md` v2.0 规范输出 `docs/<module>_ir.json`。
+**必须**按照 `docs/ir-specification.md` v2.0 规范输出 `ir/<module>_ir.json`。
 
 **关键要求**：
 - IR JSON 是 `codegen-agent`、`reviewer-agent`、`check-invariants.py` 的**唯一数据输入**
@@ -456,38 +456,38 @@ cp /tmp/docs_hash_new.txt .claude/doc-cache.hash
 ### 最终校验
 ```bash
 # IR JSON 语法验证（唯一机器消费源）
-jq . docs/${module}_ir.json > /dev/null && echo "✓ IR JSON 有效" || echo "✗ IR JSON 无效"
+jq . ir/${module}_ir.json > /dev/null && echo "✓ IR JSON 有效" || echo "✗ IR JSON 无效"
 
 # IR JSON 必需字段检查
-jq -e '.peripheral.instances | length > 0' docs/${module}_ir.json && echo "✓ 有实例定义"
-jq -e '.peripheral.gpio_config | length > 0' docs/${module}_ir.json && echo "✓ 有GPIO配置"
-jq -e '.peripheral.atomic_sequences | length > 0' docs/${module}_ir.json && echo "✓ 有原子序列"
-jq -e '.peripheral.interrupts | length > 0' docs/${module}_ir.json && echo "✓ 有中断定义"
-jq -e '.peripheral.clock | length > 0' docs/${module}_ir.json && echo "✓ 有时钟配置"
-jq -e '.peripheral.errors | length > 0' docs/${module}_ir.json && echo "✓ 有错误定义"
+jq -e '.peripheral.instances | length > 0' ir/${module}_ir.json && echo "✓ 有实例定义"
+jq -e '.peripheral.gpio_config | length > 0' ir/${module}_ir.json && echo "✓ 有GPIO配置"
+jq -e '.peripheral.atomic_sequences | length > 0' ir/${module}_ir.json && echo "✓ 有原子序列"
+jq -e '.peripheral.interrupts | length > 0' ir/${module}_ir.json && echo "✓ 有中断定义"
+jq -e '.peripheral.clock | length > 0' ir/${module}_ir.json && echo "✓ 有时钟配置"
+jq -e '.peripheral.errors | length > 0' ir/${module}_ir.json && echo "✓ 有错误定义"
 
 # RC_SEQ 引用完整性检查
-jq -e '[.peripheral.registers[].bitfields[] | select(.access == "RC_SEQ") | .clear_sequence] - [.peripheral.atomic_sequences[].id] | length == 0' docs/${module}_ir.json && echo "✓ RC_SEQ 引用完整" || echo "✗ 存在悬空的 clear_sequence 引用"
+jq -e '[.peripheral.registers[].bitfields[] | select(.access == "RC_SEQ") | .clear_sequence] - [.peripheral.atomic_sequences[].id] | length == 0' ir/${module}_ir.json && echo "✓ RC_SEQ 引用完整" || echo "✗ 存在悬空的 clear_sequence 引用"
 
 # clock 与 instances 数量匹配
-jq -e '(.peripheral.instances | length) == (.peripheral.clock | length)' docs/${module}_ir.json && echo "✓ clock/instances 匹配" || echo "✗ clock/instances 不匹配"
+jq -e '(.peripheral.instances | length) == (.peripheral.clock | length)' ir/${module}_ir.json && echo "✓ clock/instances 匹配" || echo "✗ clock/instances 不匹配"
 
 # doc-summary.json 语法验证（可选）
-[ -f .claude/doc-summary.json ] && jq . .claude/doc-summary.json > /dev/null && echo "✓ doc-summary.json 有效（参考性输出）"
+[ -f ir/{module}_ir_summary.json ] && jq . ir/{module}_ir_summary.json > /dev/null && echo "✓ doc-summary.json 有效（参考性输出）"
 ```
 
 ---
 
 ## 输出理念指导（契约原则）
 
-> **核心定位**：`docs/<module>_ir.json` 是后续 `codegen-agent` 的**严格契约（Contract）**，而非人类阅读的说明文档。`.claude/doc-summary.md` 供人类参考，`.claude/doc-summary.json` 已降级为可选调试输出。
+> **核心定位**：`ir/<module>_ir.json` 是后续 `codegen-agent` 的**严格契约（Contract）**，而非人类阅读的说明文档。`ir/{module}_ir_summary.md` 供人类参考，`ir/{module}_ir_summary.json` 已降级为可选调试输出。
 >
 > **设计原则**：
 > 1. **零幻觉**：codegen-agent 必须能直接使用每个字段生成代码，不需要猜测或推断
 > 2. **可追溯**：每个关键数值都有 `source` 标注，出问题可以回到原始文档核实
 > 3. **机器优先**：标准化表格 + JSON 结构 > 自然语言描述
 > 4. **原子可引用**：清除序列、初始化步骤都有唯一 ID，可被其他地方引用
-> 5. **单一真值源**：`docs/<module>_ir.json` 是唯一机器消费入口，禁止从多个 JSON 拼接数据
+> 5. **单一真值源**：`ir/<module>_ir.json` 是唯一机器消费入口，禁止从多个 JSON 拼接数据
 >
 > **初始化链式表达示例**：
 > ```

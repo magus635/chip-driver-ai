@@ -10,8 +10,8 @@
 当 `doc-analyst` 完成文档摘要，或寄存器头文件（`_reg.h`）生成完毕后触发。
 
 **接收参数**：
-- `doc_summary`: 寄存器与状态机摘要文件（如 `.claude/doc-summary.md`）
-- `doc_summary_json`: JSON 结构化摘要（如 `.claude/doc-summary.json`）
+- `doc_summary`: 寄存器与状态机摘要文件（如 `ir/{module}_ir_summary.md`）
+- `doc_summary_json`: JSON 结构化摘要（如 `ir/{module}_ir_summary.json`）
 - `target_files`: 待审查的头文件或映射代码（如有）
 - `module`: 当前模块名称
 
@@ -106,11 +106,11 @@ grep "CMSIS_HEADER_PATH" config/project.env 2>/dev/null || echo "NO_CMSIS_CONFIG
 
 ### 6.5 硬件不变式静态校验（V2.1 新增 · 强制）
 
-**触发条件**：存在 `docs/<module>_ir.json` 且其 `functional_model.invariants[]` 非空。
+**触发条件**：存在 `ir/<module>_ir.json` 且其 `functional_model.invariants[]` 非空。
 
 **执行命令**：
 ```bash
-python3 scripts/check-invariants.py docs/<module>_ir.json \
+python3 scripts/check-invariants.py ir/<module>_ir.json \
     src/drivers/<Module>/include/*_ll.h \
     src/drivers/<Module>/src/*.c
 ```
@@ -139,11 +139,11 @@ python3 scripts/check-invariants.py docs/<module>_ir.json \
 
 ### 7. JSON 格式验证（新增）
 
-验证 `.claude/doc-summary.json` 的结构完整性：
+验证 `ir/{module}_ir_summary.json` 的结构完整性：
 
 ```bash
 # 语法验证
-jq . .claude/doc-summary.json > /dev/null 2>&1 && echo "JSON_VALID" || echo "JSON_INVALID"
+jq . ir/{module}_ir_summary.json > /dev/null 2>&1 && echo "JSON_VALID" || echo "JSON_INVALID"
 ```
 
 **必需字段检查：**

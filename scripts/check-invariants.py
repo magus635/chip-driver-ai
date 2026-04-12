@@ -2,7 +2,7 @@
 """
 check-invariants.py — IR hardware invariant static checker.
 
-Loads invariants from a peripheral IR JSON (docs/<module>_ir.json) and scans
+Loads invariants from a peripheral IR JSON (ir/<module>_ir.json) and scans
 target C files for violations. Used by reviewer-agent before compilation.
 
 Scope (MVP):

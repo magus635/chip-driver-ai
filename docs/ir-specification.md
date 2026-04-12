@@ -43,7 +43,7 @@
 
 ## 2. 文件约定
 
-- **存放位置**: `docs/<module>_ir.json`（如 `docs/can_ir.json`、`docs/spi_ir.json`）
+- **存放位置**: `ir/<module>_ir.json`（如 `ir/can_ir.json`、`ir/spi_ir.json`）
 - **编码**: UTF-8
 - **格式**: JSON（可通过 `jq .` 验证语法）
 - **生命周期**: doc-analyst 生成 → 人工审核确认 → code-gen 消费 → 随手册版本更新
@@ -597,7 +597,7 @@ value     := INT | HEX | field_ref
 5. 跨章节交叉提取：RCC 时钟(clock[])、GPIO 复用(gpio_config[])、NVIC 中断(interrupts[])、DMA 通道(dma_channels[])
 6. 检查勘误表（若 docs/ 下存在 errata 文件）
 7. 对 confidence < 0.85 的字段，创建 pending_review
-8. 输出 IR JSON 到 docs/<module>_ir.json（唯一机器消费格式，遵循 SS3 顶层结构）
+8. 输出 IR JSON 到 ir/<module>_ir.json（唯一机器消费格式，遵循 SS3 顶层结构）
 9. 运行自验证：
    - 寄存器偏移无重叠
    - 位域无重叠且不超出寄存器宽度
@@ -655,7 +655,7 @@ doc-analyst 输出 IR 后，必须通过以下自验证：
 
 | # | 检查项 | 方法 |
 |---|--------|------|
-| 1 | JSON 语法合法 | `jq . docs/<module>_ir.json` |
+| 1 | JSON 语法合法 | `jq . ir/<module>_ir.json` |
 | 2 | 所有寄存器偏移无重叠 | 脚本检查 offset + width/8 不交叉 |
 | 3 | 所有位域无重叠 | 同一寄存器内 bit_offset + bit_width 不交叉 |
 | 4 | 位域不超出寄存器宽度 | bit_offset + bit_width <= register.width |

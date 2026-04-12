@@ -23,8 +23,8 @@
 | 参数 | 说明 | 默认值 |
 |------|------|--------|
 | `module` | 模块名称（can_bus, spi, uart, i2c, adc, tim） | 必填 |
-| `ir_json` | IR JSON 文件（唯一机器数据源） | `docs/<module>_ir.json` |
-| `doc_summary_md` | Markdown 格式文档摘要（人类可读补充） | `.claude/doc-summary.md` |
+| `ir_json` | IR JSON 文件（唯一机器数据源） | `ir/<module>_ir.json` |
+| `doc_summary_md` | Markdown 格式文档摘要（人类可读补充） | `ir/{module}_ir_summary.md` |
 | `target_dir` | 目标代码目录 | `src/drivers/{Module}/` |
 | `mode` | 生成模式：`full` / `incremental` / `stub` | `full` |
 | `missing_symbols` | 需要补充实现的符号列表（incremental模式） | `[]` |
@@ -84,7 +84,7 @@
 ### Phase 1: 上下文加载
 
 ```
-1. 读取 docs/<module>_ir.json（V2.0 · 唯一数据源）
+1. 读取 ir/<module>_ir.json（V2.0 · 唯一数据源）
    - 提取 registers[], instances[], clock[], interrupts[], dma_channels[]
    - 提取 atomic_sequences[], errors[], gpio_config[]
    - 提取 functional_model.invariants[] — 硬件不变式契约
@@ -94,7 +94,7 @@
    - 建立"一致性约束表" consistency_map: {(REG,FIELD) 集合 -> 必须同时设置的 FIELD}
    - 这两张表在 Phase 2.3 生成 LL 函数时**必须查询**
 
-2. 读取 .claude/doc-summary.md（补充人类可读上下文）
+2. 读取 ir/{module}_ir_summary.md（补充人类可读上下文）
    - 理解时序约束、特殊注意事项
 
 3. 读取 docs/embedded-c-coding-standard.md
@@ -277,7 +277,7 @@ Spi_ReturnType Spi_Disable(Spi_HandleType *handle)
 
 **Step 5 — 自验证**：生成完 LL 层所有函数后，强制运行：
 ```bash
-python3 scripts/check-invariants.py docs/<module>_ir.json src/drivers/<Module>/include/*_ll.h
+python3 scripts/check-invariants.py ir/<module>_ir.json src/drivers/<Module>/include/*_ll.h
 ```
 若报出任何 LOCK_UNGUARDED / CONSISTENCY_MISSING，必须回到 Step 2 修复，禁止带违规代码交付到 reviewer-agent。
 

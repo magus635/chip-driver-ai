@@ -147,7 +147,7 @@
       {
         "step": 3,
         "action": "check_doc_summary",
-        "file": ".claude/doc-summary.json",
+        "file": "ir/{module}_ir_summary.json",
         "on_found": "symbol_should_be_generated"
       },
       {

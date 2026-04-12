@@ -12,7 +12,7 @@
 
 - `flash_script`：烧录脚本路径（默认 `scripts/flash.sh`）
 - `debug_script`：调试快照脚本路径（默认 `scripts/debug-snapshot.sh`）
-- `doc_summary`：文档摘要路径（默认 `.claude/doc-summary.md`）
+- `doc_summary`：文档摘要路径（默认 `ir/{module}_ir_summary.md`）
 - `session_file`：调试会话记录文件（默认 `.claude/debug-session.md`）
 - `max_rounds`：最大调试轮次（默认 8）
 
