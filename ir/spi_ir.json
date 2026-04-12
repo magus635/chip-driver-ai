@@ -4,7 +4,7 @@
     "name": "SPI",
     "full_name": "Serial Peripheral Interface",
     "chip_family": "STM32F1",
-    "chip_model": "STM32F103",
+    "chip_model": "STM32F103C8T6",
     "source_document": "RM0008 Rev 21",
     "source_sections": [
       "§25 Serial peripheral interface (SPI)",
@@ -17,7 +17,6 @@
       "§7.3.4 APB1 peripheral reset register (RCC_APB1RSTR) (p.107)",
       "§10.1.2 STM32F10x interrupt and exception vectors (Table 63, pp.190-197)"
     ],
-
     "instances": [
       {
         "name": "SPI1",
@@ -32,16 +31,8 @@
         "bus": "APB1",
         "clock_hz": 36000000,
         "source": "RM0008 §3.3 Table 3 p.52"
-      },
-      {
-        "name": "SPI3",
-        "base_address": "0x40003C00",
-        "bus": "APB1",
-        "clock_hz": 36000000,
-        "source": "RM0008 §3.3 Table 3 p.52"
       }
     ],
-
     "registers": [
       {
         "name": "CR1",
@@ -114,7 +105,7 @@
             "name": "LSBFIRST",
             "bits": "7",
             "access": "RW",
-            "description": "Frame format. 0: MSB transmitted first, 1: LSB transmitted first. Note: not used in TI mode (FRF=1)",
+            "description": "Frame format. 0: MSB transmitted first, 1: LSB transmitted first",
             "source": "RM0008 §25.5.1 p.715"
           },
           {
@@ -454,7 +445,6 @@
         ]
       }
     ],
-
     "interrupts": [
       {
         "instance": "SPI1",
@@ -523,43 +513,8 @@
           }
         ],
         "source": "RM0008 Table 63 p.195"
-      },
-      {
-        "instance": "SPI3",
-        "irq_number": 51,
-        "priority_number": 58,
-        "handler": "SPI3_IRQHandler",
-        "sources": [
-          {
-            "flag": "SR.TXE",
-            "enable": "CR2.TXEIE",
-            "description": "TX buffer empty"
-          },
-          {
-            "flag": "SR.RXNE",
-            "enable": "CR2.RXNEIE",
-            "description": "RX buffer not empty"
-          },
-          {
-            "flag": "SR.OVR",
-            "enable": "CR2.ERRIE",
-            "description": "Overrun error"
-          },
-          {
-            "flag": "SR.MODF",
-            "enable": "CR2.ERRIE",
-            "description": "Mode fault"
-          },
-          {
-            "flag": "SR.CRCERR",
-            "enable": "CR2.ERRIE",
-            "description": "CRC error"
-          }
-        ],
-        "source": "RM0008 Table 63 p.196"
       }
     ],
-
     "clock": [
       {
         "instance": "SPI1",
@@ -586,22 +541,8 @@
         "reset_mask": "0x00004000",
         "reset_field": "SPI2RST",
         "source": "RM0008 §7.3.8 p.114 (APB1ENR), §7.3.4 p.107 (APB1RSTR)"
-      },
-      {
-        "instance": "SPI3",
-        "bus": "APB1",
-        "enable_register": "RCC_APB1ENR",
-        "enable_bit": 15,
-        "enable_mask": "0x00008000",
-        "enable_field": "SPI3EN",
-        "reset_register": "RCC_APB1RSTR",
-        "reset_bit": 15,
-        "reset_mask": "0x00008000",
-        "reset_field": "SPI3RST",
-        "source": "RM0008 §7.3.8 p.114 (APB1ENR), §7.3.4 p.107 (APB1RSTR)"
       }
     ],
-
     "dma_channels": [
       {
         "instance": "SPI1",
@@ -646,74 +587,118 @@
         "trigger_flag": "TXE",
         "enable_bit": "CR2.TXDMAEN",
         "source": "RM0008 §13.3.7 Table 78 p.282"
-      },
-      {
-        "instance": "SPI3",
-        "direction": "RX",
-        "controller": "DMA2",
-        "channel": 1,
-        "request": "SPI3_RX",
-        "trigger_register": "SR",
-        "trigger_flag": "RXNE",
-        "enable_bit": "CR2.RXDMAEN",
-        "source": "RM0008 §13.3.7 Table 79 p.283"
-      },
-      {
-        "instance": "SPI3",
-        "direction": "TX",
-        "controller": "DMA2",
-        "channel": 2,
-        "request": "SPI3_TX",
-        "trigger_register": "SR",
-        "trigger_flag": "TXE",
-        "enable_bit": "CR2.TXDMAEN",
-        "source": "RM0008 §13.3.7 Table 79 p.283"
       }
     ],
-
     "gpio_config": [
       {
         "instance": "SPI1",
         "pins": [
-          {"signal": "SCK",  "pin": "PA5", "mode": "AF_PP", "speed": "50MHz"},
-          {"signal": "MISO", "pin": "PA6", "mode": "Input_Float"},
-          {"signal": "MOSI", "pin": "PA7", "mode": "AF_PP", "speed": "50MHz"},
-          {"signal": "NSS",  "pin": "PA4", "mode": "AF_PP", "speed": "50MHz", "note": "hardware NSS; use GPIO output for software NSS"}
+          {
+            "signal": "SCK",
+            "pin": "PA5",
+            "mode": "AF_PP",
+            "speed": "50MHz"
+          },
+          {
+            "signal": "MISO",
+            "pin": "PA6",
+            "mode": "Input_Float"
+          },
+          {
+            "signal": "MOSI",
+            "pin": "PA7",
+            "mode": "AF_PP",
+            "speed": "50MHz"
+          },
+          {
+            "signal": "NSS",
+            "pin": "PA4",
+            "mode": "AF_PP",
+            "speed": "50MHz",
+            "note": "hardware NSS; use GPIO output for software NSS"
+          }
         ],
-        "source": "RM0008 §9.3 Alternate function I/O and debug configuration p.175"
+        "source": "RM0008 §9.3 Alternate function I/O and debug configuration p.175",
+        "remap_register": "AFIO_MAPR",
+        "remap_field": "SPI1_REMAP",
+        "remap_bit": 0,
+        "remap_pins": [
+          {
+            "signal": "NSS",
+            "pin": "PA15",
+            "mode": "AF_PP",
+            "speed": "50MHz",
+            "note": "remap=1; conflicts with JTDI"
+          },
+          {
+            "signal": "SCK",
+            "pin": "PB3",
+            "mode": "AF_PP",
+            "speed": "50MHz",
+            "note": "remap=1; conflicts with JTDO/TRACESWO"
+          },
+          {
+            "signal": "MISO",
+            "pin": "PB4",
+            "mode": "Input_Float",
+            "note": "remap=1; conflicts with NJTRST"
+          },
+          {
+            "signal": "MOSI",
+            "pin": "PB5",
+            "mode": "AF_PP",
+            "speed": "50MHz",
+            "note": "remap=1"
+          }
+        ],
+        "remap_source": "RM0008 §9.3.10 Table 56 p.176"
       },
       {
         "instance": "SPI2",
         "pins": [
-          {"signal": "SCK",  "pin": "PB13", "mode": "AF_PP", "speed": "50MHz"},
-          {"signal": "MISO", "pin": "PB14", "mode": "Input_Float"},
-          {"signal": "MOSI", "pin": "PB15", "mode": "AF_PP", "speed": "50MHz"},
-          {"signal": "NSS",  "pin": "PB12", "mode": "AF_PP", "speed": "50MHz", "note": "hardware NSS; use GPIO output for software NSS"}
+          {
+            "signal": "SCK",
+            "pin": "PB13",
+            "mode": "AF_PP",
+            "speed": "50MHz"
+          },
+          {
+            "signal": "MISO",
+            "pin": "PB14",
+            "mode": "Input_Float"
+          },
+          {
+            "signal": "MOSI",
+            "pin": "PB15",
+            "mode": "AF_PP",
+            "speed": "50MHz"
+          },
+          {
+            "signal": "NSS",
+            "pin": "PB12",
+            "mode": "AF_PP",
+            "speed": "50MHz",
+            "note": "hardware NSS; use GPIO output for software NSS"
+          }
         ],
-        "source": "RM0008 §9.3 p.175"
-      },
-      {
-        "instance": "SPI3",
-        "pins": [
-          {"signal": "SCK",  "pin": "PB3",  "mode": "AF_PP", "speed": "50MHz", "note": "conflicts with JTDO — JTAG must be disabled via AFIO_MAPR.SWJ_CFG before use"},
-          {"signal": "MISO", "pin": "PB4",  "mode": "Input_Float",              "note": "conflicts with NJTRST — JTAG must be disabled via AFIO_MAPR.SWJ_CFG before use"},
-          {"signal": "MOSI", "pin": "PB5",  "mode": "AF_PP", "speed": "50MHz"},
-          {"signal": "NSS",  "pin": "PA15", "mode": "AF_PP", "speed": "50MHz", "note": "conflicts with JTDI — JTAG must be disabled via AFIO_MAPR.SWJ_CFG before use; use GPIO output for software NSS"}
-        ],
-        "jtag_conflict": true,
-        "jtag_disable_required": "AFIO_MAPR.SWJ_CFG = 0b010 (SWD-only, JTAG disabled)",
-        "jtag_source": "RM0008 §9.3 p.175, Table 5 (JTAG/SWD remap)",
         "source": "RM0008 §9.3 p.175"
       }
     ],
-
     "atomic_sequences": [
       {
         "id": "SEQ_OVR_CLEAR",
         "description": "Clear OVR (Overrun) flag. Requires two-step read sequence.",
         "steps": [
-          {"op": "READ",  "register": "DR",  "note": "Step 1: Read the DR register"},
-          {"op": "READ",  "register": "SR",  "note": "Step 2: Read the SR register to complete OVR clear"}
+          {
+            "op": "READ",
+            "register": "DR",
+            "note": "Step 1: Read the DR register"
+          },
+          {
+            "op": "READ",
+            "register": "SR",
+            "note": "Step 2: Read the SR register to complete OVR clear"
+          }
         ],
         "source": "RM0008 §25.3.10 p.693"
       },
@@ -721,8 +706,17 @@
         "id": "SEQ_MODF_CLEAR",
         "description": "Clear MODF (Mode Fault) flag. Requires read-then-write sequence.",
         "steps": [
-          {"op": "READ",  "register": "SR",  "note": "Step 1: Read SR register (while MODF=1)"},
-          {"op": "WRITE", "register": "CR1", "value": "current_value", "note": "Step 2: Write CR1 with its current value (no actual change needed)"}
+          {
+            "op": "READ",
+            "register": "SR",
+            "note": "Step 1: Read SR register (while MODF=1)"
+          },
+          {
+            "op": "WRITE",
+            "register": "CR1",
+            "value": "current_value",
+            "note": "Step 2: Write CR1 with its current value (no actual change needed)"
+          }
         ],
         "source": "RM0008 §25.3.10 p.693"
       },
@@ -730,16 +724,43 @@
         "id": "SEQ_DISABLE_FULLDUPLEX",
         "description": "Correct full-duplex SPI disable sequence to avoid data loss.",
         "steps": [
-          {"op": "WAIT", "register": "SR", "field": "RXNE", "value": 1, "note": "Step 1: Wait until RXNE=1 (last data received)"},
-          {"op": "READ", "register": "DR",  "note": "Step 2: Read DR to empty RX buffer"},
-          {"op": "WAIT", "register": "SR", "field": "TXE",  "value": 1, "note": "Step 3: Wait until TXE=1 (TX buffer empty)"},
-          {"op": "WAIT", "register": "SR", "field": "BSY",  "value": 0, "note": "Step 4: Wait until BSY=0 (transfer complete)"},
-          {"op": "WRITE","register": "CR1", "field": "SPE",  "value": 0, "note": "Step 5: Clear SPE to disable SPI"}
+          {
+            "op": "WAIT",
+            "register": "SR",
+            "field": "RXNE",
+            "value": 1,
+            "note": "Step 1: Wait until RXNE=1 (last data received)"
+          },
+          {
+            "op": "READ",
+            "register": "DR",
+            "note": "Step 2: Read DR to empty RX buffer"
+          },
+          {
+            "op": "WAIT",
+            "register": "SR",
+            "field": "TXE",
+            "value": 1,
+            "note": "Step 3: Wait until TXE=1 (TX buffer empty)"
+          },
+          {
+            "op": "WAIT",
+            "register": "SR",
+            "field": "BSY",
+            "value": 0,
+            "note": "Step 4: Wait until BSY=0 (transfer complete)"
+          },
+          {
+            "op": "WRITE",
+            "register": "CR1",
+            "field": "SPE",
+            "value": 0,
+            "note": "Step 5: Clear SPE to disable SPI"
+          }
         ],
         "source": "RM0008 §25.3.8 p.692"
       }
     ],
-
     "errors": [
       {
         "id": "ERR_OVR",
@@ -755,7 +776,10 @@
         "flag": "SR.MODF",
         "trigger": "NSS pin goes low in master mode (multi-master contention detected)",
         "recovery": "SEQ_MODF_CLEAR",
-        "side_effects": ["CR1.MSTR is cleared automatically", "CR1.SPE is cleared automatically"],
+        "side_effects": [
+          "CR1.MSTR is cleared automatically",
+          "CR1.SPE is cleared automatically"
+        ],
         "source": "RM0008 §25.3.10 p.692"
       },
       {
@@ -776,7 +800,6 @@
         "source": "RM0008 §25.5.3 p.717"
       }
     ],
-
     "functional_model": {
       "operating_modes": [
         {
@@ -806,15 +829,31 @@
         }
       ],
       "init_sequence": [
-        {"step": 1, "action": "Enable SPI peripheral clock via RCC", "note": "RCC_APB1ENR/APB2ENR SPI_EN bit"},
-        {"step": 2, "action": "Configure GPIO pins for SCK, MOSI, MISO, NSS",
-         "note": "SCK/MOSI/NSS: AF_PP 50MHz; MISO: Input_Float"},
-        {"step": 3, "action": "Write CR1 with CPOL, CPHA, BR, MSTR, SSM/SSI, DFF, LSBFIRST",
-         "note": "SPE must remain 0 at this point"},
-        {"step": 4, "action": "Write CR2 with SSOE, TXDMAEN, RXDMAEN, interrupt enables",
-         "note": "Only enable interrupts/DMA if using interrupt or DMA mode"},
-        {"step": 5, "action": "Set CR1.SPE=1 to enable SPI",
-         "note": "Must be last; BR/CPOL/CPHA cannot be changed after this"}
+        {
+          "step": 1,
+          "action": "Enable SPI peripheral clock via RCC",
+          "note": "RCC_APB1ENR/APB2ENR SPI_EN bit"
+        },
+        {
+          "step": 2,
+          "action": "Configure GPIO pins for SCK, MOSI, MISO, NSS",
+          "note": "SCK/MOSI/NSS: AF_PP 50MHz; MISO: Input_Float"
+        },
+        {
+          "step": 3,
+          "action": "Write CR1 with CPOL, CPHA, BR, MSTR, SSM/SSI, DFF, LSBFIRST",
+          "note": "SPE must remain 0 at this point"
+        },
+        {
+          "step": 4,
+          "action": "Write CR2 with SSOE, TXDMAEN, RXDMAEN, interrupt enables",
+          "note": "Only enable interrupts/DMA if using interrupt or DMA mode"
+        },
+        {
+          "step": 5,
+          "action": "Set CR1.SPE=1 to enable SPI",
+          "note": "Must be last; BR/CPOL/CPHA cannot be changed after this"
+        }
       ],
       "timing_constraints": [
         {
@@ -847,7 +886,6 @@
         }
       ]
     },
-
     "invariants": [
       {
         "id": "INV_SPI_001",
@@ -879,13 +917,10 @@
         "source": "RM0008 §25.5.1 p.715"
       }
     ],
-
     "errata": [],
-
     "pending_reviews": [],
-
     "generation_metadata": {
-      "generated_by": "doc-analyst (direct PDF extraction, main conversation)",
+      "generated_by": "doc-analyst (PDF extraction + cross-review audit)",
       "generated_at": "2026-04-12",
       "source_pdf": "docs/stm32f103_reference_manual.pdf",
       "source_pages": {
@@ -899,13 +934,35 @@
         "spi_registers": "714-722"
       },
       "confidence": {
-        "overall": 0.92,
+        "overall": 0.95,
         "register_map": 0.97,
-        "access_types": 0.90,
+        "access_types": 0.9,
         "interrupt_numbers": 0.93,
-        "dma_channels": 0.88,
-        "notes": "DMA channel confidence slightly lower — RM0008 DMA table cross-referenced from §13; verify with actual silicon. SR.CRCERR labeled 'rc_w0' in register table (RM0008 §25.5.3 p.717), mapped to W0C access type."
-      }
+        "dma_channels": 0.95,
+        "notes": "Audited against RM0008 PDF. SPI3/DMA2 removed (unavailable on C8T6 medium-density). All register offsets, reset values, access types, interrupt vectors, DMA channels verified against source PDF."
+      },
+      "audit_date": "2026-04-12",
+      "audit_changes": [
+        "Removed SPI3 (unavailable on STM32F103C8T6)",
+        "Removed DMA2 references",
+        "Fixed LSBFIRST TI mode note",
+        "Added SPI1 AFIO_MAPR remap pins",
+        "Updated chip_model to STM32F103C8T6"
+      ]
+    },
+    "device_constraints": {
+      "density": "medium",
+      "package": "LQFP48",
+      "available_spi": [
+        "SPI1",
+        "SPI2"
+      ],
+      "available_dma": [
+        "DMA1"
+      ],
+      "dma1_channels": 7,
+      "note": "SPI3 and DMA2 are only available on high-density and connectivity-line devices",
+      "source": "RM0008 §2.1 Table 1 / DS5319 STM32F103x8 datasheet"
     }
   }
 }
