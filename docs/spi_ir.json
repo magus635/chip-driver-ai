@@ -1,238 +1,911 @@
 {
-  "ir_version": "1.0",
+  "ir_version": "2.0",
   "peripheral": {
     "name": "SPI",
     "full_name": "Serial Peripheral Interface",
-    "chip_family": "STM32F4",
-    "chip_model": "STM32F407VGT6",
-    "source_document": "RM0090 Rev 19",
-    "source_sections": ["28.5 SPI registers", "28.3 SPI functional description"],
+    "chip_family": "STM32F1",
+    "chip_model": "STM32F103",
+    "source_document": "RM0008 Rev 21",
+    "source_sections": [
+      "§25 Serial peripheral interface (SPI)",
+      "§25.3 SPI functional description (pp.675-694)",
+      "§25.5 SPI and I2S registers (pp.714-722)",
+      "§3.3 Memory map (pp.50-52)",
+      "§7.3.7 APB2 peripheral clock enable register (RCC_APB2ENR) (p.112)",
+      "§7.3.8 APB1 peripheral clock enable register (RCC_APB1ENR) (p.114)",
+      "§7.3.3 APB2 peripheral reset register (RCC_APB2RSTR) (p.105)",
+      "§7.3.4 APB1 peripheral reset register (RCC_APB1RSTR) (p.107)",
+      "§10.1.2 STM32F10x interrupt and exception vectors (Table 63, pp.190-197)"
+    ],
 
     "instances": [
-      { "index": 0, "name": "SPI1", "base_address": "0x40013000", "bus": "APB2", "source": "RM0090 §2.3 Table 1" },
-      { "index": 1, "name": "SPI2", "base_address": "0x40003800", "bus": "APB1", "source": "RM0090 §2.3 Table 1" },
-      { "index": 2, "name": "SPI3", "base_address": "0x40003C00", "bus": "APB1", "source": "RM0090 §2.3 Table 1" }
+      {
+        "name": "SPI1",
+        "base_address": "0x40013000",
+        "bus": "APB2",
+        "clock_hz": 72000000,
+        "source": "RM0008 §3.3 Table 3 p.51"
+      },
+      {
+        "name": "SPI2",
+        "base_address": "0x40003800",
+        "bus": "APB1",
+        "clock_hz": 36000000,
+        "source": "RM0008 §3.3 Table 3 p.52"
+      },
+      {
+        "name": "SPI3",
+        "base_address": "0x40003C00",
+        "bus": "APB1",
+        "clock_hz": 36000000,
+        "source": "RM0008 §3.3 Table 3 p.52"
+      }
     ],
 
     "registers": [
       {
         "name": "CR1",
-        "full_name": "SPI Control Register 1",
+        "full_name": "SPI control register 1",
         "offset": "0x00",
-        "width": 32,
-        "access": "RW",
+        "size_bits": 16,
         "reset_value": "0x0000",
-        "description": "SPI control register 1",
-        "source": "RM0090 §28.5.1",
-        "confidence": 0.98,
-        "endinit": "none",
-        "bitfields": [
-          { "name": "BIDIMODE", "bit_offset": 15, "bit_width": 1, "access": "RW", "reset_value": 0, "description": "Bidirectional data mode enable", "source": "RM0090 §28.5.1", "confidence": 0.99 },
-          { "name": "BIDIOE",   "bit_offset": 14, "bit_width": 1, "access": "RW", "reset_value": 0, "description": "Output enable in bidirectional mode", "source": "RM0090 §28.5.1", "confidence": 0.99 },
-          { "name": "CRCEN",    "bit_offset": 13, "bit_width": 1, "access": "RW", "reset_value": 0, "description": "Hardware CRC calculation enable", "source": "RM0090 §28.5.1", "confidence": 0.99 },
-          { "name": "CRCNEXT",  "bit_offset": 12, "bit_width": 1, "access": "RW", "reset_value": 0, "description": "CRC transfer next", "source": "RM0090 §28.5.1", "confidence": 0.99 },
-          { "name": "DFF",      "bit_offset": 11, "bit_width": 1, "access": "RW", "reset_value": 0, "description": "Data frame format (0=8bit, 1=16bit)", "source": "RM0090 §28.5.1", "confidence": 0.99 },
-          { "name": "RXONLY",   "bit_offset": 10, "bit_width": 1, "access": "RW", "reset_value": 0, "description": "Receive only mode enable", "source": "RM0090 §28.5.1", "confidence": 0.99 },
-          { "name": "SSM",      "bit_offset": 9,  "bit_width": 1, "access": "RW", "reset_value": 0, "description": "Software slave management", "source": "RM0090 §28.5.1", "confidence": 0.99 },
-          { "name": "SSI",      "bit_offset": 8,  "bit_width": 1, "access": "RW", "reset_value": 0, "description": "Internal slave select (relevant when SSM=1)", "source": "RM0090 §28.5.1", "confidence": 0.99 },
-          { "name": "LSBFIRST", "bit_offset": 7,  "bit_width": 1, "access": "RW", "reset_value": 0, "description": "Frame format (0=MSB first, 1=LSB first)", "source": "RM0090 §28.5.1", "confidence": 0.99 },
-          { "name": "SPE",      "bit_offset": 6,  "bit_width": 1, "access": "RW", "reset_value": 0, "description": "SPI enable", "source": "RM0090 §28.5.1", "confidence": 0.99 },
-          { "name": "BR",       "bit_offset": 3,  "bit_width": 3, "access": "RW", "reset_value": 0, "description": "Baud rate control (fPCLK/2^(BR+1))", "source": "RM0090 §28.5.1", "confidence": 0.99 },
-          { "name": "MSTR",     "bit_offset": 2,  "bit_width": 1, "access": "RW", "reset_value": 0, "description": "Master selection (0=slave, 1=master)", "source": "RM0090 §28.5.1", "confidence": 0.99 },
-          { "name": "CPOL",     "bit_offset": 1,  "bit_width": 1, "access": "RW", "reset_value": 0, "description": "Clock polarity", "source": "RM0090 §28.5.1", "confidence": 0.99 },
-          { "name": "CPHA",     "bit_offset": 0,  "bit_width": 1, "access": "RW", "reset_value": 0, "description": "Clock phase", "source": "RM0090 §28.5.1", "confidence": 0.99 }
+        "access": "RW",
+        "source": "RM0008 §25.5.1 p.714",
+        "fields": [
+          {
+            "name": "BIDIMODE",
+            "bits": "15",
+            "access": "RW",
+            "description": "Bidirectional data mode enable. 0: 2-line unidirectional, 1: 1-line bidirectional",
+            "source": "RM0008 §25.5.1 p.714"
+          },
+          {
+            "name": "BIDIOE",
+            "bits": "14",
+            "access": "RW",
+            "description": "Output enable in bidirectional mode. 0: output disabled (receive-only), 1: output enabled (transmit-only)",
+            "source": "RM0008 §25.5.1 p.714"
+          },
+          {
+            "name": "CRCEN",
+            "bits": "13",
+            "access": "RW",
+            "description": "Hardware CRC calculation enable. 0: disabled, 1: enabled. Note: should only be written when SPI is disabled (SPE=0)",
+            "guard": "INV_SPI_004",
+            "source": "RM0008 §25.5.1 p.715"
+          },
+          {
+            "name": "CRCNEXT",
+            "bits": "12",
+            "access": "RW",
+            "description": "CRC transfer next. 0: data phase, 1: next transfer is CRC",
+            "source": "RM0008 §25.5.1 p.715"
+          },
+          {
+            "name": "DFF",
+            "bits": "11",
+            "access": "RW",
+            "description": "Data frame format. 0: 8-bit data frame, 1: 16-bit data frame. Note: should only be written when SPI is disabled (SPE=0)",
+            "guard": "INV_SPI_004",
+            "source": "RM0008 §25.5.1 p.715"
+          },
+          {
+            "name": "RXONLY",
+            "bits": "10",
+            "access": "RW",
+            "description": "Receive only. 0: Full duplex (transmit and receive), 1: Output disabled (receive-only mode)",
+            "source": "RM0008 §25.5.1 p.715"
+          },
+          {
+            "name": "SSM",
+            "bits": "9",
+            "access": "RW",
+            "description": "Software slave management. 0: disabled (NSS pin controlled by hardware), 1: enabled (SSI bit value drives NSS)",
+            "source": "RM0008 §25.5.1 p.715"
+          },
+          {
+            "name": "SSI",
+            "bits": "8",
+            "access": "RW",
+            "description": "Internal slave select. Only used when SSM=1. This bit value is forced onto NSS pin and IO value of NSS is ignored.",
+            "source": "RM0008 §25.5.1 p.715"
+          },
+          {
+            "name": "LSBFIRST",
+            "bits": "7",
+            "access": "RW",
+            "description": "Frame format. 0: MSB transmitted first, 1: LSB transmitted first. Note: not used in TI mode (FRF=1)",
+            "source": "RM0008 §25.5.1 p.715"
+          },
+          {
+            "name": "SPE",
+            "bits": "6",
+            "access": "RW",
+            "description": "SPI enable. 0: disabled, 1: enabled",
+            "source": "RM0008 §25.5.1 p.715"
+          },
+          {
+            "name": "BR",
+            "bits": "5:3",
+            "access": "RW",
+            "description": "Baud rate control. 000=fPCLK/2, 001=fPCLK/4, 010=fPCLK/8, 011=fPCLK/16, 100=fPCLK/32, 101=fPCLK/64, 110=fPCLK/128, 111=fPCLK/256. Note: not used in I2S mode. Should not be changed when SPI is enabled.",
+            "guard": "INV_SPI_002",
+            "source": "RM0008 §25.5.1 p.715"
+          },
+          {
+            "name": "MSTR",
+            "bits": "2",
+            "access": "RW",
+            "description": "Master selection. 0: slave configuration, 1: master configuration. Note: not used in I2S mode; cleared automatically on MODF error",
+            "source": "RM0008 §25.5.1 p.715"
+          },
+          {
+            "name": "CPOL",
+            "bits": "1",
+            "access": "RW",
+            "description": "Clock polarity. 0: CK=0 when idle, 1: CK=1 when idle. Not used in I2S mode. Should not be changed when SPI is enabled.",
+            "guard": "INV_SPI_002",
+            "source": "RM0008 §25.5.1 p.715"
+          },
+          {
+            "name": "CPHA",
+            "bits": "0",
+            "access": "RW",
+            "description": "Clock phase. 0: first clock transition is data capture, 1: second clock transition is data capture. Not used in I2S mode. Should not be changed when SPI is enabled.",
+            "guard": "INV_SPI_002",
+            "source": "RM0008 §25.5.1 p.715"
+          }
         ]
       },
       {
         "name": "CR2",
-        "full_name": "SPI Control Register 2",
+        "full_name": "SPI control register 2",
         "offset": "0x04",
-        "width": 32,
-        "access": "RW",
+        "size_bits": 16,
         "reset_value": "0x0000",
-        "description": "SPI control register 2 (interrupt and DMA enables)",
-        "source": "RM0090 §28.5.2",
-        "confidence": 0.98,
-        "endinit": "none",
-        "bitfields": [
-          { "name": "TXEIE",   "bit_offset": 7, "bit_width": 1, "access": "RW", "reset_value": 0, "description": "TX buffer empty interrupt enable", "source": "RM0090 §28.5.2", "confidence": 0.99 },
-          { "name": "RXNEIE",  "bit_offset": 6, "bit_width": 1, "access": "RW", "reset_value": 0, "description": "RX buffer not empty interrupt enable", "source": "RM0090 §28.5.2", "confidence": 0.99 },
-          { "name": "ERRIE",   "bit_offset": 5, "bit_width": 1, "access": "RW", "reset_value": 0, "description": "Error interrupt enable", "source": "RM0090 §28.5.2", "confidence": 0.99 },
-          { "name": "SSOE",    "bit_offset": 2, "bit_width": 1, "access": "RW", "reset_value": 0, "description": "SS output enable", "source": "RM0090 §28.5.2", "confidence": 0.99 },
-          { "name": "TXDMAEN", "bit_offset": 1, "bit_width": 1, "access": "RW", "reset_value": 0, "description": "TX buffer DMA enable", "source": "RM0090 §28.5.2", "confidence": 0.99 },
-          { "name": "RXDMAEN", "bit_offset": 0, "bit_width": 1, "access": "RW", "reset_value": 0, "description": "RX buffer DMA enable", "source": "RM0090 §28.5.2", "confidence": 0.99 }
+        "access": "RW",
+        "source": "RM0008 §25.5.2 p.716",
+        "fields": [
+          {
+            "name": "TXEIE",
+            "bits": "7",
+            "access": "RW",
+            "description": "TX buffer empty interrupt enable. 0: masked, 1: interrupt generated when TXE=1",
+            "source": "RM0008 §25.5.2 p.716"
+          },
+          {
+            "name": "RXNEIE",
+            "bits": "6",
+            "access": "RW",
+            "description": "RX buffer not empty interrupt enable. 0: masked, 1: interrupt generated when RXNE=1",
+            "source": "RM0008 §25.5.2 p.716"
+          },
+          {
+            "name": "ERRIE",
+            "bits": "5",
+            "access": "RW",
+            "description": "Error interrupt enable. 0: masked, 1: interrupt generated on CRCERR, OVR, MODF, UDR",
+            "source": "RM0008 §25.5.2 p.716"
+          },
+          {
+            "name": "SSOE",
+            "bits": "2",
+            "access": "RW",
+            "description": "SS output enable. 0: SS output disabled in master mode, 1: SS output enabled in master mode",
+            "source": "RM0008 §25.5.2 p.716"
+          },
+          {
+            "name": "TXDMAEN",
+            "bits": "1",
+            "access": "RW",
+            "description": "TX buffer DMA enable. 0: disabled, 1: DMA request made when TXE=1",
+            "source": "RM0008 §25.5.2 p.716"
+          },
+          {
+            "name": "RXDMAEN",
+            "bits": "0",
+            "access": "RW",
+            "description": "RX buffer DMA enable. 0: disabled, 1: DMA request made when RXNE=1",
+            "source": "RM0008 §25.5.2 p.716"
+          }
         ]
       },
       {
         "name": "SR",
-        "full_name": "SPI Status Register",
+        "full_name": "SPI status register",
         "offset": "0x08",
-        "width": 32,
-        "access": "mixed",
+        "size_bits": 16,
         "reset_value": "0x0002",
-        "description": "SPI status register. Contains mix of RO and special-clear flags.",
-        "source": "RM0090 §28.5.3",
-        "confidence": 0.95,
-        "endinit": "none",
-        "bitfields": [
-          { "name": "BSY",     "bit_offset": 7, "bit_width": 1, "access": "RO",  "reset_value": 0, "description": "Busy flag (set during transfer)", "source": "RM0090 §28.5.3", "confidence": 0.99 },
-          { "name": "OVR",     "bit_offset": 6, "bit_width": 1, "access": "RC",  "reset_value": 0, "description": "Overrun flag. Cleared by read DR then read SR sequence.", "source": "RM0090 §28.5.3 + §28.3.10", "confidence": 0.95 },
-          { "name": "MODF",    "bit_offset": 5, "bit_width": 1, "access": "RC",  "reset_value": 0, "description": "Mode fault. Cleared by read SR (with MODF set) then write CR1.", "source": "RM0090 §28.5.3 + §28.3.10", "confidence": 0.95 },
-          { "name": "CRCERR",  "bit_offset": 4, "bit_width": 1, "access": "W1C", "reset_value": 0, "description": "CRC error flag. Cleared by writing 0 to this bit.", "source": "RM0090 §28.5.3", "confidence": 0.95 },
-          { "name": "UDR",     "bit_offset": 3, "bit_width": 1, "access": "RO",  "reset_value": 0, "description": "Underrun flag (I2S mode only)", "source": "RM0090 §28.5.3", "confidence": 0.99 },
-          { "name": "CHSIDE",  "bit_offset": 2, "bit_width": 1, "access": "RO",  "reset_value": 0, "description": "Channel side (I2S mode only)", "source": "RM0090 §28.5.3", "confidence": 0.99 },
-          { "name": "TXE",     "bit_offset": 1, "bit_width": 1, "access": "RO",  "reset_value": 1, "description": "TX buffer empty. Set by HW, cleared by writing DR.", "source": "RM0090 §28.5.3", "confidence": 0.99 },
-          { "name": "RXNE",    "bit_offset": 0, "bit_width": 1, "access": "RO",  "reset_value": 0, "description": "RX buffer not empty. Set by HW, cleared by reading DR.", "source": "RM0090 §28.5.3", "confidence": 0.99 }
+        "access": "mixed",
+        "source": "RM0008 §25.5.3 p.717",
+        "fields": [
+          {
+            "name": "BSY",
+            "bits": "7",
+            "access": "RO",
+            "description": "Busy flag. 0: not busy, 1: busy in communication or TX not empty. Set and cleared by hardware.",
+            "source": "RM0008 §25.5.3 p.718"
+          },
+          {
+            "name": "OVR",
+            "bits": "6",
+            "access": "RC_SEQ",
+            "description": "Overrun flag. 0: no overrun, 1: overrun occurred. Cleared by reading DR then SR.",
+            "clear_sequence": "SEQ_OVR_CLEAR",
+            "source": "RM0008 §25.5.3 p.718, §25.3.10 p.693"
+          },
+          {
+            "name": "MODF",
+            "bits": "5",
+            "access": "RC_SEQ",
+            "description": "Mode fault. 0: no mode fault, 1: mode fault occurred. Cleared by reading SR then writing CR1.",
+            "clear_sequence": "SEQ_MODF_CLEAR",
+            "source": "RM0008 §25.5.3 p.717, §25.3.10 p.693"
+          },
+          {
+            "name": "CRCERR",
+            "bits": "4",
+            "access": "W0C",
+            "description": "CRC error flag. 0: CRC matches received value, 1: CRC mismatch. Cleared by writing 0.",
+            "source": "RM0008 §25.5.3 p.717"
+          },
+          {
+            "name": "UDR",
+            "bits": "3",
+            "access": "RO",
+            "description": "Underrun flag (I2S mode only). 0: no underrun, 1: underrun occurred.",
+            "source": "RM0008 §25.5.3 p.717"
+          },
+          {
+            "name": "CHSIDE",
+            "bits": "2",
+            "access": "RO",
+            "description": "Channel side (I2S mode only). 0: left channel, 1: right channel.",
+            "source": "RM0008 §25.5.3 p.717"
+          },
+          {
+            "name": "TXE",
+            "bits": "1",
+            "access": "RO",
+            "description": "Transmit buffer empty. 0: TX buffer not empty, 1: TX buffer empty",
+            "source": "RM0008 §25.5.3 p.717"
+          },
+          {
+            "name": "RXNE",
+            "bits": "0",
+            "access": "RO",
+            "description": "Receive buffer not empty. 0: RX buffer empty, 1: RX buffer not empty",
+            "source": "RM0008 §25.5.3 p.717"
+          }
         ]
       },
       {
         "name": "DR",
-        "full_name": "SPI Data Register",
+        "full_name": "SPI data register",
         "offset": "0x0C",
-        "width": 32,
-        "access": "RW",
+        "size_bits": 16,
         "reset_value": "0x0000",
-        "description": "Data register for SPI transmit/receive. Only lower 8 or 16 bits used depending on DFF.",
-        "source": "RM0090 §28.5.4",
-        "confidence": 0.99,
-        "endinit": "none",
-        "bitfields": []
+        "access": "RW",
+        "source": "RM0008 §25.5.4 p.718",
+        "note": "Read clears RXNE. Write sets TX buffer. In 8-bit mode only lower 8 bits are used. Reading DR is part of OVR clear sequence.",
+        "fields": [
+          {
+            "name": "DR",
+            "bits": "15:0",
+            "access": "RW",
+            "description": "Data register. Received byte/halfword on read; byte/halfword to transmit on write.",
+            "source": "RM0008 §25.5.4 p.718"
+          }
+        ]
       },
       {
         "name": "CRCPR",
-        "full_name": "SPI CRC Polynomial Register",
+        "full_name": "SPI CRC polynomial register",
         "offset": "0x10",
-        "width": 32,
-        "access": "RW",
+        "size_bits": 16,
         "reset_value": "0x0007",
-        "description": "CRC polynomial register",
-        "source": "RM0090 §28.5.5",
-        "confidence": 0.99,
-        "endinit": "none",
-        "bitfields": []
+        "access": "RW",
+        "source": "RM0008 §25.5.5 p.718",
+        "fields": [
+          {
+            "name": "CRCPOLY",
+            "bits": "15:0",
+            "access": "RW",
+            "description": "CRC polynomial register. Default value is 0x0007. In 8-bit mode only bits [7:0] are used.",
+            "source": "RM0008 §25.5.5 p.718"
+          }
+        ]
+      },
+      {
+        "name": "RXCRCR",
+        "full_name": "SPI RX CRC register",
+        "offset": "0x14",
+        "size_bits": 16,
+        "reset_value": "0x0000",
+        "access": "RO",
+        "source": "RM0008 §25.5.6 p.719",
+        "fields": [
+          {
+            "name": "RXCRC",
+            "bits": "15:0",
+            "access": "RO",
+            "description": "RX CRC register. When CRC is enabled, contains the CRC computed from received bytes. In 8-bit mode only bits [7:0] are used.",
+            "source": "RM0008 §25.5.6 p.719"
+          }
+        ]
+      },
+      {
+        "name": "TXCRCR",
+        "full_name": "SPI TX CRC register",
+        "offset": "0x18",
+        "size_bits": 16,
+        "reset_value": "0x0000",
+        "access": "RO",
+        "source": "RM0008 §25.5.7 p.719",
+        "fields": [
+          {
+            "name": "TXCRC",
+            "bits": "15:0",
+            "access": "RO",
+            "description": "TX CRC register. When CRC is enabled, contains the CRC computed from transmitted bytes. In 8-bit mode only bits [7:0] are used.",
+            "source": "RM0008 §25.5.7 p.719"
+          }
+        ]
+      },
+      {
+        "name": "I2SCFGR",
+        "full_name": "SPI_I2S configuration register",
+        "offset": "0x1C",
+        "size_bits": 16,
+        "reset_value": "0x0000",
+        "access": "RW",
+        "source": "RM0008 §25.5.8 p.719",
+        "note": "Not used in SPI mode. I2SMOD bit (bit11) must be 0 for SPI mode operation.",
+        "fields": [
+          {
+            "name": "I2SMOD",
+            "bits": "11",
+            "access": "RW",
+            "description": "I2S mode selection. 0: SPI mode selected, 1: I2S mode selected. Must be 0 for SPI operation.",
+            "source": "RM0008 §25.5.8 p.720"
+          },
+          {
+            "name": "I2SE",
+            "bits": "10",
+            "access": "RW",
+            "description": "I2S enable. Not used in SPI mode.",
+            "source": "RM0008 §25.5.8 p.720"
+          },
+          {
+            "name": "I2SCFG",
+            "bits": "9:8",
+            "access": "RW",
+            "description": "I2S configuration mode. Not used in SPI mode.",
+            "source": "RM0008 §25.5.8 p.720"
+          },
+          {
+            "name": "PCMSYNC",
+            "bits": "7",
+            "access": "RW",
+            "description": "PCM frame synchronization. Not used in SPI mode.",
+            "source": "RM0008 §25.5.8 p.720"
+          },
+          {
+            "name": "I2SSTD",
+            "bits": "5:4",
+            "access": "RW",
+            "description": "I2S standard selection. Not used in SPI mode.",
+            "source": "RM0008 §25.5.8 p.720"
+          },
+          {
+            "name": "CKPOL",
+            "bits": "3",
+            "access": "RW",
+            "description": "Steady state clock polarity (I2S). Not used in SPI mode.",
+            "source": "RM0008 §25.5.8 p.720"
+          },
+          {
+            "name": "DATLEN",
+            "bits": "2:1",
+            "access": "RW",
+            "description": "Data length to be transferred (I2S). Not used in SPI mode.",
+            "source": "RM0008 §25.5.8 p.720"
+          },
+          {
+            "name": "CHLEN",
+            "bits": "0",
+            "access": "RW",
+            "description": "Channel length (I2S). Not used in SPI mode.",
+            "source": "RM0008 §25.5.8 p.720"
+          }
+        ]
+      },
+      {
+        "name": "I2SPR",
+        "full_name": "SPI_I2S prescaler register",
+        "offset": "0x20",
+        "size_bits": 16,
+        "reset_value": "0x0002",
+        "access": "RW",
+        "source": "RM0008 §25.5.9 p.721",
+        "note": "Not used in SPI mode.",
+        "fields": [
+          {
+            "name": "MCKOE",
+            "bits": "9",
+            "access": "RW",
+            "description": "Master clock output enable (I2S). Not used in SPI mode.",
+            "source": "RM0008 §25.5.9 p.721"
+          },
+          {
+            "name": "ODD",
+            "bits": "8",
+            "access": "RW",
+            "description": "Odd factor for the prescaler (I2S). Not used in SPI mode.",
+            "source": "RM0008 §25.5.9 p.721"
+          },
+          {
+            "name": "I2SDIV",
+            "bits": "7:0",
+            "access": "RW",
+            "description": "I2S linear prescaler. Not used in SPI mode.",
+            "source": "RM0008 §25.5.9 p.721"
+          }
+        ]
       }
     ],
 
     "interrupts": [
       {
-        "name": "SPI1_IRQ",
+        "instance": "SPI1",
         "irq_number": 35,
-        "description": "SPI1 global interrupt",
-        "trigger_flags": ["TXE", "RXNE", "OVR", "MODF", "CRCERR"],
-        "source": "RM0090 §12.2 Table 61"
+        "priority_number": 42,
+        "handler": "SPI1_IRQHandler",
+        "sources": [
+          {
+            "flag": "SR.TXE",
+            "enable": "CR2.TXEIE",
+            "description": "TX buffer empty"
+          },
+          {
+            "flag": "SR.RXNE",
+            "enable": "CR2.RXNEIE",
+            "description": "RX buffer not empty"
+          },
+          {
+            "flag": "SR.OVR",
+            "enable": "CR2.ERRIE",
+            "description": "Overrun error"
+          },
+          {
+            "flag": "SR.MODF",
+            "enable": "CR2.ERRIE",
+            "description": "Mode fault"
+          },
+          {
+            "flag": "SR.CRCERR",
+            "enable": "CR2.ERRIE",
+            "description": "CRC error"
+          }
+        ],
+        "source": "RM0008 Table 63 p.194"
       },
       {
-        "name": "SPI2_IRQ",
+        "instance": "SPI2",
         "irq_number": 36,
-        "description": "SPI2 global interrupt",
-        "trigger_flags": ["TXE", "RXNE", "OVR", "MODF", "CRCERR"],
-        "source": "RM0090 §12.2 Table 61"
+        "priority_number": 43,
+        "handler": "SPI2_IRQHandler",
+        "sources": [
+          {
+            "flag": "SR.TXE",
+            "enable": "CR2.TXEIE",
+            "description": "TX buffer empty"
+          },
+          {
+            "flag": "SR.RXNE",
+            "enable": "CR2.RXNEIE",
+            "description": "RX buffer not empty"
+          },
+          {
+            "flag": "SR.OVR",
+            "enable": "CR2.ERRIE",
+            "description": "Overrun error"
+          },
+          {
+            "flag": "SR.MODF",
+            "enable": "CR2.ERRIE",
+            "description": "Mode fault"
+          },
+          {
+            "flag": "SR.CRCERR",
+            "enable": "CR2.ERRIE",
+            "description": "CRC error"
+          }
+        ],
+        "source": "RM0008 Table 63 p.195"
+      },
+      {
+        "instance": "SPI3",
+        "irq_number": 51,
+        "priority_number": 58,
+        "handler": "SPI3_IRQHandler",
+        "sources": [
+          {
+            "flag": "SR.TXE",
+            "enable": "CR2.TXEIE",
+            "description": "TX buffer empty"
+          },
+          {
+            "flag": "SR.RXNE",
+            "enable": "CR2.RXNEIE",
+            "description": "RX buffer not empty"
+          },
+          {
+            "flag": "SR.OVR",
+            "enable": "CR2.ERRIE",
+            "description": "Overrun error"
+          },
+          {
+            "flag": "SR.MODF",
+            "enable": "CR2.ERRIE",
+            "description": "Mode fault"
+          },
+          {
+            "flag": "SR.CRCERR",
+            "enable": "CR2.ERRIE",
+            "description": "CRC error"
+          }
+        ],
+        "source": "RM0008 Table 63 p.196"
       }
     ],
 
-    "clock": {
-      "SPI1": { "bus": "APB2", "enable_register": "RCC_APB2ENR", "enable_bit": "SPI1EN", "max_frequency_mhz": 84, "source": "RM0090 §7.3.13" },
-      "SPI2": { "bus": "APB1", "enable_register": "RCC_APB1ENR", "enable_bit": "SPI2EN", "max_frequency_mhz": 42, "source": "RM0090 §7.3.14" },
-      "SPI3": { "bus": "APB1", "enable_register": "RCC_APB1ENR", "enable_bit": "SPI3EN", "max_frequency_mhz": 42, "source": "RM0090 §7.3.14" }
-    },
+    "clock": [
+      {
+        "instance": "SPI1",
+        "bus": "APB2",
+        "enable_register": "RCC_APB2ENR",
+        "enable_bit": 12,
+        "enable_mask": "0x00001000",
+        "enable_field": "SPI1EN",
+        "reset_register": "RCC_APB2RSTR",
+        "reset_bit": 12,
+        "reset_mask": "0x00001000",
+        "reset_field": "SPI1RST",
+        "source": "RM0008 §7.3.7 p.112 (APB2ENR), §7.3.3 p.105 (APB2RSTR)"
+      },
+      {
+        "instance": "SPI2",
+        "bus": "APB1",
+        "enable_register": "RCC_APB1ENR",
+        "enable_bit": 14,
+        "enable_mask": "0x00004000",
+        "enable_field": "SPI2EN",
+        "reset_register": "RCC_APB1RSTR",
+        "reset_bit": 14,
+        "reset_mask": "0x00004000",
+        "reset_field": "SPI2RST",
+        "source": "RM0008 §7.3.8 p.114 (APB1ENR), §7.3.4 p.107 (APB1RSTR)"
+      },
+      {
+        "instance": "SPI3",
+        "bus": "APB1",
+        "enable_register": "RCC_APB1ENR",
+        "enable_bit": 15,
+        "enable_mask": "0x00008000",
+        "enable_field": "SPI3EN",
+        "reset_register": "RCC_APB1RSTR",
+        "reset_bit": 15,
+        "reset_mask": "0x00008000",
+        "reset_field": "SPI3RST",
+        "source": "RM0008 §7.3.8 p.114 (APB1ENR), §7.3.4 p.107 (APB1RSTR)"
+      }
+    ],
+
+    "dma_channels": [
+      {
+        "instance": "SPI1",
+        "direction": "RX",
+        "controller": "DMA1",
+        "channel": 2,
+        "request": "SPI1_RX",
+        "trigger_register": "SR",
+        "trigger_flag": "RXNE",
+        "enable_bit": "CR2.RXDMAEN",
+        "source": "RM0008 §13.3.7 Table 78 p.282"
+      },
+      {
+        "instance": "SPI1",
+        "direction": "TX",
+        "controller": "DMA1",
+        "channel": 3,
+        "request": "SPI1_TX",
+        "trigger_register": "SR",
+        "trigger_flag": "TXE",
+        "enable_bit": "CR2.TXDMAEN",
+        "source": "RM0008 §13.3.7 Table 78 p.282"
+      },
+      {
+        "instance": "SPI2",
+        "direction": "RX",
+        "controller": "DMA1",
+        "channel": 4,
+        "request": "SPI2_RX",
+        "trigger_register": "SR",
+        "trigger_flag": "RXNE",
+        "enable_bit": "CR2.RXDMAEN",
+        "source": "RM0008 §13.3.7 Table 78 p.282"
+      },
+      {
+        "instance": "SPI2",
+        "direction": "TX",
+        "controller": "DMA1",
+        "channel": 5,
+        "request": "SPI2_TX",
+        "trigger_register": "SR",
+        "trigger_flag": "TXE",
+        "enable_bit": "CR2.TXDMAEN",
+        "source": "RM0008 §13.3.7 Table 78 p.282"
+      },
+      {
+        "instance": "SPI3",
+        "direction": "RX",
+        "controller": "DMA2",
+        "channel": 1,
+        "request": "SPI3_RX",
+        "trigger_register": "SR",
+        "trigger_flag": "RXNE",
+        "enable_bit": "CR2.RXDMAEN",
+        "source": "RM0008 §13.3.7 Table 79 p.283"
+      },
+      {
+        "instance": "SPI3",
+        "direction": "TX",
+        "controller": "DMA2",
+        "channel": 2,
+        "request": "SPI3_TX",
+        "trigger_register": "SR",
+        "trigger_flag": "TXE",
+        "enable_bit": "CR2.TXDMAEN",
+        "source": "RM0008 §13.3.7 Table 79 p.283"
+      }
+    ],
+
+    "gpio_config": [
+      {
+        "instance": "SPI1",
+        "pins": [
+          {"signal": "SCK",  "pin": "PA5", "mode": "AF_PP", "speed": "50MHz"},
+          {"signal": "MISO", "pin": "PA6", "mode": "Input_Float"},
+          {"signal": "MOSI", "pin": "PA7", "mode": "AF_PP", "speed": "50MHz"},
+          {"signal": "NSS",  "pin": "PA4", "mode": "AF_PP", "speed": "50MHz", "note": "hardware NSS; use GPIO output for software NSS"}
+        ],
+        "source": "RM0008 §9.3 Alternate function I/O and debug configuration p.175"
+      },
+      {
+        "instance": "SPI2",
+        "pins": [
+          {"signal": "SCK",  "pin": "PB13", "mode": "AF_PP", "speed": "50MHz"},
+          {"signal": "MISO", "pin": "PB14", "mode": "Input_Float"},
+          {"signal": "MOSI", "pin": "PB15", "mode": "AF_PP", "speed": "50MHz"},
+          {"signal": "NSS",  "pin": "PB12", "mode": "AF_PP", "speed": "50MHz", "note": "hardware NSS; use GPIO output for software NSS"}
+        ],
+        "source": "RM0008 §9.3 p.175"
+      },
+      {
+        "instance": "SPI3",
+        "pins": [
+          {"signal": "SCK",  "pin": "PB3",  "mode": "AF_PP", "speed": "50MHz", "note": "conflicts with JTDO — JTAG must be disabled via AFIO_MAPR.SWJ_CFG before use"},
+          {"signal": "MISO", "pin": "PB4",  "mode": "Input_Float",              "note": "conflicts with NJTRST — JTAG must be disabled via AFIO_MAPR.SWJ_CFG before use"},
+          {"signal": "MOSI", "pin": "PB5",  "mode": "AF_PP", "speed": "50MHz"},
+          {"signal": "NSS",  "pin": "PA15", "mode": "AF_PP", "speed": "50MHz", "note": "conflicts with JTDI — JTAG must be disabled via AFIO_MAPR.SWJ_CFG before use; use GPIO output for software NSS"}
+        ],
+        "jtag_conflict": true,
+        "jtag_disable_required": "AFIO_MAPR.SWJ_CFG = 0b010 (SWD-only, JTAG disabled)",
+        "jtag_source": "RM0008 §9.3 p.175, Table 5 (JTAG/SWD remap)",
+        "source": "RM0008 §9.3 p.175"
+      }
+    ],
+
+    "atomic_sequences": [
+      {
+        "id": "SEQ_OVR_CLEAR",
+        "description": "Clear OVR (Overrun) flag. Requires two-step read sequence.",
+        "steps": [
+          {"op": "READ",  "register": "DR",  "note": "Step 1: Read the DR register"},
+          {"op": "READ",  "register": "SR",  "note": "Step 2: Read the SR register to complete OVR clear"}
+        ],
+        "source": "RM0008 §25.3.10 p.693"
+      },
+      {
+        "id": "SEQ_MODF_CLEAR",
+        "description": "Clear MODF (Mode Fault) flag. Requires read-then-write sequence.",
+        "steps": [
+          {"op": "READ",  "register": "SR",  "note": "Step 1: Read SR register (while MODF=1)"},
+          {"op": "WRITE", "register": "CR1", "value": "current_value", "note": "Step 2: Write CR1 with its current value (no actual change needed)"}
+        ],
+        "source": "RM0008 §25.3.10 p.693"
+      },
+      {
+        "id": "SEQ_DISABLE_FULLDUPLEX",
+        "description": "Correct full-duplex SPI disable sequence to avoid data loss.",
+        "steps": [
+          {"op": "WAIT", "register": "SR", "field": "RXNE", "value": 1, "note": "Step 1: Wait until RXNE=1 (last data received)"},
+          {"op": "READ", "register": "DR",  "note": "Step 2: Read DR to empty RX buffer"},
+          {"op": "WAIT", "register": "SR", "field": "TXE",  "value": 1, "note": "Step 3: Wait until TXE=1 (TX buffer empty)"},
+          {"op": "WAIT", "register": "SR", "field": "BSY",  "value": 0, "note": "Step 4: Wait until BSY=0 (transfer complete)"},
+          {"op": "WRITE","register": "CR1", "field": "SPE",  "value": 0, "note": "Step 5: Clear SPE to disable SPI"}
+        ],
+        "source": "RM0008 §25.3.8 p.692"
+      }
+    ],
+
+    "errors": [
+      {
+        "id": "ERR_OVR",
+        "name": "Overrun Error",
+        "flag": "SR.OVR",
+        "trigger": "Data received when RXNE was already set (previous data not read)",
+        "recovery": "SEQ_OVR_CLEAR",
+        "source": "RM0008 §25.3.10 p.693"
+      },
+      {
+        "id": "ERR_MODF",
+        "name": "Mode Fault",
+        "flag": "SR.MODF",
+        "trigger": "NSS pin goes low in master mode (multi-master contention detected)",
+        "recovery": "SEQ_MODF_CLEAR",
+        "side_effects": ["CR1.MSTR is cleared automatically", "CR1.SPE is cleared automatically"],
+        "source": "RM0008 §25.3.10 p.692"
+      },
+      {
+        "id": "ERR_CRCERR",
+        "name": "CRC Error",
+        "flag": "SR.CRCERR",
+        "trigger": "CRC value received does not match computed CRC",
+        "recovery": "Write 0 to CRCERR bit in SR (W0C)",
+        "source": "RM0008 §25.3.10 p.693"
+      },
+      {
+        "id": "ERR_UDR",
+        "name": "Underrun Error (I2S only)",
+        "flag": "SR.UDR",
+        "trigger": "I2S slave transmitter: next data not yet provided when clock edge arrives",
+        "recovery": "Read SR register",
+        "note": "Only relevant in I2S slave transmitter mode, not SPI mode",
+        "source": "RM0008 §25.5.3 p.717"
+      }
+    ],
 
     "functional_model": {
-      "init_sequence": [
-        { "order": 1, "description": "Enable peripheral clock via RCC", "register": "RCC_APBxENR", "field": "SPIxEN", "value": "1", "source": "RM0090 §28.3.3" },
-        { "order": 2, "description": "Ensure SPI is disabled (SPE=0) before configuration", "register": "CR1", "field": "SPE", "value": "0", "source": "RM0090 §28.3.3" },
-        { "order": 3, "description": "Configure baud rate prescaler BR[2:0]", "register": "CR1", "field": "BR", "source": "RM0090 §28.5.1" },
-        { "order": 4, "description": "Configure clock polarity and phase (CPOL, CPHA)", "register": "CR1", "field": "CPOL,CPHA", "source": "RM0090 §28.5.1" },
-        { "order": 5, "description": "Configure data frame format (DFF: 8-bit or 16-bit)", "register": "CR1", "field": "DFF", "source": "RM0090 §28.5.1" },
-        { "order": 6, "description": "Set master/slave mode (MSTR)", "register": "CR1", "field": "MSTR", "source": "RM0090 §28.5.1" },
-        { "order": 7, "description": "Configure slave management (SSM, SSI for master mode)", "register": "CR1", "field": "SSM,SSI", "source": "RM0090 §28.3.1" },
-        { "order": 8, "description": "Clear any stale error flags (read DR, read SR for OVR)", "register": "SR,DR", "source": "RM0090 §28.3.10" },
-        { "order": 9, "description": "Enable SPI peripheral (SPE=1)", "register": "CR1", "field": "SPE", "value": "1", "source": "RM0090 §28.3.3" }
-      ],
-      "deinit_sequence": [
-        { "order": 1, "description": "Wait until BSY=0 and TXE=1 (all transfers complete)", "register": "SR", "field": "BSY,TXE", "condition": "BSY==0 && TXE==1", "source": "RM0090 §28.3.8" },
-        { "order": 2, "description": "Disable SPI (SPE=0)", "register": "CR1", "field": "SPE", "value": "0", "source": "RM0090 §28.3.8" },
-        { "order": 3, "description": "Disable peripheral clock via RCC", "register": "RCC_APBxENR", "field": "SPIxEN", "value": "0", "source": "RM0090 §28.3.8" }
-      ],
-      "operation_modes": [
-        { "name": "full_duplex_master", "description": "Simultaneous TX and RX in master mode", "config": "MSTR=1, BIDIMODE=0, RXONLY=0" },
-        { "name": "full_duplex_slave",  "description": "Simultaneous TX and RX in slave mode",  "config": "MSTR=0, BIDIMODE=0, RXONLY=0" },
-        { "name": "rx_only_master",     "description": "Receive-only master (continuous clock)", "config": "MSTR=1, BIDIMODE=0, RXONLY=1" }
-      ],
-      "error_handling": [
-        "OVR (Overrun): Cleared by read DR then read SR sequence (RM0090 §28.3.10)",
-        "MODF (Mode Fault): Cleared by read SR then write CR1 sequence (RM0090 §28.3.10)",
-        "CRCERR: Cleared by writing 0 to CRCERR bit in SR (W1C behavior, actually write-0-to-clear)"
-      ],
-      "invariants": [
+      "operating_modes": [
         {
-          "id": "INV_SPI_001",
-          "expr": "CR1.MSTR==1 && CR1.SSM==1 implies CR1.SSI==1",
-          "description": "Master mode with software NSS management requires SSI=1; otherwise hardware sees NSS low and triggers MODF, clearing MSTR",
-          "scope": "always",
-          "violation_effect": "MSTR cleared by hardware, SR.MODF set, SPI demoted to slave",
-          "enforced_by": ["code-gen:precondition", "reviewer-agent:static"],
-          "source": "RM0090 §28.3.3",
-          "confidence": 0.98
+          "name": "full_duplex_master",
+          "description": "MSTR=1, BIDIMODE=0, RXONLY=0. Standard master mode with MOSI and MISO.",
+          "source": "RM0008 §25.3.1 p.675"
         },
         {
-          "id": "INV_SPI_002",
-          "expr": "CR1.SPE==1 implies !writable(CR1.BR) && !writable(CR1.CPOL) && !writable(CR1.CPHA) && !writable(CR1.LSBFIRST) && !writable(CR1.CRCEN) && !writable(CR1.DFF) && !writable(CR1.RXONLY) && !writable(CR1.BIDIMODE) && !writable(CR1.MSTR)",
-          "description": "Configuration bits must be set while SPI is disabled (SPE=0); changes while SPE=1 are undefined",
-          "scope": "always",
-          "violation_effect": "Undefined behavior per RM0090 (not allowed)",
-          "enforced_by": ["code-gen:precondition", "reviewer-agent:static"],
-          "source": "RM0090 §28.3.3",
-          "confidence": 0.99
+          "name": "full_duplex_slave",
+          "description": "MSTR=0, BIDIMODE=0, RXONLY=0. Slave mode driven by external master clock.",
+          "source": "RM0008 §25.3.1 p.675"
         },
         {
-          "id": "INV_SPI_003",
-          "expr": "SR.BSY==1 || SR.TXE==0 implies !writable(CR1.SPE)",
-          "description": "Disabling SPI requires waiting until current frame completes (TXE=1 then BSY=0), otherwise the in-flight frame may be corrupted",
-          "scope": "before_disable",
-          "violation_effect": "Last frame may be lost or partially transmitted",
-          "enforced_by": ["code-gen:precondition"],
-          "source": "RM0090 §28.3.8",
-          "confidence": 0.99
+          "name": "half_duplex_master_tx",
+          "description": "MSTR=1, BIDIMODE=1, BIDIOE=1. Single wire bidirectional, transmit only.",
+          "source": "RM0008 §25.3.4 p.681"
         },
         {
-          "id": "INV_SPI_004",
-          "expr": "CR1.BIDIMODE==1 implies CR1.RXONLY==0",
-          "description": "Bidirectional mode and receive-only mode are mutually exclusive",
-          "scope": "always",
-          "violation_effect": "Undefined behavior, conflicting data direction control",
-          "enforced_by": ["code-gen:precondition", "reviewer-agent:static"],
-          "source": "RM0090 §28.5.1",
-          "confidence": 0.97
+          "name": "half_duplex_master_rx",
+          "description": "MSTR=1, BIDIMODE=1, BIDIOE=0. Single wire bidirectional, receive only.",
+          "source": "RM0008 §25.3.4 p.681"
         },
         {
-          "id": "INV_SPI_005",
-          "expr": "CR1.CRCEN==1 implies CR1.SPE==0",
-          "description": "CRCEN may only be written when SPE=0 to keep TX/RX CRC registers consistent across both endpoints",
-          "scope": "always",
-          "violation_effect": "CRC calculation state desynchronized between master and slave",
-          "enforced_by": ["code-gen:precondition", "reviewer-agent:static"],
-          "source": "RM0090 §28.3.7",
-          "confidence": 0.96
+          "name": "simplex_rx_master",
+          "description": "MSTR=1, BIDIMODE=0, RXONLY=1. Receive-only on MISO, MOSI not driven.",
+          "source": "RM0008 §25.3.3 p.679"
         }
       ],
-      "confidence": 0.92,
-      "source": "RM0090 §28.3"
+      "init_sequence": [
+        {"step": 1, "action": "Enable SPI peripheral clock via RCC", "note": "RCC_APB1ENR/APB2ENR SPI_EN bit"},
+        {"step": 2, "action": "Configure GPIO pins for SCK, MOSI, MISO, NSS",
+         "note": "SCK/MOSI/NSS: AF_PP 50MHz; MISO: Input_Float"},
+        {"step": 3, "action": "Write CR1 with CPOL, CPHA, BR, MSTR, SSM/SSI, DFF, LSBFIRST",
+         "note": "SPE must remain 0 at this point"},
+        {"step": 4, "action": "Write CR2 with SSOE, TXDMAEN, RXDMAEN, interrupt enables",
+         "note": "Only enable interrupts/DMA if using interrupt or DMA mode"},
+        {"step": 5, "action": "Set CR1.SPE=1 to enable SPI",
+         "note": "Must be last; BR/CPOL/CPHA cannot be changed after this"}
+      ],
+      "timing_constraints": [
+        {
+          "name": "max_baud_rate_apb2",
+          "value": 36000000,
+          "unit": "Hz",
+          "description": "SPI1 max baud rate = PCLK2/2 = 72MHz/2 = 36MHz",
+          "source": "RM0008 §25.3.1 p.675"
+        },
+        {
+          "name": "max_baud_rate_apb1",
+          "value": 18000000,
+          "unit": "Hz",
+          "description": "SPI2/SPI3 max baud rate = PCLK1/2 = 36MHz/2 = 18MHz",
+          "source": "RM0008 §25.3.1 p.675"
+        },
+        {
+          "name": "tx_timeout_default",
+          "value": 1000,
+          "unit": "ms",
+          "description": "Recommended software timeout for TXE polling",
+          "source": "RM0008 §25.3.7 p.688 (recommended practice)"
+        },
+        {
+          "name": "rx_timeout_default",
+          "value": 1000,
+          "unit": "ms",
+          "description": "Recommended software timeout for RXNE polling",
+          "source": "RM0008 §25.3.7 p.688 (recommended practice)"
+        }
+      ]
     },
 
+    "invariants": [
+      {
+        "id": "INV_SPI_001",
+        "expression": "CR1.MSTR==1 && CR1.SSM==1 => CR1.SSI==1",
+        "description": "When in master mode with software NSS (SSM=1), SSI must be 1, otherwise NSS is seen as low and MODF fault triggers.",
+        "severity": "ERROR",
+        "source": "RM0008 §25.3.1 p.677"
+      },
+      {
+        "id": "INV_SPI_002",
+        "expression": "CR1.SPE==1 => !writable(CR1.BR) && !writable(CR1.CPOL) && !writable(CR1.CPHA)",
+        "description": "BR, CPOL, CPHA must not be changed while SPI is enabled (SPE=1). Disable first.",
+        "severity": "ERROR",
+        "source": "RM0008 §25.5.1 p.715"
+      },
+      {
+        "id": "INV_SPI_003",
+        "expression": "SR.BSY==1 => !writable(CR1.SPE)",
+        "description": "SPE must not be cleared while BSY=1 (transfer in progress). Wait for BSY=0 first.",
+        "scope": "before_disable",
+        "severity": "WARNING",
+        "source": "RM0008 §25.3.8 p.692"
+      },
+      {
+        "id": "INV_SPI_004",
+        "expression": "CR1.SPE==1 => !writable(CR1.CRCEN) && !writable(CR1.DFF)",
+        "description": "CRCEN and DFF must not be changed while SPI is enabled (SPE=1). Disable first.",
+        "severity": "ERROR",
+        "source": "RM0008 §25.5.1 p.715"
+      }
+    ],
+
     "errata": [],
+
     "pending_reviews": [],
 
     "generation_metadata": {
-      "generated_by": "doc-analyst",
-      "generation_date": "2026-04-11",
-      "source_documents": [
-        { "name": "RM0090", "version": "Rev 19", "path": "docs/stm32f103_reference_manual.pdf" }
-      ],
-      "total_registers": 5,
-      "total_bitfields": 28,
-      "average_confidence": 0.97,
-      "fields_below_threshold": 0,
-      "validation_passed": true
+      "generated_by": "doc-analyst (direct PDF extraction, main conversation)",
+      "generated_at": "2026-04-12",
+      "source_pdf": "docs/stm32f103_reference_manual.pdf",
+      "source_pages": {
+        "memory_map": "50-52",
+        "rcc_apb2rstr": "105",
+        "rcc_apb1rstr": "107",
+        "rcc_apb2enr": "112",
+        "rcc_apb1enr": "114",
+        "nvic_vectors": "190-197",
+        "spi_functional": "675-694",
+        "spi_registers": "714-722"
+      },
+      "confidence": {
+        "overall": 0.92,
+        "register_map": 0.97,
+        "access_types": 0.90,
+        "interrupt_numbers": 0.93,
+        "dma_channels": 0.88,
+        "notes": "DMA channel confidence slightly lower — RM0008 DMA table cross-referenced from §13; verify with actual silicon. SR.CRCERR labeled 'rc_w0' in register table (RM0008 §25.5.3 p.717), mapped to W0C access type."
+      }
     }
   }
 }
