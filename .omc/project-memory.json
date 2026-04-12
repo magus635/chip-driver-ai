@@ -1,6 +1,6 @@
 {
   "version": "1.0.0",
-  "lastScanned": 1775877129019,
+  "lastScanned": 1775965078010,
   "projectRoot": "/Users/qlwang/Downloads/chip-driver-ai",
   "techStack": {
     "languages": [],
@@ -40,7 +40,7 @@
       "path": "build",
       "purpose": "Build output",
       "fileCount": 13,
-      "lastAccessed": 1775877129003,
+      "lastAccessed": 1775965077998,
       "keyFiles": [
         "can_driver.o",
         "can_drv.o",
@@ -53,7 +53,7 @@
       "path": "config",
       "purpose": "Configuration files",
       "fileCount": 3,
-      "lastAccessed": 1775877129004,
+      "lastAccessed": 1775965077998,
       "keyFiles": [
         "STM32F407VGT6.ld",
         "openocd.cfg",
@@ -64,191 +64,71 @@
       "path": "docs",
       "purpose": "Documentation",
       "fileCount": 5,
-      "lastAccessed": 1775877129004,
+      "lastAccessed": 1775965077998,
       "keyFiles": [
         "STM32F407_CAN_Reference.md",
         "architecture-guidelines.md",
         "embedded-c-coding-standard.md",
-        "i2c_section.txt",
+        "ir-specification.md",
         "stm32f103_reference_manual.pdf"
       ]
     },
     "scripts": {
       "path": "scripts",
       "purpose": "Build/utility scripts",
-      "fileCount": 5,
-      "lastAccessed": 1775877129005,
+      "fileCount": 7,
+      "lastAccessed": 1775965077998,
       "keyFiles": [
+        "check-arch.sh",
         "check-env.sh",
+        "check-invariants.py",
         "compile.sh",
-        "debug-snapshot.sh",
-        "flash.sh",
-        "link.sh"
+        "debug-snapshot.sh"
       ]
     },
     "src": {
       "path": "src",
       "purpose": "Source code",
       "fileCount": 1,
-      "lastAccessed": 1775877129005,
+      "lastAccessed": 1775965077998,
       "keyFiles": []
     }
   },
   "hotPaths": [
     {
-      "path": ".claude/agents/codegen-agent.md",
-      "accessCount": 10,
-      "lastAccessed": 1775907991311,
-      "type": "directory"
-    },
-    {
-      "path": "docs/architecture-guidelines.md",
-      "accessCount": 9,
-      "lastAccessed": 1775908010257,
-      "type": "file"
-    },
-    {
-      "path": "scripts/check-arch.sh",
-      "accessCount": 8,
-      "lastAccessed": 1775908031543,
-      "type": "file"
-    },
-    {
-      "path": "CLAUDE.md",
-      "accessCount": 6,
-      "lastAccessed": 1775907312633,
-      "type": "file"
-    },
-    {
-      "path": "src/drivers/Spi/include/spi_ll.h",
-      "accessCount": 5,
-      "lastAccessed": 1775907530709,
-      "type": "file"
-    },
-    {
-      "path": ".claude/agents/doc-analyst.md",
-      "accessCount": 4,
-      "lastAccessed": 1775893156564,
-      "type": "file"
-    },
-    {
-      "path": "scripts/check-invariants.py",
-      "accessCount": 4,
-      "lastAccessed": 1775906806697,
+      "path": ".claude/doc-summary.md",
+      "accessCount": 2,
+      "lastAccessed": 1775965311300,
       "type": "file"
     },
     {
       "path": "docs/spi_ir.json",
-      "accessCount": 4,
-      "lastAccessed": 1775907516400,
+      "accessCount": 2,
+      "lastAccessed": 1775965876437,
       "type": "file"
     },
     {
-      "path": "scripts/compile.sh",
-      "accessCount": 3,
-      "lastAccessed": 1775879108177,
-      "type": "file"
+      "path": "",
+      "accessCount": 2,
+      "lastAccessed": 1775966448369,
+      "type": "directory"
     },
     {
       "path": "docs/ir-specification.md",
-      "accessCount": 3,
-      "lastAccessed": 1775892917521,
-      "type": "file"
-    },
-    {
-      "path": "docs/embedded-c-coding-standard.md",
-      "accessCount": 2,
-      "lastAccessed": 1775877813798,
-      "type": "file"
-    },
-    {
-      "path": "src/drivers/Spi/include/spi_types.h",
-      "accessCount": 2,
-      "lastAccessed": 1775884884146,
-      "type": "file"
-    },
-    {
-      "path": "src/drivers/Spi/include/spi_api.h",
-      "accessCount": 2,
-      "lastAccessed": 1775884909107,
-      "type": "file"
-    },
-    {
-      "path": "src/drivers/Spi/src/spi_drv.c",
-      "accessCount": 2,
-      "lastAccessed": 1775884940159,
-      "type": "file"
-    },
-    {
-      "path": "src/drivers/Spi/include/spi_reg.h",
-      "accessCount": 2,
-      "lastAccessed": 1775907517391,
-      "type": "file"
-    },
-    {
-      "path": "src/drivers/Can/src/can_drv.c",
       "accessCount": 1,
-      "lastAccessed": 1775877419544,
-      "type": "file"
-    },
-    {
-      "path": "src/drivers/I2c/src/i2c_api.c",
-      "accessCount": 1,
-      "lastAccessed": 1775877429348,
-      "type": "file"
-    },
-    {
-      "path": "src/drivers/Can/include/can_ll.h",
-      "accessCount": 1,
-      "lastAccessed": 1775877429859,
-      "type": "file"
-    },
-    {
-      "path": "src/drivers/Can/include/can_types.h",
-      "accessCount": 1,
-      "lastAccessed": 1775877438519,
-      "type": "file"
-    },
-    {
-      "path": "src/drivers/I2c/include/i2c_types.h",
-      "accessCount": 1,
-      "lastAccessed": 1775877438919,
-      "type": "file"
-    },
-    {
-      "path": "src/drivers/Can/include/can_api.h",
-      "accessCount": 1,
-      "lastAccessed": 1775877448638,
-      "type": "file"
-    },
-    {
-      "path": "src/drivers/I2c/include/i2c_ll.h",
-      "accessCount": 1,
-      "lastAccessed": 1775877448820,
-      "type": "file"
-    },
-    {
-      "path": "config/project.env",
-      "accessCount": 1,
-      "lastAccessed": 1775877449769,
-      "type": "file"
-    },
-    {
-      "path": "src/drivers/Spi/include/spi_cfg.h",
-      "accessCount": 1,
-      "lastAccessed": 1775884754955,
+      "lastAccessed": 1775965083851,
       "type": "file"
     },
     {
       "path": ".claude/agents/reviewer-agent.md",
       "accessCount": 1,
-      "lastAccessed": 1775906831965,
+      "lastAccessed": 1775965571258,
       "type": "file"
     },
     {
-      "path": ".claude/lib/session-state.json",
+      "path": ".claude/agents/doc-analyst.md",
       "accessCount": 1,
-      "lastAccessed": 1775907430494,
+      "lastAccessed": 1775966452314,
       "type": "file"
     }
   ],
