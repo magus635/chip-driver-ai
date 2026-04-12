@@ -58,9 +58,9 @@
   "peripheral": {
     "name": "CAN",
     "full_name": "Controller Area Network",
-    "chip_family": "STM32F4",
-    "chip_model": "STM32F407VGT6",
-    "source_document": "RM0090 Rev 19",
+    "chip_family": "STM32F1",
+    "chip_model": "STM32F103C8T6",
+    "source_document": "RM0008 Rev 21",
     "source_sections": ["32.7 bxCAN registers", "32.4 Operating modes"],
 
     "instances": [ ... ],
@@ -571,7 +571,7 @@ value     := INT | HEX | field_ref
   "generated_by": "doc-analyst",
   "generation_date": "2026-04-11",
   "source_documents": [
-    {"name": "RM0090", "version": "Rev 19", "path": "docs/stm32f103_reference_manual.pdf"},
+    {"name": "RM0008", "version": "Rev 21", "path": "docs/stm32f103_reference_manual.pdf"},
     {"name": "ES0182", "version": "Rev 13", "path": "docs/stm32f4_errata.pdf"}
   ],
   "total_registers": 24,

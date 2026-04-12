@@ -31,7 +31,7 @@ chip-driver-ai/
 ├── config/
 │   ├── project.env                  # 工具链和芯片配置（必须修改）
 │   ├── openocd.cfg                  # OpenOCD 探针配置
-│   └── STM32F407VGT6.ld             # 链接脚本示例
+│   └── STM32F103C8T6.ld             # 链接脚本
 │
 ├── scripts/
 │   ├── check-env.sh                 # 环境检查
@@ -70,7 +70,7 @@ cd /path/to/your/project
 vim config/project.env
 
 # 放入芯片手册（PDF 或 Markdown 均可）
-cp /path/to/STM32F407_RM.pdf docs/
+cp /path/to/stm32f103_reference_manual.pdf docs/
 cp /path/to/design_spec.md docs/
 
 # 放入驱动框架（已有 TODO 的框架文件）

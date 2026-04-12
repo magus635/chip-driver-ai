@@ -1,23 +1,22 @@
-/* config/STM32F407VGT6.ld — STM32F407VGT6 链接脚本模板
- * Flash: 1024K @ 0x08000000
- * RAM:   128K  @ 0x20000000
- * CCM:   64K   @ 0x10000000 (仅 CPU 可访问，不可用于 DMA)
+/* config/STM32F103C8T6.ld — STM32F103C8T6 链接脚本
+ * Flash: 64K  @ 0x08000000
+ * RAM:   20K  @ 0x20000000
+ * 注意：F103 没有 CCM RAM
  *
- * 根据实际芯片修改 MEMORY 块中的大小
+ * 芯片手册来源：RM0008 §2.3.1 Embedded Flash, §2.3.2 Embedded SRAM
  */
 
 ENTRY(Reset_Handler)
 
 MEMORY
 {
-    FLASH  (rx)  : ORIGIN = 0x08000000, LENGTH = 1024K
-    RAM    (xrw) : ORIGIN = 0x20000000, LENGTH = 128K
-    CCMRAM (xrw) : ORIGIN = 0x10000000, LENGTH = 64K
+    FLASH  (rx)  : ORIGIN = 0x08000000, LENGTH = 64K
+    RAM    (xrw) : ORIGIN = 0x20000000, LENGTH = 20K
 }
 
 _estack = ORIGIN(RAM) + LENGTH(RAM);
-_Min_Heap_Size  = 0x400;  /* 1KB 堆 */
-_Min_Stack_Size = 0x800;  /* 2KB 栈 */
+_Min_Heap_Size  = 0x200;  /* 512B 堆 — F103C8 资源有限，缩减 */
+_Min_Stack_Size = 0x400;  /* 1KB 栈 */
 
 SECTIONS
 {
@@ -60,17 +59,6 @@ SECTIONS
     .init_array    : { KEEP(*(.init_array*)) }    >FLASH
     .fini_array    : { KEEP(*(.fini_array*)) }    >FLASH
     _sidata = LOADADDR(.data);
-
-    /* ── CCM RAM（快速访问，不可 DMA）─────────────────── */
-    .ccmram :
-    {
-        . = ALIGN(4);
-        _sccmram = .;
-        *(.ccmram)
-        *(.ccmram*)
-        . = ALIGN(4);
-        _eccmram = .;
-    } >CCMRAM AT> FLASH
 
     /* ── 初始化数据段 ───────────────────────────────── */
     .data :

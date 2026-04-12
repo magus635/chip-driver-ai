@@ -1,6 +1,6 @@
-# STM32F407 bxCAN 外设参考手册摘要
-# 来源：RM0090 Reference Manual (STM32F405/415, STM32F407/417, STM32F427/437, STM32F429/439)
-# 章节：Chapter 32 - Controller area network (bxCAN)
+# STM32F103 bxCAN 外设参考手册摘要
+# 来源：RM0008 Reference Manual (STM32F101xx, STM32F102xx, STM32F103xx, STM32F105xx, STM32F107xx)
+# 章节：Chapter 24 - Controller area network (bxCAN)
 
 ---
 
@@ -10,52 +10,66 @@
 |---|---|
 | 外设名称 | bxCAN (Basic Extended CAN) |
 | CAN1 基地址 | 0x40006400 |
-| CAN2 基地址 | 0x40006800 |
 | 总线 | APB1 |
-| APB1 时钟 | 42 MHz (SYSCLK=168MHz, AHB/4) |
+| APB1 时钟 | 36 MHz (SYSCLK=72MHz, APB1 prescaler=2) |
 | 支持协议 | CAN 2.0A / CAN 2.0B |
 | 发送邮箱 | 3 个 |
 | 接收 FIFO | 2 个（各 3 级深度） |
-| 过滤器组 | 28 个（CAN1: 0-13, CAN2: 14-27，可配置） |
+| 过滤器组 | 14 个（组 0-13） |
 
 ---
 
 ## 2. RCC 时钟配置
 
-### 2.1 APB1 外设时钟使能寄存器 (RCC_APB1ENR)
-- 地址：RCC 基地址 + 0x40 = 0x40023840
-- CAN1EN: bit 25 — CAN1 时钟使能
-- CAN2EN: bit 26 — CAN2 时钟使能
+RCC 基地址: 0x40021000
 
-### 2.2 AHB1 外设时钟使能寄存器 (RCC_AHB1ENR)
-- 地址：RCC 基地址 + 0x30 = 0x40023830
-- GPIOAEN: bit 0 — GPIOA 时钟使能
-- GPIOBEN: bit 1 — GPIOB 时钟使能
-- GPIOCEN: bit 2 — GPIOC 时钟使能
-- GPIODEN: bit 3 — GPIOD 时钟使能
+### 2.1 APB1 外设时钟使能寄存器 (RCC_APB1ENR)
+- 地址：RCC 基地址 + 0x1C = 0x4002101C
+- CAN1EN: bit 25 — CAN1 时钟使能
+
+### 2.2 APB2 外设时钟使能寄存器 (RCC_APB2ENR)
+- 地址：RCC 基地址 + 0x18 = 0x40021018
+- IOPAEN: bit 2 — GPIOA 时钟使能
+- IOPBEN: bit 3 — GPIOB 时钟使能
+- IOPCEN: bit 4 — GPIOC 时钟使能
+- IOPDEN: bit 5 — GPIOD 时钟使能
+- AFIOEN: bit 0 — AFIO 时钟使能（使用引脚重映射时必须使能）
 
 ---
 
-## 3. GPIO 复用功能映射
+## 3. GPIO 引脚映射与配置
 
-### 3.1 CAN1 引脚 (AF9)
-| 功能 | 引脚选项 1 | 引脚选项 2 | 引脚选项 3 | AF |
-|---|---|---|---|---|
-| CAN1_TX | PA12 | PB9 | PD1 | AF9 |
-| CAN1_RX | PA11 | PB8 | PD0 | AF9 |
+### 3.1 CAN1 引脚映射（通过 AFIO_MAPR 重映射）
 
-### 3.2 CAN2 引脚 (AF9)
-| 功能 | 引脚选项 1 | 引脚选项 2 | AF |
+| AFIO_MAPR CAN_REMAP[1:0] | CAN1_RX | CAN1_TX | 说明 |
 |---|---|---|---|
-| CAN2_TX | PB13 | PB6 | AF9 |
-| CAN2_RX | PB12 | PB5 | AF9 |
+| 00 (默认) | PA11 | PA12 | 无重映射 |
+| 10 (部分重映射) | PB8 | PB9 | 重映射到 PB8/PB9 |
+| 11 (完全重映射) | PD0 | PD1 | 重映射到 PD0/PD1 |
 
-### 3.3 GPIO 配置要求
-- MODER: 复用功能模式 (0b10)
-- OTYPER: 推挽输出 (0)
-- OSPEEDR: 高速 (0b10)
-- PUPDR: 上拉 (0b01)
-- AFR[x]: AF9 (0x9)
+AFIO_MAPR 寄存器地址: 0x40010004
+CAN_REMAP 位域: bits [14:13]
+
+### 3.2 GPIO 配置要求（F103 CRL/CRH 寄存器模型）
+
+CAN_TX 引脚 (输出):
+- CNF: 复用推挽输出 (0b10)
+- MODE: 50MHz 输出 (0b11)
+- 对应 CRL/CRH 4位配置值: 0b1011 (0xB)
+
+CAN_RX 引脚 (输入):
+- CNF: 上拉/下拉输入 (0b10)
+- MODE: 输入模式 (0b00)
+- 对应 CRL/CRH 4位配置值: 0b1000 (0x8)
+- 同时设置 ODR 对应位 = 1（选择上拉）
+
+### 3.3 GPIO CRL/CRH 寄存器说明
+
+每个 GPIO 引脚占 4 位配置空间:
+- 引脚 0-7: GPIOx_CRL (偏移 0x00)
+- 引脚 8-15: GPIOx_CRH (偏移 0x04)
+
+每 4 位格式: CNF[1:0] : MODE[1:0]
 
 ---
 
@@ -281,23 +295,24 @@
 
 | 位 | 名称 | 说明 |
 |---|---|---|
-| 13:8 | CAN2SB | CAN2 过滤器起始组号（默认14） |
 | 0 | FINIT | 过滤器初始化模式：1=初始化模式 |
 
+注意: F103 只有 CAN1，无 CAN2SB 字段的实际意义（无需分配过滤器给 CAN2）。
+
 ### 7.2 CAN_FM1R — 过滤器模式寄存器 (偏移 0x204)
-- 位 x (x=0-27): FBMx — 0=掩码模式，1=列表模式
+- 位 x (x=0-13): FBMx — 0=掩码模式，1=列表模式
 
 ### 7.3 CAN_FS1R — 过滤器比例寄存器 (偏移 0x20C)
-- 位 x (x=0-27): FSCx — 0=双16位，1=单32位
+- 位 x (x=0-13): FSCx — 0=双16位，1=单32位
 
 ### 7.4 CAN_FFA1R — 过滤器 FIFO 分配寄存器 (偏移 0x214)
-- 位 x (x=0-27): FFAx — 0=分配到FIFO 0，1=分配到FIFO 1
+- 位 x (x=0-13): FFAx — 0=分配到FIFO 0，1=分配到FIFO 1
 
 ### 7.5 CAN_FA1R — 过滤器激活寄存器 (偏移 0x21C)
-- 位 x (x=0-27): FACTx — 0=未激活，1=激活
+- 位 x (x=0-13): FACTx — 0=未激活，1=激活
 
 ### 7.6 CAN_FiRx — 过滤器组 i 寄存器 x (偏移 0x240 + i*0x08 + x*0x04)
-- i = 0-27 (过滤器组号)
+- i = 0-13 (过滤器组号)
 - x = 0-1 (每组两个寄存器)
 
 ---
@@ -322,42 +337,50 @@ BaudRate = APB1_CLK / ((BRP + 1) * (1 + (TS1 + 1) + (TS2 + 1)))
 - SJW ≤ TS2
 - 推荐采样点: 75% ~ 87.5%
 
-### 8.3 常用波特率配置表 (APB1 = 42 MHz)
+### 8.3 常用波特率配置表 (APB1 = 36 MHz, Tq_count = 12)
 
 | 波特率 | BRP | TS1 | TS2 | Tq数 | 采样点 | 实际波特率 |
 |---|---|---|---|---|---|---|
-| 1000 kbps | 2 | 10 | 1 | 14 | 85.7% | 1000.0 kbps |
-| 500 kbps | 5 | 10 | 1 | 14 | 85.7% | 500.0 kbps |
-| 250 kbps | 11 | 10 | 1 | 14 | 85.7% | 250.0 kbps |
-| 125 kbps | 23 | 10 | 1 | 14 | 85.7% | 125.0 kbps |
-| 100 kbps | 29 | 10 | 1 | 14 | 85.7% | 100.0 kbps |
-| 50 kbps | 59 | 10 | 1 | 14 | 85.7% | 50.0 kbps |
+| 1000 kbps | 2 | 8 | 1 | 12 | 83.3% | 1000.0 kbps |
+| 500 kbps | 5 | 8 | 1 | 12 | 83.3% | 500.0 kbps |
+| 250 kbps | 11 | 8 | 1 | 12 | 83.3% | 250.0 kbps |
+| 125 kbps | 23 | 8 | 1 | 12 | 83.3% | 125.0 kbps |
+| 100 kbps | 29 | 8 | 1 | 12 | 83.3% | 100.0 kbps |
+| 50 kbps | 59 | 8 | 1 | 12 | 83.3% | 50.0 kbps |
 
 ### 8.4 验算示例 (500 kbps)
 ```
-BaudRate = 42,000,000 / ((5+1) * (1 + (10+1) + (1+1)))
-         = 42,000,000 / (6 * 14)
-         = 42,000,000 / 84
+BaudRate = 36,000,000 / ((5+1) * (1 + (8+1) + (1+1)))
+         = 36,000,000 / (6 * 12)
+         = 36,000,000 / 72
          = 500,000 = 500 kbps ✓
 
-采样点 = (1 + 11) / 14 = 85.7% ✓
+采样点 = (1 + 9) / 12 = 83.3% ✓
 ```
 
 ---
 
-## 9. 初始化序列 (RM0090 §32.4.1)
+## 9. 初始化序列 (RM0008 §24.4.1)
 
 ```
 步骤 1: 使能时钟
-  RCC->AHB1ENR |= RCC_AHB1ENR_GPIOxEN;   // GPIO 时钟
-  RCC->APB1ENR |= RCC_APB1ENR_CAN1EN;     // CAN1 时钟
+  RCC->APB2ENR |= RCC_APB2ENR_IOPxEN;    // GPIO 端口时钟（如 IOPAEN for PA）
+  RCC->APB2ENR |= RCC_APB2ENR_AFIOEN;    // AFIO 时钟（引脚重映射需要）
+  RCC->APB1ENR |= RCC_APB1ENR_CAN1EN;    // CAN1 时钟
 
-步骤 2: 配置 GPIO 引脚为 AF9
-  GPIOx->MODER  — 设置对应引脚为复用功能 (0b10)
-  GPIOx->OTYPER — 推挽 (0)
-  GPIOx->OSPEEDR — 高速 (0b10)
-  GPIOx->PUPDR  — 上拉 (0b01)
-  GPIOx->AFR[pin/8] — 设置 AF9 (0x9)
+步骤 2: 配置 GPIO 引脚（以默认 PA11/PA12 为例）
+  // PA12 (CAN_TX): 复用推挽输出, 50MHz
+  GPIOA->CRH &= ~(0xF << 16);            // 清除 PA12 配置位 (pin12 在 CRH, 偏移 (12-8)*4=16)
+  GPIOA->CRH |=  (0xB << 16);            // CNF=10(复用推挽), MODE=11(50MHz)
+
+  // PA11 (CAN_RX): 上拉输入
+  GPIOA->CRH &= ~(0xF << 12);            // 清除 PA11 配置位 (pin11 在 CRH, 偏移 (11-8)*4=12)
+  GPIOA->CRH |=  (0x8 << 12);            // CNF=10(上拉/下拉输入), MODE=00(输入)
+  GPIOA->ODR |=  (1 << 11);              // 选择上拉
+
+  // 可选: 重映射到 PB8/PB9 (部分重映射)
+  // AFIO->MAPR &= ~(0x3 << 13);
+  // AFIO->MAPR |=  (0x2 << 13);         // CAN_REMAP = 10
 
 步骤 3: 请求进入初始化模式
   CAN1->MCR |= CAN_MCR_INRQ;
@@ -392,7 +415,7 @@ BaudRate = 42,000,000 / ((5+1) * (1 + (10+1) + (1+1)))
 
 ---
 
-## 10. 发送流程 (RM0090 §32.4.2)
+## 10. 发送流程 (RM0008 §24.4.2)
 
 ```
 1. 查找空闲邮箱
@@ -419,7 +442,7 @@ BaudRate = 42,000,000 / ((5+1) * (1 + (10+1) + (1+1)))
 
 ---
 
-## 11. 接收流程 (RM0090 §32.4.3)
+## 11. 接收流程 (RM0008 §24.4.3)
 
 ```
 1. 检查 FIFO 中是否有报文
