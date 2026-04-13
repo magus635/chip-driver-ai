@@ -11,12 +11,14 @@ build/
 
 # Claude AI State
 .claude/state/
+.claude/worktrees/
 .claude/last-*.log
 .claude/*-output.txt
 .claude/doc-summary.md
 .claude/pre-fix.md5
 .claude/post-fix.md5
 .claude/*.bak
+.claude/*.tmp
 
 # Mac
 .DS_Store
@@ -25,4 +27,3 @@ build/
 /tmp/
 *.tmp
 *.bak
-.claude/

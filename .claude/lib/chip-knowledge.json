@@ -1,0 +1,82 @@
+{
+  "version": "1.0.0",
+  "description": "芯片特定知识库 - 积累非文档派生的实践经验",
+  "last_updated": null,
+  "chips": {
+    "STM32F1": {
+      "family": "STM32F1xx",
+      "core": "Cortex-M3",
+      "quirks": [
+        {
+          "id": "Q001",
+          "peripheral": "SPI",
+          "description": "OVR标志清除需要特定序列：先读DR再读SR",
+          "workaround": "SPI_LL_ClearOverrun 必须实现为 (void)SPIx->DR; (void)SPIx->SR;",
+          "confidence": 0.95,
+          "source": "实践验证"
+        },
+        {
+          "id": "Q002",
+          "peripheral": "CAN",
+          "description": "BTR寄存器只能在初始化模式下写入",
+          "workaround": "配置波特率前必须先设置INRQ，等待INAK",
+          "confidence": 0.95,
+          "source": "参考手册"
+        },
+        {
+          "id": "Q003",
+          "peripheral": "FLASH",
+          "description": "Flash写入前必须解锁，写入后必须重新锁定",
+          "workaround": "使用FLASH_Unlock/FLASH_Lock序列",
+          "confidence": 0.90,
+          "source": "实践验证"
+        }
+      ],
+      "best_practices": [
+        {
+          "area": "时钟配置",
+          "practice": "使用HSE时检查RCC_CR的HSERDY位，超时处理",
+          "reason": "外部晶振可能不稳定或未焊接"
+        },
+        {
+          "area": "中断",
+          "practice": "中断处理函数中先清除标志位再处理数据",
+          "reason": "避免重入和标志位遗漏"
+        }
+      ],
+      "common_mistakes": [
+        {
+          "mistake": "忘记使能外设时钟就访问寄存器",
+          "symptom": "寄存器读取返回0xFFFFFFFF或硬件错误",
+          "fix": "确保RCC_APBxENR中对应位已置位"
+        },
+        {
+          "mistake": "SPI主模式下不设置SSI位",
+          "symptom": "MODF错误，SPI自动切换到从模式",
+          "fix": "SSM=1时必须同时设置SSI=1"
+        }
+      ]
+    },
+    "STM32F4": {
+      "family": "STM32F4xx",
+      "core": "Cortex-M4",
+      "quirks": [],
+      "best_practices": [],
+      "common_mistakes": []
+    }
+  },
+  "generic_knowledge": {
+    "ARM_Cortex_M": [
+      {
+        "topic": "中断优先级",
+        "knowledge": "数值越小优先级越高，分组由AIRCR.PRIGROUP决定",
+        "confidence": 0.95
+      },
+      {
+        "topic": "内存屏障",
+        "knowledge": "DMA传输后访问数据需要DSB/DMB确保一致性",
+        "confidence": 0.90
+      }
+    ]
+  }
+}
