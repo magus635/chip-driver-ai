@@ -96,6 +96,24 @@
   },
   "hotPaths": [
     {
+      "path": "",
+      "accessCount": 4,
+      "lastAccessed": 1775982477957,
+      "type": "directory"
+    },
+    {
+      "path": ".claude/review-report.md",
+      "accessCount": 4,
+      "lastAccessed": 1775982933202,
+      "type": "file"
+    },
+    {
+      "path": ".claude/lib/session-state.json",
+      "accessCount": 3,
+      "lastAccessed": 1775989859968,
+      "type": "file"
+    },
+    {
       "path": ".claude/doc-summary.md",
       "accessCount": 2,
       "lastAccessed": 1775965311300,
@@ -108,10 +126,22 @@
       "type": "file"
     },
     {
-      "path": "",
+      "path": "ir/spi_ir_summary.md",
       "accessCount": 2,
-      "lastAccessed": 1775966448369,
-      "type": "directory"
+      "lastAccessed": 1775982484210,
+      "type": "file"
+    },
+    {
+      "path": "ir/spi_ir.json",
+      "accessCount": 2,
+      "lastAccessed": 1775983194517,
+      "type": "file"
+    },
+    {
+      "path": "src/drivers/Spi/src/spi_ll.c",
+      "accessCount": 2,
+      "lastAccessed": 1775985231455,
+      "type": "file"
     },
     {
       "path": "docs/ir-specification.md",
@@ -129,6 +159,48 @@
       "path": ".claude/agents/doc-analyst.md",
       "accessCount": 1,
       "lastAccessed": 1775966452314,
+      "type": "file"
+    },
+    {
+      "path": "src/drivers/Spi/include/spi_reg.h",
+      "accessCount": 1,
+      "lastAccessed": 1775982485206,
+      "type": "file"
+    },
+    {
+      "path": "src/drivers/Spi/include/spi_types.h",
+      "accessCount": 1,
+      "lastAccessed": 1775982485534,
+      "type": "file"
+    },
+    {
+      "path": "src/drivers/Spi/include/spi_cfg.h",
+      "accessCount": 1,
+      "lastAccessed": 1775982486224,
+      "type": "file"
+    },
+    {
+      "path": "src/drivers/Spi/include/spi_ll.h",
+      "accessCount": 1,
+      "lastAccessed": 1775983889992,
+      "type": "file"
+    },
+    {
+      "path": "src/drivers/Spi/include/spi_api.h",
+      "accessCount": 1,
+      "lastAccessed": 1775983890252,
+      "type": "file"
+    },
+    {
+      "path": "src/drivers/Spi/src/spi_drv.c",
+      "accessCount": 1,
+      "lastAccessed": 1775984007425,
+      "type": "file"
+    },
+    {
+      "path": "src/drivers/Spi/src/spi_isr.c",
+      "accessCount": 1,
+      "lastAccessed": 1775984026420,
       "type": "file"
     }
   ],

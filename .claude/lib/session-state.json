@@ -4,63 +4,87 @@
   "description": "会话状态持久化 - 支持断点恢复",
 
   "current_session": {
-    "id": null,
-    "module": null,
-    "started_at": null,
-    "last_updated": null,
-    "current_step": null,
-    "status": "idle"
+    "id": "spi-2026-04-12",
+    "module": "spi",
+    "started_at": "2026-04-12",
+    "last_updated": "2026-04-12",
+    "current_step": "4",
+    "status": "completed"
   },
 
   "checkpoint": {
-    "step": null,
-    "substep": null,
-    "data": {},
+    "step": "4",
+    "substep": "link_success",
+    "data": {
+      "firmware_elf": "build/firmware.elf",
+      "text_bytes": 164,
+      "data_bytes": 8,
+      "bss_bytes": 1568
+    },
     "can_resume": false
   },
 
-  "step_history": [],
+  "step_history": [
+    {"step": "0", "status": "passed", "note": "env check OK"},
+    {"step": "1", "status": "cache_hit", "note": "ir/spi_ir.json reused"},
+    {"step": "1.5", "status": "passed", "note": "REVIEW_PASSED"},
+    {"step": "2", "status": "completed", "note": "5 files generated"},
+    {"step": "3", "status": "passed", "note": "compile OK iter=1"},
+    {"step": "4", "status": "passed", "note": "link OK iter=1"}
+  ],
 
   "agent_states": {
     "doc-analyst": {
-      "last_run": null,
-      "status": null,
-      "output_files": []
+      "last_run": "2026-04-12",
+      "status": "cache_hit",
+      "output_files": ["ir/spi_ir.json", "ir/spi_ir_summary.md"]
     },
     "reviewer-agent": {
-      "last_run": null,
-      "status": null,
-      "review_result": null
+      "last_run": "2026-04-12",
+      "status": "passed",
+      "review_result": "REVIEW_PASSED"
     },
     "codegen-agent": {
-      "last_run": null,
-      "status": null,
-      "generated_files": []
+      "last_run": "2026-04-12",
+      "status": "completed",
+      "generated_files": [
+        "src/drivers/Spi/include/spi_ll.h",
+        "src/drivers/Spi/include/spi_api.h",
+        "src/drivers/Spi/src/spi_ll.c",
+        "src/drivers/Spi/src/spi_drv.c",
+        "src/drivers/Spi/src/spi_isr.c"
+      ]
     },
     "compiler-agent": {
-      "last_run": null,
-      "status": null,
-      "iterations": 0,
+      "last_run": "2026-04-12",
+      "status": "success",
+      "iterations": 1,
       "last_error_hash": null
     },
     "linker-agent": {
-      "last_run": null,
-      "status": null,
-      "iterations": 0,
+      "last_run": "2026-04-12",
+      "status": "success",
+      "iterations": 1,
       "last_error_hash": null
     },
     "debugger-agent": {
       "last_run": null,
-      "status": null,
+      "status": "skipped_no_hw",
       "rounds": 0
     }
   },
 
   "artifacts": {
-    "doc_summary_md": null,
-    "doc_summary_json": null,
-    "review_report": null,
-    "repair_log": null,
-    "generated_files": []
+    "doc_summary_md": "ir/spi_ir_summary.md",
+    "doc_summary_json": "ir/spi_ir.json",
+    "review_report": ".claude/review-report.md",
+    "repair_log": ".claude/repair-log.md",
+    "generated_files": [
+      "src/drivers/Spi/include/spi_ll.h",
+      "src/drivers/Spi/include/spi_api.h",
+      "src/drivers/Spi/src/spi_ll.c",
+      "src/drivers/Spi/src/spi_drv.c",
+      "src/drivers/Spi/src/spi_isr.c"
+    ]
   }
 }
