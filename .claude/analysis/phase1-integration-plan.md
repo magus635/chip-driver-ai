@@ -12,7 +12,7 @@
 
 | Agent | 现有能力 | 缺陷 | 集成需求 |
 |-------|--------|------|--------|
-| **doc-analyst** | ✅ 结构化输出 (`.claude/doc-summary.md`) | 无状态记录 | 记录：分析完成时间、覆盖范围、信心度 |
+| **doc-analyst** | ✅ 结构化输出 (`ir/<module>_ir_summary.json`) | 无状态记录 | 记录：分析完成时间、覆盖范围、信心度 |
 | **compiler-agent** | ✅ 日志追加、MD5 校验、错误模式表 | 自由格式日志、无去重 | 记录每轮的错误哈希、修复 diff、假设 |
 | **linker-agent** | ✅ 读 .map 文件、修复决策树 | 自由格式日志、无跨阶段追踪 | 记录错误类型、根因分析、决策路径 |
 | **debugger-agent** | ✅ 分层分析、快照采集 | 快照无持久化、无修复追踪 | 记录快照数据、验证结论、回溯链接 |
@@ -22,7 +22,7 @@
 ```
 dev-driver (主命令)
 ├─ STEP 0: 环境检查 ────────────────────────→ 无状态
-├─ STEP 1: doc-analyst ────────────────────→ 输出 doc-summary.md（有结构）
+├─ STEP 1: doc-analyst ────────────────────→ 输出 `ir/<module>_ir_summary.json`
 ├─ STEP 2: 代码生成 ────────────────────────→ 修改源文件（无记录）
 ├─ STEP 3: compiler-agent ──────────────────→ 追加 repair-log.md（无结构）
 ├─ STEP 4: linker-agent ────────────────────→ 追加 repair-log.md（无结构）
@@ -140,7 +140,7 @@ dev-driver (主命令)
 
 ### 3.1 doc-analyst 集成点
 
-**当前**: 输出 `doc-summary.md`
+**当前**: 输出 `ir/<module>_ir_summary.md`
 
 **需要添加**:
 ```json

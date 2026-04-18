@@ -66,6 +66,7 @@
 | 9 | **每个模块必须实现 Init/DeInit 配对** | 只有 `Can_Init` 无 `Can_DeInit` | 补充 `Can_DeInit` 释放资源/恢复默认态 | 功能安全要求，保证模块可安全关闭和重启 |
 | 10 | **寄存器操作注释必须标注手册来源** | `CANx->BTR = btr;` | `CANx->BTR = btr; /* RM0090 §32.7.7 */` | R1 文档优先原则，保证可追溯性 |
 | 11 | **配置锁字段写入必须前置守卫** | `SPIx->CR1 = cr1;`（SPE 未清零就改 BR/CPOL/CPHA） | 先 `SPIx->CR1 &= ~SPI_CR1_SPE_Msk;` 再写 CR1，并注释 `/* Guard: INV_SPI_002 */` | IR 中标记为 LOCK 的不变式（`<guard> implies !writable(REG.FIELD)`）必须被 code-gen 消费；LL 函数不得假设调用者已满足前置条件。违规由 `scripts/check-invariants.py` 检出，reviewer-agent 拒绝放行 |
+| 12 | **DeInit/Disable 必须遵循 IR `disable_procedures` 中的模式特定关闭序列** | `Spi_DeInit` 中 full_duplex 分支仅做 TXE→BSY→SPE，遗漏首步 RXNE 读取 | 从 IR `disable_procedures` 读取每种模式的完整步骤列表，逐步生成代码并标注手册来源 | 不同通信模式（full_duplex/receive_only/bidirectional_rx）的关闭序列步骤和顺序各不相同（RM0008 §25.3.8）；遗漏任何一步都可能导致数据丢失、时钟残留或总线挂死。code-gen 必须消费 `disable_procedures`，reviewer-agent 必须逐步核对 |
 
 ### R9 · 置信度与人工审核
 
@@ -124,8 +125,8 @@ AI推荐: <推荐选项编号及理由>
 
 | Agent | 职责 |
 |---|---|
-| `doc-analyst` | 读取并结构化芯片手册，按 `docs/ir-specification.md` 规范输出外设 IR JSON（含寄存器 access type、W1C 标注、endinit 保护、来源引用），存放于 `ir/<module>_ir.json` |
-| `code-gen` | 读取 doc-analyst 产出的 IR JSON，按架构分层和编码规范生成驱动代码。寄存器层从 IR 直接映射（确定性），驱动逻辑层由 AI 推理生成 |
+| `doc-analyst` | 读取并结构化芯片手册，按 `docs/ir-specification.md` 规范输出外设 IR JSON。**必须执行 §5.2~5.3 的完整性检查**：(1) 配置矩阵穷举（master/slave 对称性），(2) 配置策略提取（single-master/multimaster），(3) 跨字段约束识别（LOCK/交互），(4) 初始化前置条件标注，(5) Errata 可用性检查。运行 `python3 scripts/validate-ir.py` 验证 IR 完整性。存放于 `ir/<module>_ir_summary.json` |
+| `code-gen` | 读取 doc-analyst 产出的 IR JSON，按架构分层和编码规范生成驱动代码。**必须消费** `configuration_strategies[]` 和 `cross_field_constraints[]`，在初始化代码中插入 guard 检查（如 INV_SPI_002）。寄存器层从 IR 直接映射（确定性），驱动逻辑层由 AI 推理生成 |
 | `reviewer-agent` | **编译前合规审查**（质量关卡）：执行 `scripts/check-arch.sh` 自动检查 + R8 反模式逐条人工审查。不通过则打回 code-gen 修改，禁止带违规代码进入编译 |
 | `compiler-agent` | 执行编译→捕获错误→定位→修复，循环至成功 |
 | `linker-agent` | 执行链接→分析 .map→定位符号问题→修复，循环至成功 |

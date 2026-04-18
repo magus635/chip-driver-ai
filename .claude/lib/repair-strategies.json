@@ -57,7 +57,7 @@
     "implement_function": {
       "description": "实现缺失的函数",
       "steps": [
-        "1. 从doc-summary.json获取函数预期行为",
+        "1. 从ir/<module>_ir_summary.json获取函数预期行为",
         "2. 参照框架中类似函数的实现模式",
         "3. 在对应的.c文件中添加实现",
         "4. 确保符合coding-standard"

@@ -1,158 +1,174 @@
 /**
  * @file    spi_api.h
- * @brief   SPI driver public API for STM32F103C8T6
- * @target  STM32F103C8T6
- * @ref     RM0008 Rev 21, Chapter 25 — Serial peripheral interface (SPI)
+ * @brief   STM32F103C8T6 SPI 公共接口层 (API)
  *
- * External interface for the SPI driver. Only spi_types.h and spi_cfg.h are
- * included. spi_ll.h and spi_reg.h must NOT be included here — implementation
- * details must not leak into the API layer (architecture guideline R8.7).
+ * @note    对上层唯一暴露的稳定接口。
+ *          禁止 include spi_ll.h 或 spi_reg.h（规则 R8-7）。
+ *          只 include spi_types.h 和 spi_cfg.h。
  *
- * Supported instances: SPI_INSTANCE_1 (SPI1, APB2) and SPI_INSTANCE_2 (SPI2, APB1).
- * SPI3 does not exist on STM32F103C8T6 (Medium-Density). — RM0008 §25
+ * Source:  RM0008 Rev 14, §25.3 SPI functional description
  */
 
 #ifndef SPI_API_H
 #define SPI_API_H
 
-#include <stdint.h>
 #include "spi_types.h"
 #include "spi_cfg.h"
 
-/* ── Instance selector (opaque index, not a register pointer) ─────────────── */
-typedef uint8_t Spi_InstanceType;
-
-/** SPI1 — APB2 bus, max 36 MHz (fPCLK2/2 at 72 MHz). — RM0008 §25, §3.3 */
-#define SPI_INSTANCE_1  (0U)
-
-/** SPI2 — APB1 bus, max 18 MHz (fPCLK1/2 at 36 MHz). — RM0008 §25, §3.3 */
-#define SPI_INSTANCE_2  (1U)
-
-/* ═══════════════════════════════════════════════════════════════════════════
- *  Lifecycle — Init / DeInit must always be used as a pair
- * ═══════════════════════════════════════════════════════════════════════════ */
+/*===========================================================================*/
+/* Initialisation / De-initialisation                                         */
+/*===========================================================================*/
 
 /**
- * @brief  Initialize an SPI peripheral instance.
+ * @brief  Initialise an SPI instance according to the provided configuration.
  *
- * Sequence (RM0008 §25.3.3):
- *   1. Enable APB clock via RCC.
- *   2. Configure GPIO (caller's responsibility — depends on application pinout).
- *   3. Write CR1 with SPE=0 (Guard: INV_SPI_002).
- *   4. Write CR2 (interrupt / DMA enables).
- *   5. Set CR1.SPE=1.
+ *         Full init sequence (RM0008 §25.3.3 p.680):
+ *           1. Enable peripheral clock (RCC).
+ *           2. Guard SPE=0 (INV_SPI_002).
+ *           3. Configure CR1: BR, CPOL/CPHA, DFF, LSBFIRST, NSS, MSTR.
+ *           4. Configure CR2: interrupt/DMA enables.
+ *           5. Enable SPI (SPE=1).
  *
- * Invariants enforced:
- *   INV_SPI_001: if SSM=1 and MSTR=1, SSI is forced to 1.
- *   INV_SPI_002: BR/CPOL/CPHA written only while SPE=0.
- *   INV_SPI_004: DFF/CRCEN written only while SPE=0.
- *
- * @param  instance  SPI_INSTANCE_1 or SPI_INSTANCE_2
- * @param  cfg       Pointer to configuration structure (must not be NULL)
- * @return SPI_OK on success; SPI_ERR_PARAM if instance or cfg is invalid
+ * @param[in]  pConfig  Pointer to configuration structure. Must not be NULL.
+ * @return     SPI_OK on success, SPI_ERR_PARAM if pConfig is NULL or invalid.
  */
-Spi_ReturnType Spi_Init(Spi_InstanceType instance, const Spi_ConfigType *cfg);
+Spi_ReturnType Spi_Init(const Spi_ConfigType *pConfig);
 
 /**
- * @brief  De-initialize an SPI instance and disable the peripheral clock.
+ * @brief  De-initialise an SPI instance and release the peripheral clock.
  *
- * Waits for BSY=0 before clearing SPE (Guard: INV_SPI_003).
- * Disables all interrupts in CR2 before disabling.
+ *         Full disable sequence (RM0008 §25.3.8 p.691):
+ *           1. Wait RXNE=1 and read last data.
+ *           2. Wait TXE=1.
+ *           3. Wait BSY=0 (INV_SPI_003).
+ *           4. Clear SPE=0.
+ *           5. Disable peripheral clock (RCC).
  *
- * @param  instance  SPI_INSTANCE_1 or SPI_INSTANCE_2
- * @return SPI_OK on success; SPI_ERR_TIMEOUT if BSY never cleared
+ * @param[in]  instanceIndex  Instance to de-initialise.
+ * @return     SPI_OK on success, SPI_ERR_TIMEOUT if BSY/TXE wait expired,
+ *             SPI_ERR_NOT_INIT if not previously initialised.
  */
-Spi_ReturnType Spi_DeInit(Spi_InstanceType instance);
+Spi_ReturnType Spi_DeInit(Spi_InstanceIndex_e instanceIndex);
 
-/* ═══════════════════════════════════════════════════════════════════════════
- *  Polling-mode data transfer
- * ═══════════════════════════════════════════════════════════════════════════ */
+/*===========================================================================*/
+/* Blocking (polling) data transfer                                           */
+/*===========================================================================*/
 
 /**
- * @brief  Transmit a buffer in polling mode (received data discarded).
+ * @brief  Full-duplex blocking transmit/receive (polling, 8-bit frame).
  *
- * For 8-bit frames, p_data is treated as uint8_t array.
- * For 16-bit frames, p_data is reinterpreted as uint16_t array; size is
- * the number of 16-bit frames, and p_data must be 2-byte aligned.
+ *         Transmits each byte in pTxBuf and simultaneously captures received
+ *         bytes into pRxBuf. If pRxBuf is NULL, received data is discarded.
+ *         If pTxBuf is NULL, 0xFF dummy bytes are transmitted.
+ *         All waits are guarded by SPI_CFG_TIMEOUT_LOOPS.
  *
- * @param  instance    SPI_INSTANCE_1 or SPI_INSTANCE_2
- * @param  p_data      Pointer to transmit buffer (must not be NULL)
- * @param  size        Number of data frames to send
- * @param  timeout_ms  Per-frame timeout in milliseconds
- * @return SPI_OK, SPI_ERR_TIMEOUT, SPI_ERR_BUSY, SPI_ERR_NOT_INIT, SPI_ERR_PARAM
+ * @param[in]  instanceIndex  Instance to use.
+ * @param[in]  pTxBuf         Transmit buffer (may be NULL for receive-only).
+ * @param[out] pRxBuf         Receive buffer (may be NULL for transmit-only).
+ * @param[in]  length         Number of bytes to transfer. Must be > 0.
+ * @return     SPI_OK, SPI_ERR_BUSY, SPI_ERR_TIMEOUT, SPI_ERR_PARAM,
+ *             SPI_ERR_OVERRUN, SPI_ERR_MODE_FAULT, SPI_ERR_NOT_INIT.
  */
-Spi_ReturnType Spi_Transmit(Spi_InstanceType  instance,
-                             const uint8_t    *p_data,
-                             uint16_t          size,
-                             uint32_t          timeout_ms);
+Spi_ReturnType Spi_TransferBlocking(Spi_InstanceIndex_e  instanceIndex,
+                                    const uint8_t       *pTxBuf,
+                                    uint8_t             *pRxBuf,
+                                    uint32_t             length);
 
 /**
- * @brief  Receive a buffer in polling mode (0xFF transmitted as dummy bytes).
+ * @brief  Blocking transmit only (polling, 8-bit frame).
  *
- * @param  instance    SPI_INSTANCE_1 or SPI_INSTANCE_2
- * @param  p_buf       Pointer to receive buffer (must not be NULL)
- * @param  size        Number of data frames to receive
- * @param  timeout_ms  Per-frame timeout in milliseconds
- * @return SPI_OK, SPI_ERR_TIMEOUT, SPI_ERR_OVERRUN, SPI_ERR_NOT_INIT, SPI_ERR_PARAM
+ * @param[in]  instanceIndex  Instance to use.
+ * @param[in]  pTxBuf         Transmit buffer. Must not be NULL.
+ * @param[in]  length         Number of bytes. Must be > 0.
+ * @return     SPI_OK or error code.
  */
-Spi_ReturnType Spi_Receive(Spi_InstanceType  instance,
-                            uint8_t          *p_buf,
-                            uint16_t          size,
-                            uint32_t          timeout_ms);
+Spi_ReturnType Spi_TransmitBlocking(Spi_InstanceIndex_e  instanceIndex,
+                                    const uint8_t       *pTxBuf,
+                                    uint32_t             length);
 
 /**
- * @brief  Full-duplex polling transmit and receive.
+ * @brief  Blocking receive only (polling, 8-bit frame).
+ *         Transmits 0xFF dummy bytes to generate clock.
  *
- * @param  instance    SPI_INSTANCE_1 or SPI_INSTANCE_2
- * @param  p_tx_data   Pointer to transmit buffer (must not be NULL)
- * @param  p_rx_buf    Pointer to receive buffer (must not be NULL)
- * @param  size        Number of data frames
- * @param  timeout_ms  Per-frame timeout in milliseconds
- * @return SPI_OK, SPI_ERR_TIMEOUT, SPI_ERR_OVERRUN, SPI_ERR_NOT_INIT, SPI_ERR_PARAM
+ * @param[in]  instanceIndex  Instance to use.
+ * @param[out] pRxBuf         Receive buffer. Must not be NULL.
+ * @param[in]  length         Number of bytes. Must be > 0.
+ * @return     SPI_OK or error code.
  */
-Spi_ReturnType Spi_TransmitReceive(Spi_InstanceType  instance,
-                                    const uint8_t    *p_tx_data,
-                                    uint8_t          *p_rx_buf,
-                                    uint16_t          size,
-                                    uint32_t          timeout_ms);
+Spi_ReturnType Spi_ReceiveBlocking(Spi_InstanceIndex_e  instanceIndex,
+                                   uint8_t             *pRxBuf,
+                                   uint32_t             length);
 
-/* ═══════════════════════════════════════════════════════════════════════════
- *  Status and control
- * ═══════════════════════════════════════════════════════════════════════════ */
+/*===========================================================================*/
+/* Interrupt-driven (non-blocking) data transfer                              */
+/*===========================================================================*/
 
 /**
- * @brief  Retrieve the current driver status for an instance.
- * @param  instance  SPI_INSTANCE_1 or SPI_INSTANCE_2
- * @param  p_status  Output pointer — filled with state, error count, tx/rx counts
- * @return SPI_OK or SPI_ERR_PARAM (if p_status is NULL or instance invalid)
+ * @brief  Start a non-blocking full-duplex transfer (interrupt-driven).
+ *         Returns immediately; completion is signalled via Spi_IsrCallback_t
+ *         registered through Spi_RegisterCallback().
+ *
+ * @param[in]  instanceIndex  Instance to use.
+ * @param[in]  pTxBuf         Transmit buffer (may be NULL).
+ * @param[out] pRxBuf         Receive buffer (may be NULL).
+ * @param[in]  length         Number of bytes. Must be > 0.
+ * @return     SPI_OK if transfer started, SPI_ERR_BUSY if already running,
+ *             SPI_ERR_PARAM, SPI_ERR_NOT_INIT.
  */
-Spi_ReturnType Spi_GetStatus(Spi_InstanceType instance, Spi_StatusType *p_status);
+Spi_ReturnType Spi_TransferIT(Spi_InstanceIndex_e  instanceIndex,
+                               const uint8_t       *pTxBuf,
+                               uint8_t             *pRxBuf,
+                               uint32_t             length);
+
+/*===========================================================================*/
+/* Callback registration                                                      */
+/*===========================================================================*/
 
 /**
- * @brief  Abort an ongoing transfer and return driver to IDLE state.
- *         Clears pending error flags (OVR, MODF, CRCERR) after abort.
- * @param  instance  SPI_INSTANCE_1 or SPI_INSTANCE_2
- * @return SPI_OK or SPI_ERR_PARAM
+ * @brief  Callback type invoked from ISR context on transfer completion
+ *         or error.
+ *
+ * @param[in]  instanceIndex  Which instance completed.
+ * @param[in]  result         SPI_OK on success, error code otherwise.
  */
-Spi_ReturnType Spi_AbortTransfer(Spi_InstanceType instance);
-
-/* ═══════════════════════════════════════════════════════════════════════════
- *  ISR callback registration
- * ═══════════════════════════════════════════════════════════════════════════ */
+typedef void (*Spi_IsrCallback_t)(Spi_InstanceIndex_e instanceIndex,
+                                  Spi_ReturnType      result);
 
 /**
- * @brief  Callback type invoked from the SPI ISR on transfer-complete or error.
- * @param  instance  Which SPI instance triggered the event
- * @param  event     SPI_OK (transfer done) or an error code
+ * @brief  Register a transfer-complete callback for an instance.
+ *         Pass NULL to deregister.
+ *
+ * @param[in]  instanceIndex  Instance to register for.
+ * @param[in]  callback       Function pointer (may be NULL).
+ * @return     SPI_OK or SPI_ERR_PARAM.
  */
-typedef void (*Spi_CallbackType)(Spi_InstanceType instance, Spi_ReturnType event);
+Spi_ReturnType Spi_RegisterCallback(Spi_InstanceIndex_e instanceIndex,
+                                    Spi_IsrCallback_t   callback);
+
+/*===========================================================================*/
+/* Status query                                                               */
+/*===========================================================================*/
 
 /**
- * @brief  Register (or deregister) an event callback for the given instance.
- * @param  instance   SPI_INSTANCE_1 or SPI_INSTANCE_2
- * @param  callback   Function pointer; NULL to disable callbacks
- * @return SPI_OK or SPI_ERR_PARAM
+ * @brief  Query the current driver and hardware status of an instance.
+ *
+ * @param[in]  instanceIndex  Instance to query.
+ * @param[out] pStatus        Output status structure. Must not be NULL.
+ * @return     SPI_OK or SPI_ERR_PARAM.
  */
-Spi_ReturnType Spi_RegisterCallback(Spi_InstanceType instance, Spi_CallbackType callback);
+Spi_ReturnType Spi_GetStatus(Spi_InstanceIndex_e  instanceIndex,
+                              Spi_StatusType      *pStatus);
+
+/*===========================================================================*/
+/* ISR entry points (called from spi_isr.c vector handlers)                  */
+/*===========================================================================*/
+
+/**
+ * @brief  Common SPI interrupt handler — must be called from the vector ISR.
+ *         Handles TXE, RXNE, MODF, OVR, CRCERR flags.
+ *
+ * @param[in]  instanceIndex  Instance whose IRQ fired.
+ */
+void Spi_IRQHandler(Spi_InstanceIndex_e instanceIndex);
 
 #endif /* SPI_API_H */

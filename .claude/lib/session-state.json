@@ -4,11 +4,11 @@
   "description": "会话状态持久化 - 支持断点恢复",
 
   "current_session": {
-    "id": "spi-2026-04-12",
+    "id": "spi-2026-04-13-reset",
     "module": "spi",
-    "started_at": "2026-04-12",
-    "last_updated": "2026-04-12",
-    "current_step": "4",
+    "started_at": "2026-04-13",
+    "last_updated": "2026-04-13",
+    "current_step": "5",
     "status": "completed"
   },
 
@@ -25,61 +25,34 @@
   },
 
   "step_history": [
-    {"step": "0", "status": "passed", "note": "env check OK"},
-    {"step": "1", "status": "cache_hit", "note": "ir/spi_ir.json reused"},
-    {"step": "1.5", "status": "passed", "note": "REVIEW_PASSED"},
-    {"step": "2", "status": "completed", "note": "5 files generated"},
-    {"step": "3", "status": "passed", "note": "compile OK iter=1"},
-    {"step": "4", "status": "passed", "note": "link OK iter=1"}
+    {"step": "0", "status": "passed",    "note": "env check OK, 0 errors 2 warnings"},
+    {"step": "1", "status": "completed", "note": "IR generated from PDF, 7 regs, 4 invariants, 11 init steps"},
+    {"step": "1.5", "status": "passed",  "note": "REVIEW_PASSED, 2 issues fixed (CR2 access, ModeFault typo)"},
+    {"step": "2", "status": "completed", "note": "8 files generated, arch-check 0 violations"},
+    {"step": "3", "status": "passed",    "note": "compile OK iter=1, 0 errors"},
+    {"step": "4", "status": "passed",    "note": "link OK iter=1, 0 errors (5 expected warnings)"},
+    {"step": "5", "status": "skipped_no_hw", "note": "serial port not connected"}
   ],
 
   "agent_states": {
-    "doc-analyst": {
-      "last_run": "2026-04-12",
-      "status": "cache_hit",
-      "output_files": ["ir/spi_ir.json", "ir/spi_ir_summary.md"]
-    },
-    "reviewer-agent": {
-      "last_run": "2026-04-12",
-      "status": "passed",
-      "review_result": "REVIEW_PASSED"
-    },
-    "codegen-agent": {
-      "last_run": "2026-04-12",
-      "status": "completed",
-      "generated_files": [
-        "src/drivers/Spi/include/spi_ll.h",
-        "src/drivers/Spi/include/spi_api.h",
-        "src/drivers/Spi/src/spi_ll.c",
-        "src/drivers/Spi/src/spi_drv.c",
-        "src/drivers/Spi/src/spi_isr.c"
-      ]
-    },
-    "compiler-agent": {
-      "last_run": "2026-04-12",
-      "status": "success",
-      "iterations": 1,
-      "last_error_hash": null
-    },
-    "linker-agent": {
-      "last_run": "2026-04-12",
-      "status": "success",
-      "iterations": 1,
-      "last_error_hash": null
-    },
-    "debugger-agent": {
-      "last_run": null,
-      "status": "skipped_no_hw",
-      "rounds": 0
-    }
+    "doc-analyst":    {"status": "completed", "iterations": 1},
+    "reviewer-agent": {"status": "passed",    "review_result": "REVIEW_PASSED"},
+    "codegen-agent":  {"status": "completed", "files_generated": 8},
+    "compiler-agent": {"status": "success",   "iterations": 1},
+    "linker-agent":   {"status": "success",   "iterations": 1},
+    "debugger-agent": {"status": "skipped_no_hw", "rounds": 0}
   },
 
   "artifacts": {
-    "doc_summary_md": "ir/spi_ir_summary.md",
-    "doc_summary_json": "ir/spi_ir.json",
-    "review_report": ".claude/review-report.md",
-    "repair_log": ".claude/repair-log.md",
+    "doc_summary_md":   "ir/spi_ir_summary.md",
+    "doc_summary_json": "ir/spi_ir_summary.json",
+    "review_report":    ".claude/review-report.md",
+    "repair_log":       ".claude/repair-log.md",
+    "firmware_elf":     "build/firmware.elf",
     "generated_files": [
+      "src/drivers/Spi/include/spi_reg.h",
+      "src/drivers/Spi/include/spi_types.h",
+      "src/drivers/Spi/include/spi_cfg.h",
       "src/drivers/Spi/include/spi_ll.h",
       "src/drivers/Spi/include/spi_api.h",
       "src/drivers/Spi/src/spi_ll.c",

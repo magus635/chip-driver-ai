@@ -155,7 +155,7 @@ arm-none-eabi-size build/*.o | sort -k2 -nr | head -10
    ├─ 找到声明 → 函数声明了但未实现，需要 codegen-agent 补充
    └─ 未找到 → 可能是库函数或拼写错误
 
-4. 检查 doc-summary.json
+4. 检查 ir/<module>_ir_summary.json
    符号是否应该由驱动代码提供？
    ├─ 是 → 通知主控流程，需要重新生成
    └─ 否 → 可能是启动代码或 HAL 层缺失

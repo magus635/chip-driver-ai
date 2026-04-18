@@ -1,7 +1,7 @@
 # 外设中间表示规范 (Peripheral IR Specification)
 
 **版本**: 2.0
-**用途**: 定义 `doc-analyst` Agent 输出的结构化外设描述格式。**IR JSON 是唯一机器可消费真值源。**
+**用途**: 定义 `doc-analyst` Agent 输出的结构化外设描述格式。**ir/<module>_ir_summary.json** 是唯一机器可消费真值源。**
 **消费者**: `code-gen` Agent（从 IR 生成驱动代码）、`reviewer-agent`（验证代码与 IR 的一致性）、`check-invariants.py`（静态检查）
 
 ---
@@ -23,7 +23,7 @@
    ┌─────────────┐
    │  IR JSON     │  ← 本规范定义的格式
    │  <module>    │
-   │  _ir.json    │
+   │  _ir_summary.json    │
    └──────┬──────┘
           │ 输入
           ▼
@@ -43,7 +43,7 @@
 
 ## 2. 文件约定
 
-- **存放位置**: `ir/<module>_ir.json`（如 `ir/can_ir.json`、`ir/spi_ir.json`）
+- **存放位置**: `ir/<module>_ir_summary.json`（如 `ir/can_ir_summary.json`、`ir/spi_ir_summary.json`）
 - **编码**: UTF-8
 - **格式**: JSON（可通过 `jq .` 验证语法）
 - **生命周期**: doc-analyst 生成 → 人工审核确认 → code-gen 消费 → 随手册版本更新
@@ -72,6 +72,8 @@
     "atomic_sequences": [ ... ],
     "errors": [ ... ],
     "functional_model": { ... },
+    "configuration_strategies": [ ... ],
+    "cross_field_constraints": [ ... ],
     "errata": [ ... ],
 
     "pending_reviews": [ ... ],
@@ -273,6 +275,48 @@
 **必填字段**：`instance`, `bus`, `enable_register`, `enable_bit`, `source`
 **可选字段**：`reset_register`, `reset_bit`, `max_frequency_mhz`, `clock_source_mux`, `confidence`
 
+### 4.5b dma_channels — DMA 通道映射
+
+定义外设各实例使用的 DMA 通道及请求映射，供 code-gen 在 DMA 传输模式下生成正确的通道配置。
+
+```json
+"dma_channels": [
+  {
+    "instance": "SPI1",
+    "direction": "TX",
+    "dma_controller": "DMA1",
+    "channel": 3,
+    "request": "SPI1_TX",
+    "priority": "medium",
+    "source": "RM0008 §13.3.7 Table 78 p.282"
+  },
+  {
+    "instance": "SPI1",
+    "direction": "RX",
+    "dma_controller": "DMA1",
+    "channel": 2,
+    "request": "SPI1_RX",
+    "priority": "medium",
+    "source": "RM0008 §13.3.7 Table 78 p.282"
+  }
+]
+```
+
+**字段说明**：
+
+| 字段 | 类型 | 必填 | 说明 |
+|------|------|------|------|
+| `instance` | string | 是 | 外设实例名（如 `SPI1`） |
+| `direction` | enum | 是 | `TX` / `RX` / `MEM2MEM` |
+| `dma_controller` | string | 是 | DMA 控制器名（如 `DMA1`） |
+| `channel` | int | 是 | 通道编号（STM32F1 为固定映射，无 request mux） |
+| `request` | string | 否 | 请求源标识（STM32F1 由通道号隐含，F4/H7 需显式指定） |
+| `priority` | enum | 否 | 默认优先级：`low` / `medium` / `high` / `very_high` |
+| `source` | string | 是 | 手册引用 |
+| `confidence` | float | 否 | 置信度 (0.0-1.0) |
+
+**code-gen 消费规则**：为支持 DMA 的外设生成 `Xxx_TransferDMA()` 函数时，从此数组读取通道号和控制器，避免硬编码。
+
 ### 4.6 functional_model — 功能语义（AI 提取）
 
 ```json
@@ -425,7 +469,7 @@ value     := INT | HEX | field_ref
     "scope": "always",
     "violation_effect": "MSTR 被硬件清零，SR.MODF 置位，SPI 退化为从机",
     "enforced_by": ["code-gen:precondition", "reviewer-agent:static"],
-    "source": "RM0090 §28.3.3",
+    "source": "RM0008 §25.3.1 p.676, §25.5.1 p.715",
     "confidence": 0.98
   },
   {
@@ -435,7 +479,7 @@ value     := INT | HEX | field_ref
     "scope": "always",
     "violation_effect": "未定义行为（手册：not allowed）",
     "enforced_by": ["code-gen:precondition", "reviewer-agent:static"],
-    "source": "RM0090 §28.3.3",
+    "source": "RM0008 §25.5.1 p.714-715 Notes",
     "confidence": 0.99
   },
   {
@@ -445,7 +489,7 @@ value     := INT | HEX | field_ref
     "scope": "before_disable",
     "violation_effect": "最后一帧数据可能损坏或丢失",
     "enforced_by": ["code-gen:precondition"],
-    "source": "RM0090 §28.3.8",
+    "source": "RM0008 §25.3.8 p.691",
     "confidence": 0.99
   }
 ]
@@ -470,6 +514,8 @@ value     := INT | HEX | field_ref
     "confidence": 0.95
   }
 ]
+```
+
 ### 4.8 atomic_sequences — 原子操作序列
 
 当标志位的清除方式不是简单的读或写（如 SPI OVR 需要"先读 DR 再读 SR"），必须在 `atomic_sequences` 中定义精确的操作步骤，并在相应 bitfield 中通过 `clear_sequence` 引用：
@@ -564,7 +610,233 @@ value     := INT | HEX | field_ref
 
 **规则**：存在未解决的 `pending_reviews` 时，code-gen 禁止生成涉及该寄存器/位域的代码，直到人工审核完成。
 
-### 4.12 generation_metadata — 生成元信息
+### 4.12 configuration_strategies — 配置策略
+
+定义外设的不同**初始化和运行策略**（如单主机、多主机、特定应用场景），供 code-gen 生成对应的配置函数。
+
+```json
+"configuration_strategies": [
+  {
+    "id": "single_master_mode",
+    "name": "Single-Master Mode",
+    "description": "标准的单主机通信模式。主机控制 NSS，从机被动响应。",
+    "applies_to": ["master"],
+    "register_config": {
+      "CR1": {"MSTR": 1, "SSM": 1, "SSI": 1},
+      "CR2": {"SSOE": 0}
+    },
+    "prerequisites": [
+      "NSS pin configured as GPIO output",
+      "Master controls NSS signal timing"
+    ],
+    "constraints": [
+      "SSI must be 1 (INV_SPI_001)",
+      "SSOE must be 0 in single-master mode"
+    ],
+    "source": "RM0008 §25.3.3 p.680",
+    "confidence": 0.99
+  },
+  {
+    "id": "multimaster_mode",
+    "name": "Multimaster Mode (Arbitration)",
+    "description": "多主机竞争模式。每个节点通过 NSS 脚信号和 MODF 监听实现仲裁。",
+    "applies_to": ["master"],
+    "register_config": {
+      "CR1": {"MSTR": 1, "SSM": 0},
+      "CR2": {"SSOE": 0, "ERRIE": 1}
+    },
+    "prerequisites": [
+      "NSS configured as input (floating or pulled-up)",
+      "MODF interrupt enabled for collision detection",
+      "Application implements arbitration protocol"
+    ],
+    "constraints": [
+      "Cannot enable SSOE (CR2.SSOE=0)",
+      "Each master must implement arbitration protocol",
+      "MODF flag indicates collision; master must release bus and retry"
+    ],
+    "source": "RM0008 §25.3.1 p.676",
+    "confidence": 0.98
+  },
+  {
+    "id": "hardware_nss_slave_mode",
+    "name": "Hardware NSS Slave Mode",
+    "description": "从机使用硬件 NSS 管理。NSS 拉低时使能，拉高时禁用接收。",
+    "applies_to": ["slave"],
+    "register_config": {
+      "CR1": {"MSTR": 0, "SSM": 0},
+      "CR2": {"SSOE": 0}
+    },
+    "prerequisites": [
+      "NSS pin configured as input (floating)",
+      "Master controls NSS signal"
+    ],
+    "constraints": [
+      "Slave becomes active only when NSS is pulled low"
+    ],
+    "source": "RM0008 §25.3.2 p.678",
+    "confidence": 0.98
+  },
+  {
+    "id": "software_nss_slave_mode",
+    "name": "Software NSS Slave Mode",
+    "description": "从机使用软件 NSS 管理。SSI 位决定是否响应。",
+    "applies_to": ["slave"],
+    "register_config": {
+      "CR1": {"MSTR": 0, "SSM": 1, "SSI": 0},
+      "CR2": {"SSOE": 0}
+    },
+    "prerequisites": [
+      "NSS pin can be used for other purposes"
+    ],
+    "constraints": [
+      "SSI=0 allows MODF detection for collision handling"
+    ],
+    "source": "RM0008 §25.3.2 p.678",
+    "confidence": 0.98
+  }
+]
+```
+
+**字段说明**：
+
+| 字段 | 类型 | 说明 |
+|------|------|------|
+| `id` | string | 唯一标识，格式 `<mode>_<variant>` |
+| `name` | string | 可读名称 |
+| `description` | string | 详细功能说明 |
+| `applies_to` | string[] | 应用范围：`master` / `slave` / `both` |
+| `register_config` | object | 寄存器字段配置字典，按寄存器名组织 |
+| `prerequisites` | string[] | 前置条件（GPIO 配置、中断使能等） |
+| `constraints` | string[] | 运行约束和限制 |
+| `source` | string | 手册引用 |
+| `confidence` | float | 置信度 (0.0-1.0) |
+
+**code-gen 消费规则**：
+- 从 `configuration_strategies[]` 提取所有策略
+- 为每个策略生成一个高级配置函数（如 `SPI_ConfigMultimaster()`）
+- 函数内部调用 LL 层函数完成寄存器配置
+- 在函数文档中标注 `prerequisites` 和 `constraints`
+
+### 4.13 cross_field_constraints — 跨字段约束
+
+记录**两个或多个字段之间的依赖关系**，包括前置条件、相互作用、不变式、初始化顺序等。
+
+```json
+"cross_field_constraints": [
+  {
+    "id": "CONSTRAINT_SSI_MODF",
+    "type": "invariant_violation",
+    "title": "Master + Software NSS 时 SSI 必须=1（INV_SPI_001）",
+    "fields": ["CR1.MSTR", "CR1.SSM", "CR1.SSI"],
+    "description": "主机模式 + 软件 NSS 管理时，SSI 必须为 1。若 SSI=0，硬件会检测 NSS 为低电平（因为软件强制到管脚），触发 MODF 并自动清除 MSTR，导致 SPI 退化为从机。",
+    "precondition": "MSTR == 1 && SSM == 1 implies SSI == 1",
+    "violation_effect": "MODF flag set by hardware; MSTR automatically cleared; SPI forced to slave mode",
+    "enforced_by": ["code-gen:precondition", "reviewer-agent:static"],
+    "source": "RM0008 §25.3.1 p.676, §25.5.1 p.715",
+    "confidence": 0.99
+  },
+  {
+    "id": "CONSTRAINT_BR_SPE_LOCK",
+    "type": "precondition",
+    "title": "BR[2:0] 不可在 SPE=1 时修改",
+    "fields": ["CR1.BR", "CR1.SPE"],
+    "description": "BR (baud rate) 是 LOCK 字段，仅可在 SPE=0 时配置。SPE=1 时写入无效（未定义行为）。",
+    "precondition": "write_to(CR1.BR) requires CR1.SPE == 0",
+    "procedure": [
+      "Check if SPE == 1",
+      "If true, clear SPE (CR1.SPE = 0)",
+      "Wait for any pending transmission to complete",
+      "Modify BR[2:0]"
+    ],
+    "violation_effect": "Write to BR is silently ignored; actual baud rate does not change",
+    "enforced_by": ["code-gen:guard"],
+    "source": "RM0008 §25.5.1 p.715 Notes",
+    "confidence": 0.99
+  },
+  {
+    "id": "CONSTRAINT_DFF_CRC",
+    "type": "interaction",
+    "title": "DFF 修改时 CRC 寄存器复位",
+    "fields": ["CR1.DFF", "CR1.CRCEN", "RXCRCR", "TXCRCR"],
+    "description": "当改变 DFF（8位↔16位）时，CRC 寄存器（RXCRCR/TXCRCR）需通过切换 CRCEN 进行复位。否则可能残留前一次传输的 CRC 值，导致 CRC 校验错误。",
+    "precondition": "SPE == 0 && (DFF change detected)",
+    "procedure": [
+      "Ensure SPE == 0",
+      "Clear CRCEN (CR1.CRCEN = 0)",
+      "Change DFF (CR1.DFF = new_value)",
+      "Set CRCEN = 1 (if CRC is used)"
+    ],
+    "violation_effect": "CRC mismatch detection fails; stale CRC values cause spurious CRCERR",
+    "enforced_by": ["code-gen:guard", "reviewer-agent:static"],
+    "source": "RM0008 §25.5.1 Notes, Errata ES0306 (pending)",
+    "confidence": 0.85
+  },
+  {
+    "id": "CONSTRAINT_AFIO_GPIO_ORDER",
+    "type": "initialization_order",
+    "title": "AFIO 重映射必须在 GPIO 配置前完成",
+    "fields": ["AFIO_MAPR", "GPIO_CRL/CRH"],
+    "description": "对于支持重映射的外设（如 SPI1），AFIO_MAPR 重映射位必须在 GPIO 模式/复用配置之前设置。否则 GPIO 可能在错误的引脚上使能复用功能。",
+    "precondition": "if_remap_needed() then AFIO_MAPR_set before GPIO_config",
+    "procedure": [
+      "1. Check if SPI remapping is needed",
+      "2. If yes, set AFIO_MAPR.<peripheral>_REMAP bit",
+      "3. Then configure GPIO pins (CNF+MODE)"
+    ],
+    "applies_to": ["SPI1"],
+    "violation_effect": "GPIO复用配置作用到错误的物理引脚，导致通信无法建立",
+    "enforced_by": ["code-gen:order"],
+    "source": "RM0008 §9.3.10 p.176",
+    "confidence": 0.97
+  }
+]
+```
+
+**字段说明**：
+
+| 字段 | 类型 | 必填 | 说明 |
+|------|------|------|------|
+| `id` | string | 是 | 唯一标识，格式 `CONSTRAINT_<field1>_<field2>` |
+| `type` | enum | 是 | 约束类型：`interaction` / `precondition` / `invariant_violation` / `initialization_order` |
+| `fields` | string[] | 是 | 涉及的寄存器字段（全路径，如 `CR1.BR`） |
+| `description` | string | 是 | 详细说明为什么存在这个约束 |
+| `violation_effect` | string | 是 | 违反约束时硬件的实际行为 |
+| `source` | string | 是 | 手册引用 |
+| `title` | string | 否 | 简述（可选，用于人类快速浏览） |
+| `precondition` | string | 否 | 前置条件表达式或自然语言说明（`precondition` 类型建议提供） |
+| `procedure` | string[] | 否 | 正确处理步骤（`interaction` 和 `initialization_order` 类型建议提供） |
+| `applies_to` | string[] | 否 | 适用的外设实例（如 `["SPI1"]`，省略表示所有实例） |
+| `enforced_by` | string[] | 否 | 谁来保证：`code-gen:guard` / `code-gen:order` / `reviewer-agent:static` / `runtime:assert` |
+| `confidence` | float | 否 | 置信度 (0.0-1.0) |
+
+**约束类型说明**：
+
+| 类型 | 含义 | code-gen 处理 |
+|------|------|--------------|
+| `precondition` | 字段修改需要满足的前置条件 | 生成 guard 检查代码 |
+| `interaction` | 修改一个字段会影响其他字段 | 生成级联操作序列 |
+| `invariant_violation` | 字段组合违反硬件不变式 | 插入断言和合规检查 |
+| `initialization_order` | 初始化步骤的依赖顺序 | 确保 init_sequence 的执行顺序 |
+
+**code-gen 消费规则**：
+1. 遍历 `cross_field_constraints[]`
+2. 对于 `enforced_by: code-gen:guard` 的约束，在对应字段写入前生成条件检查
+3. 对于 `enforced_by: code-gen:order` 的约束，验证 `init_sequence` 中的步骤顺序
+4. 在生成的代码中插入注释标注约束 ID（如 `/* CONSTRAINT_BR_SPE_LOCK */`）
+
+示例（INV_SPI_002）：
+```c
+// Guard: CONSTRAINT_BR_SPE_LOCK
+// BR[2:0] must be configured when SPE=0
+if (SPIx->CR1 & SPI_CR1_SPE_Msk) {
+    SPIx->CR1 &= ~SPI_CR1_SPE_Msk;  // Clear SPE first
+}
+// Now safe to modify BR
+SPIx->CR1 = (SPIx->CR1 & ~SPI_CR1_BR_Msk) | ((br_value << SPI_CR1_BR_Pos) & SPI_CR1_BR_Msk);
+```
+
+### 4.14 generation_metadata — 生成元信息
 
 ```json
 "generation_metadata": {
@@ -586,6 +858,8 @@ value     := INT | HEX | field_ref
 
 ## 5. doc-analyst 工作流程
 
+### 5.1 核心提取步骤
+
 ```
 1. 读取芯片手册（PDF -> 文本/表格提取，或 SVD -> 直接解析）
 2. 逐个寄存器提取：name, offset, width, access, reset_value, bitfields
@@ -593,18 +867,248 @@ value     := INT | HEX | field_ref
    - 必须忠实反映手册标注（如 rc_w0 -> W0C, rc_w1 -> W1C）
    - 重点关注 W1C、W0C、RC、RC_SEQ、WO_TRIGGER 等特殊类型
    - 多步清除的标志位必须定义 atomic_sequence 并在 bitfield 中通过 clear_sequence 引用
-4. 提取功能描述：init_sequence（每步含 layer 标注）, operation_modes, error_handling
+4. 提取功能描述：init_sequence（每步含 layer 和 requires 标注）, operation_modes, error_handling
 5. 跨章节交叉提取：RCC 时钟(clock[])、GPIO 复用(gpio_config[])、NVIC 中断(interrupts[])、DMA 通道(dma_channels[])
-6. 检查勘误表（若 docs/ 下存在 errata 文件）
-7. 对 confidence < 0.85 的字段，创建 pending_review
-8. 输出 IR JSON 到 ir/<module>_ir.json（唯一机器消费格式，遵循 SS3 顶层结构）
-9. 运行自验证：
-   - 寄存器偏移无重叠
-   - 位域无重叠且不超出寄存器宽度
-   - 所有字段都有 source 引用
-   - 所有 RC_SEQ 位域的 clear_sequence 引用存在于 atomic_sequences[]
-   - clock[] 与 instances[] 个数匹配
-   - JSON 语法合法（jq 验证）
+6. 提取配置策略(configuration_strategies[])：识别不同初始化/运行场景（如单主机、多主机、从机模式），标注 prerequisites 和 constraints
+7. 提取跨字段约束(cross_field_constraints[])：识别字段间的前置条件(precondition)、交互作用(interaction)、不变式违反(invariant_violation)、初始化顺序(initialization_order)
+8. 检查勘误表（若 docs/ 下存在 errata 文件）
+9. 对 confidence < 0.85 的字段，创建 pending_review
+10. 执行 §5.2~5.3 完整性检查，运行 `python3 scripts/validate-ir.py` 验证
+11. 输出 IR JSON 到 ir/<module>_ir_summary.json（唯一机器消费格式，遵循 §3 顶层结构）
+```
+
+### 5.2 完整性检查 — 模式穷举与约束提取
+
+**核心目标**：防止生成的 IR 遗漏操作模式、配置策略和跨字段约束。
+
+#### 5.2.1 配置矩阵穷举（Configuration Mode Matrix）
+
+对多位配置字段的所有**合法组合**进行穷举，并明确标注在 `operation_modes[]` 中。
+
+**方法**：
+1. 识别所有**配置主导字段**（影响硬件行为的寄存器位，如 BIDIMODE、RXONLY、MSTR）
+2. 枚举所有可能的位值组合
+3. 查阅手册确定哪些组合**合法**、哪些**保留**、哪些**非法**
+4. 对每个合法组合，创建一个 `operation_modes[]` 条目
+
+**SPI 示例**（应覆盖但原 IR 缺失的模式）：
+
+```json
+"operation_modes": [
+  // 全双工模式（BIDIMODE=0, RXONLY=0）
+  {"name": "full_duplex_master", "cr1": {"BIDIMODE": 0, "RXONLY": 0, "MSTR": 1}},
+  {"name": "full_duplex_slave", "cr1": {"BIDIMODE": 0, "RXONLY": 0, "MSTR": 0}},
+  
+  // 仅接收模式（BIDIMODE=0, RXONLY=1）— 缺失 slave variant
+  {"name": "receive_only_master", "cr1": {"BIDIMODE": 0, "RXONLY": 1, "MSTR": 1}},
+  {"name": "receive_only_slave", "cr1": {"BIDIMODE": 0, "RXONLY": 1, "MSTR": 0}},  // ← 原IR缺失
+  
+  // 单线双向模式（BIDIMODE=1, RXONLY=ignored, BIDIOE控制方向）
+  {"name": "bidirectional_tx_master", "cr1": {"BIDIMODE": 1, "BIDIOE": 1, "MSTR": 1}},
+  {"name": "bidirectional_rx_master", "cr1": {"BIDIMODE": 1, "BIDIOE": 0, "MSTR": 1}},
+  {"name": "bidirectional_tx_slave", "cr1": {"BIDIMODE": 1, "BIDIOE": 1, "MSTR": 0}},    // ← 原IR缺失
+  {"name": "bidirectional_rx_slave", "cr1": {"BIDIMODE": 1, "BIDIOE": 0, "MSTR": 0}}     // ← 原IR缺失
+]
+```
+
+**检查清单**：
+- [ ] 对每个多位字段组合（如 BIDIMODE × RXONLY × MSTR），是否列举了所有 2^n 种理论组合？
+- [ ] 是否明确标注了哪些组合保留或非法（在 description 中或 `pending_reviews` 中）？
+- [ ] master/slave 的对称模式是否都出现了？
+
+#### 5.2.2 配置策略提取（Configuration Strategies）
+
+识别**不同的初始化和运行策略**，这些策略可能不是单纯的寄存器位组合，而是**场景级别的配置**。
+
+**SPI 示例**（原 IR 未明确列出）：
+
+```json
+"configuration_strategies": [
+  {
+    "id": "single_master_mode",
+    "name": "Single-Master Mode",
+    "description": "标准的单主机通信模式。主机控制 NSS，从机被动响应。",
+    "applies_to": ["master"],
+    "register_config": {
+      "CR1": {"MSTR": 1, "SSM": 1, "SSI": 1},  // ← INV_SPI_001: SSI必须=1
+      "CR2": {"SSOE": 0}                        // 禁止 SSOE 在 single-master
+    },
+    "prerequisites": ["NSS pin configured as GPIO output"],
+    "source": "RM0008 §25.3.3"
+  },
+  {
+    "id": "multimaster_mode",
+    "name": "Multimaster Mode (Arbitration)",
+    "description": "多主机竞争模式。每个节点通过 NSS 脚信号和 MODF 监听实现仲裁。",
+    "applies_to": ["master"],
+    "register_config": {
+      "CR1": {"MSTR": 1, "SSM": 0},             // 硬件 NSS 模式
+      "CR2": {"SSOE": 0}                        // CRITICAL: 禁止启用 SSOE
+    },
+    "prerequisites": [
+      "NSS configured as input (floating or pulled up)",
+      "MODF interrupt enabled (CR2.ERRIE=1) for collision detection",
+      "Each master drives NSS low only during its own transmission"
+    ],
+    "constraints": [
+      "Cannot use SSOE in multimaster environment",
+      "MODF flag indicates collision; master must release bus and retry"
+    ],
+    "source": "RM0008 §25.3.1"
+  },
+  {
+    "id": "hardware_nss_slave_mode",
+    "name": "Hardware NSS Slave Mode",
+    "description": "从机使用硬件 NSS 管理。NSS 拉低时使能，拉高时禁用接收。",
+    "applies_to": ["slave"],
+    "register_config": {
+      "CR1": {"MSTR": 0, "SSM": 0},
+      "CR2": {"SSOE": 0}
+    },
+    "prerequisites": ["NSS pin configured as input (floating)"],
+    "source": "RM0008 §25.3.2"
+  }
+]
+```
+
+#### 5.2.3 跨字段约束识别（Cross-field Constraints）
+
+识别**两个或多个字段之间的依赖关系**，包括：
+- **字段修改的前置条件**（如 DFF 必须在 SPE=0 时修改）
+- **字段间的相互作用**（如修改 DFF 时需重置 CRC）
+- **字段的互斥关系**（如某些组合是非法的）
+
+**格式**：
+
+```json
+"cross_field_constraints": [
+  {
+    "id": "CONSTRAINT_DFF_CRC",
+    "type": "interaction",
+    "title": "DFF 修改时 CRC 寄存器复位",
+    "fields": ["CR1.DFF", "CR1.CRCEN", "RXCRCR", "TXCRCR"],
+    "description": "当改变 DFF（8位↔16位）时，CRC 寄存器（RXCRCR/TXCRCR）需通过切换 CRCEN 进行复位。否则可能残留前一次传输的 CRC 值。",
+    "precondition": "SPE == 0 && (DFF change detected)",
+    "procedure": [
+      "Clear CRCEN (CR1.CRCEN = 0)",
+      "Change DFF",
+      "Set CRCEN = 1 (if CRC is used)"
+    ],
+    "violation_effect": "CRC mismatch detection fails; stale CRC values cause spurious CRCERR",
+    "source": "RM0008 §25.5.1 Notes, Errata ES0306 (pending confirmation)"
+  },
+  {
+    "id": "CONSTRAINT_BR_SPE_LOCK",
+    "type": "precondition",
+    "title": "BR[2:0] 不可在 SPE=1 时修改",
+    "fields": ["CR1.BR", "CR1.SPE"],
+    "description": "BR (baud rate) 是 LOCK 字段，仅可在 SPE=0 时配置。SPE=1 时写入无效。",
+    "precondition": "write_to(CR1.BR) requires CR1.SPE == 0",
+    "violation_effect": "Write to BR is silently ignored; actual baud rate does not change",
+    "source": "RM0008 §25.5.1 p.715 Notes"
+  },
+  {
+    "id": "CONSTRAINT_SSI_MODF",
+    "type": "invariant_violation",
+    "title": "Master + Software NSS 时 SSI 必须=1（INV_SPI_001）",
+    "fields": ["CR1.MSTR", "CR1.SSM", "CR1.SSI"],
+    "description": "主机模式 + 软件 NSS 管理时，SSI 必须为 1。若 SSI=0，硬件会检测 NSS 为低电平（因为软件强制到管脚），触发 MODF 并自动清除 MSTR，导致 SPI 退化为从机。",
+    "precondition": "MSTR == 1 && SSM == 1 implies SSI == 1",
+    "violation_effect": "MODF flag set by hardware; MSTR automatically cleared; SPI forced to slave mode",
+    "enforced_by": ["code-gen:precondition", "reviewer-agent:static"],
+    "source": "RM0008 §25.3.1, §25.5.1"
+  },
+  {
+    "id": "CONSTRAINT_AFIO_GPIO_ORDER",
+    "type": "initialization_order",
+    "title": "AFIO 重映射必须在 GPIO 配置前完成",
+    "fields": ["AFIO_MAPR", "GPIO_CRL/CRH"],
+    "description": "对于支持重映射的外设（如 SPI1），AFIO_MAPR 重映射位必须在 GPIO 模式/复用配置之前设置。否则 GPIO 可能在错误的引脚上使能复用功能。",
+    "procedure": [
+      "1. Set AFIO_MAPR.SPI1_REMAP (if needed)",
+      "2. Then configure GPIO pins (CNF+MODE)"
+    ],
+    "applies_to": ["SPI1"],
+    "violation_effect": "GPIO复用配置作用到错误的物理引脚，导致通信无法建立",
+    "source": "RM0008 §9.3.10"
+  }
+]
+```
+
+#### 5.2.4 初始化序列的前置条件标注
+
+在 `functional_model.init_sequence` 的每一步中，若某字段依赖前置条件，显式标注 `requires` 字段：
+
+```json
+"init_sequence": [
+  {
+    "order": 1,
+    "description": "Enable SPI peripheral clock via RCC",
+    "register": "RCC_APB2ENR",
+    "field": "SPI1EN",
+    "layer": "drv",
+    "source": "RM0008 §7.3.7"
+  },
+  {
+    "order": 2,
+    "description": "Configure AFIO remapping (if needed)",
+    "register": "AFIO_MAPR",
+    "field": "SPI1_REMAP",
+    "value": "0 or 1",
+    "condition": "depends on desired pin mapping",
+    "layer": "drv",
+    "source": "RM0008 §9.3.10",
+    "note": "Must be done BEFORE GPIO configuration"
+  },
+  {
+    "order": 3,
+    "description": "Configure GPIO pins for SPI alternate function",
+    "register": "GPIOx_CRL/CRH",
+    "field": "CNFy, MODEy",
+    "layer": "drv",
+    "requires": "step 2 completed (if AFIO remap needed)",
+    "source": "RM0008 §9.1.11"
+  },
+  {
+    "order": 4,
+    "description": "Guard: ensure SPE=0 before modifying LOCK fields",
+    "register": "CR1",
+    "field": "SPE",
+    "value": "0",
+    "layer": "ll",
+    "guard": "INV_SPI_002",
+    "requires": "must be checked before any CR1 field modification",
+    "source": "RM0008 §25.5.1 Notes"
+  }
+  // ...more steps
+]
+```
+
+### 5.3 完整性检查流程
+
+完成上述 5.2 的提取后，运行以下自验证：
+
+```
+A. 模式完整性
+  - [ ] 配置矩阵穷举：所有主导字段的组合都有对应 operation_modes 条目或 pending_review
+  - [ ] master/slave 对称性：slave 版本是否都列出了？
+  
+B. 策略完整性
+  - [ ] configuration_strategies[] 是否覆盖了所有重要的使用场景？（single-master, multimaster, etc.）
+  - [ ] 每个策略是否标注了 prerequisites 和 constraints？
+  
+C. 约束完整性
+  - [ ] 是否识别了所有 LOCK 字段及其前置条件？
+  - [ ] 是否识别了所有跨字段依赖？
+  - [ ] 初始化序列中的每一步是否有前置条件标注（requires）？
+  
+D. 初始化顺序
+  - [ ] init_sequence 中依赖其他步骤的项是否显式标注了 requires？
+  - [ ] AFIO/GPIO/外设时钟的顺序是否正确？
+  
+E. Errata
+  - [ ] 是否存在来自 docs/ 的 errata 文件？
+  - [ ] 若缺失，是否在 pending_reviews 中标注？
 ```
 
 ---
@@ -641,9 +1145,11 @@ code-gen 从 IR JSON 生成代码时，**必须遵守**以下映射关系：
 
 | IR 字段 | 生成目标 |
 |---------|---------|
-| `functional_model.init_sequence` | `Xxx_Init()` 函数体中的操作顺序。按 `layer` 字段决定：`ll` -> 调用 LL 函数，`drv` -> 在 drv 层组装逻辑（含等待循环、跨模块调用） |
+| `functional_model.init_sequence` | `Xxx_Init()` 函数体中的操作顺序。按 `layer` 字段决定：`ll` -> 调用 LL 函数，`drv` -> 在 drv 层组装逻辑（含等待循环、跨模块调用）。根据 `requires` 字段验证步骤间依赖关系，确保前置步骤先执行（如 RCC 时钟使能 → GPIO 配置 → SPI 配置） |
 | `functional_model.deinit_sequence` | `Xxx_DeInit()` 函数体 |
 | `functional_model.operation_modes` | 模式枚举和配置逻辑 |
+| `configuration_strategies` | 为每个策略生成高级配置函数（如 `SPI_ConfigMultimaster()`），内部调用 LL 层函数。在函数文档中标注 prerequisites 和 constraints |
+| `cross_field_constraints` | 在涉及约束字段的初始化代码中插入 guard 检查和级联操作。使用 `enforced_by` 字段决定放置位置。在代码中插入注释标注约束 ID（如 `/* CONSTRAINT_BR_SPE_LOCK */`） |
 | `errors[]` | 错误处理函数，按 `recovery_sequence` 引用调用对应 LL 封装 |
 | `errata[].workaround` | 在对应代码位置插入 workaround 并注释 errata ID |
 
@@ -655,7 +1161,7 @@ doc-analyst 输出 IR 后，必须通过以下自验证：
 
 | # | 检查项 | 方法 |
 |---|--------|------|
-| 1 | JSON 语法合法 | `jq . ir/<module>_ir.json` |
+| 1 | JSON 语法合法 | `jq . ir/<module>_ir_summary.json` |
 | 2 | 所有寄存器偏移无重叠 | 脚本检查 offset + width/8 不交叉 |
 | 3 | 所有位域无重叠 | 同一寄存器内 bit_offset + bit_width 不交叉 |
 | 4 | 位域不超出寄存器宽度 | bit_offset + bit_width <= register.width |
@@ -666,3 +1172,7 @@ doc-analyst 输出 IR 后，必须通过以下自验证：
 | 9 | `interrupts[]` 非空且每项有 `irq_number` | 无中断的外设需显式标注 |
 | 10 | `pending_reviews` 中无未解决项（仅 code-gen 前检查） | `resolved == true` |
 | 11 | `average_confidence >= 0.85` | 否则整体需人工审核 |
+| 12 | `configuration_strategies[]` 非空 | 至少包含 1 种策略；多主机/单主机等重要场景都应列出 |
+| 13 | `cross_field_constraints[]` 非空 | 至少包含 1 个约束；所有 LOCK 字段、字段交互、初始化顺序都应列出 |
+| 14 | 约束的 `violation_effect` 清晰 | 每个约束都明确描述违反后果（"未定义行为" / "硬件自动修复" / "数据丢失" 等） |
+| 15 | `init_sequence` 中关键步骤有 `requires` | 初始化顺序依赖（如 AFIO → GPIO）都应标注 |

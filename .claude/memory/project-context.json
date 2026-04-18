@@ -43,7 +43,7 @@
         "src/drivers/Spi/include/spi_api.h",
         "src/drivers/Spi/src/spi_drv.c"
       ],
-      "notes": ["IR JSON 已完成 (ir/spi_ir.json)，代码尚未生成"]
+      "notes": ["IR JSON 已完成 (ir/spi_ir_summary.json)，代码尚未生成"]
     },
     "uart": {
       "status": "not_started",

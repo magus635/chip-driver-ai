@@ -93,7 +93,7 @@ bash scripts/compile.sh
   "steps": [
     "grep -r 'CAN_BASE' src/ --include='*.h'",
     "如果找到，添加对应的 #include",
-    "如果未找到，检查 doc-summary.json 是否应该生成"
+    "如果未找到，检查 ir/<module>_ir_summary.json 是否应该生成"
   ],
   "fallback": "add_declaration"
 }

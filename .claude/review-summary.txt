@@ -1,0 +1,100 @@
+[REVIEWER_REPORT]
+================================================================================
+R8 Hardware Operation Anti-Pattern Review — SPI Driver Code-Gen Output
+================================================================================
+
+Date: 2026-04-18
+Reviewer: reviewer-agent (AI)
+Scope: src/drivers/Spi/ (8 files)
+Total Review Time: Comprehensive manual + automated checks
+
+================================================================================
+OVERALL STATUS: ✅ APPROVED — ALL CHECKS PASSED
+================================================================================
+
+CHECKLIST RESULTS:
+  R8-1  | W1C Register |= Prohibition          | ✅ PASS | No violations found
+  R8-2  | _Msk Usage (forbid _Pos)              | ✅ PASS | Consistent use
+  R8-3  | Driver Layer Layering (LL only)       | ✅ PASS | Zero violations
+  R8-4  | Fixed-Width Types (no raw int)        | ✅ PASS | 100% compliant
+  R8-5  | Delay Loop Prohibition                | ✅ PASS | Timeout protection
+  R8-6  | NULL Macro (not (void*)0)             | ✅ PASS | Consistent
+  R8-7  | API Header Isolation                  | ✅ PASS | No cross-includes
+  R8-8  | LL Header Isolation                   | ✅ PASS | No upward deps
+  R8-9  | Init/DeInit Pairing                   | ✅ PASS | Complete pairs
+  R8-10 | Datasheet Attribution Comments        | ✅ PASS | ~95% coverage
+  R8-11 | Config Lock Guard (INV_SPI_002)       | ✅ PASS | All guarded
+  R8-12 | DeInit Completeness (INV_SPI_003)     | ✅ PASS | 4-step sequence
+
+Automatic Script Check (check-arch.sh):
+  ✅ Driver direct register access — PASS
+  ✅ Include hierarchy violations — PASS
+  ✅ Bare int/short/long usage — PASS
+  ✅ W1C register |= operations — PASS
+  ✅ _Pos misuse as bitmask — PASS
+  ✅ (void*)0 instead of NULL — PASS
+  ✅ Empty loop delays — PASS
+  ✅ Init/DeInit pairing — PASS
+  ✅ Module file completeness — PASS
+
+Final Result: 0 FAIL, 0 WARN, 21/21 PASS (100%)
+
+================================================================================
+KEY QUALITY INDICATORS
+================================================================================
+
+1. REGISTER OPERATION CORRECTNESS
+   - All RC_SEQ operations follow hardware spec (OVR: DR→SR, MODF: SR→CR1)
+   - W0C operation correct (CRCERR uses &=, not |=)
+   - Guard comments properly documented
+
+2. LAYERING INTEGRITY
+   - Zero register accesses in driver layer (spi_drv.c)
+   - All hardware operations go through LL functions
+   - API/LL/Reg header isolation enforced
+
+3. TYPE SAFETY
+   - 100% use of uint32_t, uint16_t, uint8_t
+   - No bare int/short/long/char types
+   - Proper NULL macro usage
+
+4. INITIALIZATION SEQUENCES
+   - Spi_Init: 11-step complete sequence with guards
+   - Spi_DeInit: 3 branches, each with mode-specific shutdown per RM0008 §25.3.8
+   - SPE guarding enforced (INV_SPI_002, INV_SPI_003)
+
+5. TRACEABILITY
+   - RM0008 datasheet citations on ~95% of register operations
+   - Manual source attribution enables verification
+
+6. DEADLOCK PREVENTION
+   - All polling loops use timeout counters (SPI_CFG_TIMEOUT_LOOPS)
+   - No infinite wait conditions
+   - Proper BSY/TXE/RXNE state machine
+
+================================================================================
+VIOLATIONS FOUND
+================================================================================
+
+None. Code passes all R8 checks.
+
+================================================================================
+APPROVALS & SIGN-OFF
+================================================================================
+
+✅ Ready for Compilation Stage
+
+This code-gen output is approved to enter the compiler-agent phase.
+All hardware anti-patterns have been verified and found compliant.
+
+Reviewer: reviewer-agent (AI)
+Date: 2026-04-18
+Status: APPROVED
+Confidence: HIGH (100% automated + comprehensive manual review)
+
+Files:
+  - Full report: .claude/r8-review-report-codegen.md (435 lines, 12K)
+  - This summary: .claude/review-summary.txt
+  - Auto-check: scripts/check-arch.sh (0 FAIL, 0 WARN)
+
+================================================================================

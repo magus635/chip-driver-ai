@@ -1,10 +1,12 @@
 /**
- * @file spi_types.h
- * @brief SPI driver type definitions for STM32F103C8T6.
+ * @file    spi_types.h
+ * @brief   STM32F103C8T6 SPI 类型定义层
  *
- * This file contains all type definitions, enumerations, and structures
- * used by the SPI driver. No function declarations or register references
- * are included. Compliant with MISRA-C:2012.
+ * @note    集中定义跨层共用的数据结构、枚举、错误码。
+ *          禁止包含任何函数声明/实现或寄存器引用。
+ *          只允许 include C 标准库头文件。
+ *
+ * Source:  RM0008 Rev 14, §25.3 SPI functional description
  */
 
 #ifndef SPI_TYPES_H
@@ -13,130 +15,167 @@
 #include <stdint.h>
 #include <stdbool.h>
 
-/**
- * @brief SPI operation return codes.
- */
+/*===========================================================================*/
+/* Return / error code enumeration                                            */
+/*===========================================================================*/
+
 typedef enum
 {
-    SPI_OK            = 0,  /**< Operation completed successfully */
-    SPI_ERR_BUSY      = 1,  /**< SPI peripheral is busy */
-    SPI_ERR_PARAM     = 2,  /**< Invalid parameter supplied */
-    SPI_ERR_TIMEOUT   = 3,  /**< Operation timed out */
-    SPI_ERR_OVERRUN   = 4,  /**< Data overrun error */
-    SPI_ERR_MODF      = 5,  /**< Mode fault error */
-    SPI_ERR_CRCERR    = 6,  /**< CRC mismatch error */
-    SPI_ERR_NOT_INIT  = 7   /**< Driver not initialized */
+    SPI_OK              = 0,  /* Operation successful                        */
+    SPI_ERR_BUSY        = 1,  /* Peripheral or transfer in progress          */
+    SPI_ERR_PARAM       = 2,  /* Invalid parameter                           */
+    SPI_ERR_TIMEOUT     = 3,  /* Wait loop exceeded timeout limit            */
+    SPI_ERR_OVERRUN     = 4,  /* SR.OVR — overrun detected (RC_SEQ)          */
+    SPI_ERR_MODE_FAULT  = 5,  /* SR.MODF — mode fault detected (RC_SEQ)      */
+    SPI_ERR_CRC         = 6,  /* SR.CRCERR — CRC mismatch (W0C)             */
+    SPI_ERR_NOT_INIT    = 7   /* Module not initialised                      */
 } Spi_ReturnType;
 
-/**
- * @brief SPI driver state.
- */
+/*===========================================================================*/
+/* Baud rate prescaler                                                        */
+/* Source: RM0008 §25.5.1 p.715 CR1.BR[2:0]                                 */
+/*===========================================================================*/
+
 typedef enum
 {
-    SPI_STATE_UNINIT    = 0,  /**< Driver not yet initialized */
-    SPI_STATE_IDLE      = 1,  /**< Initialized and ready */
-    SPI_STATE_BUSY_TX   = 2,  /**< Transmission in progress */
-    SPI_STATE_BUSY_RX   = 3,  /**< Reception in progress */
-    SPI_STATE_BUSY_TX_RX = 4, /**< Full-duplex transfer in progress */
-    SPI_STATE_ERROR     = 5   /**< Error state */
-} Spi_StateType;
+    SPI_BAUD_DIV2   = 0U,  /* fPCLK / 2   */
+    SPI_BAUD_DIV4   = 1U,  /* fPCLK / 4   */
+    SPI_BAUD_DIV8   = 2U,  /* fPCLK / 8   */
+    SPI_BAUD_DIV16  = 3U,  /* fPCLK / 16  */
+    SPI_BAUD_DIV32  = 4U,  /* fPCLK / 32  */
+    SPI_BAUD_DIV64  = 5U,  /* fPCLK / 64  */
+    SPI_BAUD_DIV128 = 6U,  /* fPCLK / 128 */
+    SPI_BAUD_DIV256 = 7U   /* fPCLK / 256 */
+} Spi_BaudDiv_e;
 
-/**
- * @brief SPI master/slave mode selection.
- */
+/*===========================================================================*/
+/* Clock mode (CPOL / CPHA)                                                  */
+/* Source: RM0008 §25.3.3 p.680                                              */
+/*===========================================================================*/
+
 typedef enum
 {
-    SPI_MODE_MASTER = 0,  /**< Master mode */
-    SPI_MODE_SLAVE  = 1   /**< Slave mode */
-} Spi_ModeType;
+    SPI_MODE_0 = 0U,  /* CPOL=0, CPHA=0 — idle low,  capture on rising edge  */
+    SPI_MODE_1 = 1U,  /* CPOL=0, CPHA=1 — idle low,  capture on falling edge */
+    SPI_MODE_2 = 2U,  /* CPOL=1, CPHA=0 — idle high, capture on falling edge */
+    SPI_MODE_3 = 3U   /* CPOL=1, CPHA=1 — idle high, capture on rising edge  */
+} Spi_ClockMode_e;
 
-/**
- * @brief SPI baud rate prescaler values.
- *
- * The SPI clock is derived from APB clock divided by the prescaler.
- */
+/*===========================================================================*/
+/* Data frame format                                                          */
+/* Source: RM0008 §25.5.1 p.714 CR1.DFF                                     */
+/*===========================================================================*/
+
 typedef enum
 {
-    SPI_BAUD_DIV2   = 0,  /**< fPCLK / 2 */
-    SPI_BAUD_DIV4   = 1,  /**< fPCLK / 4 */
-    SPI_BAUD_DIV8   = 2,  /**< fPCLK / 8 */
-    SPI_BAUD_DIV16  = 3,  /**< fPCLK / 16 */
-    SPI_BAUD_DIV32  = 4,  /**< fPCLK / 32 */
-    SPI_BAUD_DIV64  = 5,  /**< fPCLK / 64 */
-    SPI_BAUD_DIV128 = 6,  /**< fPCLK / 128 */
-    SPI_BAUD_DIV256 = 7   /**< fPCLK / 256 */
-} Spi_BaudPrescalerType;
+    SPI_DFF_8BIT  = 0U,  /* 8-bit data frame  */
+    SPI_DFF_16BIT = 1U   /* 16-bit data frame */
+} Spi_DataFrameFormat_e;
 
-/**
- * @brief SPI data frame format.
- */
+/*===========================================================================*/
+/* Bit order                                                                  */
+/* Source: RM0008 §25.5.1 p.715 CR1.LSBFIRST                                */
+/*===========================================================================*/
+
 typedef enum
 {
-    SPI_FRAME_8BIT  = 0,  /**< 8-bit data frame */
-    SPI_FRAME_16BIT = 1   /**< 16-bit data frame */
-} Spi_DataFrameType;
+    SPI_FIRSTBIT_MSB = 0U,  /* MSB transmitted first */
+    SPI_FIRSTBIT_LSB = 1U   /* LSB transmitted first */
+} Spi_FirstBit_e;
 
-/**
- * @brief SPI clock polarity (CPOL).
- */
+/*===========================================================================*/
+/* Communication mode (BIDIMODE / RXONLY)                                     */
+/* Source: RM0008 §25.3.5 p.682, Table 177; IR operation_modes[]            */
+/*===========================================================================*/
+
 typedef enum
 {
-    SPI_CPOL_LOW  = 0,  /**< Clock idle state is low */
-    SPI_CPOL_HIGH = 1   /**< Clock idle state is high */
-} Spi_ClockPolarityType;
+    SPI_COMM_FULL_DUPLEX   = 0U,  /* BIDIMODE=0, RXONLY=0: 2-line, TX+RX      */
+    SPI_COMM_RECEIVE_ONLY  = 1U,  /* BIDIMODE=0, RXONLY=1: 2-line, RX only    */
+    SPI_COMM_BIDI_TX       = 2U,  /* BIDIMODE=1, BIDIOE=1: 1-line, TX         */
+    SPI_COMM_BIDI_RX       = 3U   /* BIDIMODE=1, BIDIOE=0: 1-line, RX         */
+} Spi_CommMode_e;
 
-/**
- * @brief SPI clock phase (CPHA).
- */
+/*===========================================================================*/
+/* NSS management mode                                                        */
+/* Source: RM0008 §25.3.1 p.676, §25.5.1 p.715 CR1.SSM, §25.5.2 p.716 CR2.SSOE */
+/* IR: configuration_strategies[]                                            */
+/*===========================================================================*/
+
 typedef enum
 {
-    SPI_CPHA_1EDGE = 0,  /**< Data captured on first clock edge */
-    SPI_CPHA_2EDGE = 1   /**< Data captured on second clock edge */
-} Spi_ClockPhaseType;
+    SPI_NSS_SOFT        = 0U,  /* Software NSS: SSM=1, SSI per role         */
+    SPI_NSS_HARD_INPUT  = 1U,  /* Hardware NSS input: SSM=0, SSOE=0         */
+    SPI_NSS_HARD_OUTPUT = 2U   /* Hardware NSS output: SSM=0, SSOE=1        */
+} Spi_NssMode_e;
 
-/**
- * @brief SPI NSS (slave select) management mode.
- */
+/*===========================================================================*/
+/* Master / slave selection                                                   */
+/* Source: RM0008 §25.5.1 p.715 CR1.MSTR                                    */
+/*===========================================================================*/
+
 typedef enum
 {
-    SPI_NSS_HARD = 0,  /**< Hardware NSS management */
-    SPI_NSS_SOFT = 1   /**< Software NSS management */
-} Spi_NssManageType;
+    SPI_SLAVE  = 0U,  /* Slave configuration  */
+    SPI_MASTER = 1U   /* Master configuration */
+} Spi_MasterSlave_e;
 
-/**
- * @brief SPI bit transmission order.
- */
+/*===========================================================================*/
+/* SPI instance index                                                         */
+/*===========================================================================*/
+
 typedef enum
 {
-    SPI_MSB_FIRST = 0,  /**< Most significant bit transmitted first */
-    SPI_LSB_FIRST = 1   /**< Least significant bit transmitted first */
-} Spi_BitOrderType;
+    SPI_INSTANCE_1 = 0U,  /* SPI1: base 0x40013000, APB2 */
+    SPI_INSTANCE_2 = 1U,  /* SPI2: base 0x40003800, APB1 */
+    SPI_INSTANCE_COUNT    /* Sentinel — number of instances */
+} Spi_InstanceIndex_e;
 
-/**
- * @brief SPI peripheral configuration structure.
- */
+/*===========================================================================*/
+/* Runtime module state                                                       */
+/*===========================================================================*/
+
+typedef enum
+{
+    SPI_STATE_UNINIT   = 0U,  /* Module not initialised     */
+    SPI_STATE_IDLE     = 1U,  /* Initialised, no transfer   */
+    SPI_STATE_BUSY_TX  = 2U,  /* Transmit in progress       */
+    SPI_STATE_BUSY_RX  = 3U,  /* Receive in progress        */
+    SPI_STATE_BUSY_TRX = 4U,  /* Full-duplex in progress    */
+    SPI_STATE_ERROR    = 5U   /* Error state, needs recovery */
+} Spi_State_e;
+
+/*===========================================================================*/
+/* Configuration structure (passed to Spi_Init)                              */
+/*===========================================================================*/
+
 typedef struct
 {
-    Spi_ModeType           mode;            /**< Master or slave mode */
-    Spi_BaudPrescalerType  baud_prescaler;  /**< Baud rate prescaler */
-    Spi_DataFrameType      data_frame;      /**< Data frame format (8/16 bit) */
-    Spi_ClockPolarityType  cpol;            /**< Clock polarity */
-    Spi_ClockPhaseType     cpha;            /**< Clock phase */
-    Spi_NssManageType      nss_manage;      /**< NSS management mode */
-    Spi_BitOrderType       bit_order;       /**< Bit transmission order */
-    bool                   crc_enable;      /**< CRC calculation enable */
-    uint16_t               crc_polynomial;  /**< CRC polynomial, default 0x0007 */
+    Spi_InstanceIndex_e    instanceIndex;  /* Which SPI peripheral to configure */
+    Spi_MasterSlave_e      masterSlave;    /* Master or slave mode               */
+    Spi_CommMode_e         commMode;       /* Communication mode (duplex/rx/bidi) */
+    Spi_BaudDiv_e          baudDiv;        /* Clock prescaler                    */
+    Spi_ClockMode_e        clockMode;      /* CPOL/CPHA combination              */
+    Spi_DataFrameFormat_e  dataFrame;      /* 8-bit or 16-bit frame              */
+    Spi_FirstBit_e         firstBit;       /* MSB or LSB first                   */
+    Spi_NssMode_e          nssMode;        /* NSS management strategy            */
+    bool                   crcEnable;      /* Hardware CRC enable                */
+    uint16_t               crcPolynomial;  /* CRC polynomial (default 0x0007)    */
 } Spi_ConfigType;
 
-/**
- * @brief SPI runtime status information.
- */
+/*===========================================================================*/
+/* Status snapshot (returned by Spi_GetStatus)                               */
+/*===========================================================================*/
+
 typedef struct
 {
-    Spi_StateType state;        /**< Current driver state */
-    uint32_t      error_count;  /**< Cumulative error count */
-    uint32_t      tx_count;     /**< Total bytes/frames transmitted */
-    uint32_t      rx_count;     /**< Total bytes/frames received */
+    Spi_State_e  state;      /* Current driver state       */
+    bool         isBusy;     /* SR.BSY flag                */
+    bool         txEmpty;    /* SR.TXE flag                */
+    bool         rxNotEmpty; /* SR.RXNE flag               */
+    bool         overrun;    /* SR.OVR flag                */
+    bool         modeFault;  /* SR.MODF flag               */
+    bool         crcError;   /* SR.CRCERR flag             */
 } Spi_StatusType;
 
 #endif /* SPI_TYPES_H */

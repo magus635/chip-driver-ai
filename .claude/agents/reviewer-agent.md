@@ -26,7 +26,7 @@
 
 ### 2. 偏移连续性与占位 (Offset Alignment)
 - 如果结构体成员声明为 `uint32_t`，它们在内存中间距即为 4
-- 严格比对 `doc-summary.md` 里的物理偏移量
+- 严格比对 `ir/<module>_ir_summary.md` 里的物理偏移量
 - 若偏移不连续，必须报错指出缺失了 `uint32_t Reserved;` 或类似的字节填充对齐
 - 验证结构体总大小是否与寄存器空间匹配
 
@@ -49,7 +49,7 @@ grep "CMSIS_HEADER_PATH" config/project.env 2>/dev/null || echo "NO_CMSIS_CONFIG
 
 **若检测到官方头文件：**
 1. 解析官方头文件中的外设基地址定义
-2. 逐一对比 doc-summary 中的：
+2. 逐一对比 ir/<module>_ir_summary.json 中的：
    - 外设基地址 vs CMSIS 定义（如 `CAN1_BASE`）
    - 寄存器偏移 vs 结构体成员顺序
    - 位域 `_Pos`/`_Msk` 宏 vs 官方宏
@@ -63,7 +63,7 @@ grep "CMSIS_HEADER_PATH" config/project.env 2>/dev/null || echo "NO_CMSIS_CONFIG
 
 ### 5. 初始化序列逻辑验证（新增）
 
-验证 `doc-summary` 中的初始化步骤是否符合硬件约束：
+验证 `ir/<module>_ir_summary.json` 中的初始化步骤是否符合硬件约束：
 
 **时钟依赖检查：**
 - 外设时钟使能必须在任何外设寄存器访问之前
@@ -106,13 +106,13 @@ grep "CMSIS_HEADER_PATH" config/project.env 2>/dev/null || echo "NO_CMSIS_CONFIG
 
 ### 6.5 硬件不变式静态校验（V2.1 新增 · 强制）
 
-**触发条件**：存在 `ir/<module>_ir.json` 且其 `functional_model.invariants[]` 非空。
+**触发条件**：存在 `ir/<module>_ir_summary.json` 且其 `functional_model.invariants[]` 非空。
 
 **执行命令**：
 ```bash
-python3 scripts/check-invariants.py ir/<module>_ir.json \
-    src/drivers/<Module>/include/*_ll.h \
-    src/drivers/<Module>/src/*.c
+python3 scripts/check-invariants.py ir/<module>_ir_summary.json \
+  src/drivers/<Module>/include/*_ll.h \
+  src/drivers/<Module>/src/*.c
 ```
 
 **语义**：

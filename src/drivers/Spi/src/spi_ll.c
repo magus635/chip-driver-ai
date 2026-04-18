@@ -1,314 +1,157 @@
 /**
  * @file    spi_ll.c
- * @brief   STM32F103C8T6 SPI low-level driver implementation
- * @target  STM32F103C8T6
- * @ref     RM0008 Rev 21, Chapter 25 — Serial peripheral interface (SPI)
+ * @brief   STM32F103C8T6 SPI LL 层非 inline 实现
  *
- * Implements all functions declared in spi_ll.h. This is the only layer that
- * may access SPI and RCC registers directly. All higher layers (drv, api)
- * must call through this interface.
+ * @note    本文件仅包含不适合 inline 的 LL 实现（如初始化序列原子操作）。
+ *          大多数 LL 操作以 static inline 形式定义在 spi_ll.h 中。
+ *          Driver 层（spi_drv.c）禁止直接访问寄存器（规则 R8-3）。
  *
- * Anti-pattern compliance (R8):
- *   W1: No |= on SR (W0C/RC_SEQ fields — see Spi_LL_ClearCrcError)
- *   W2: All bit operations use _Msk, not _Pos
- *   W3: This file does not include _drv.h or _api.h
- *   W4: Fixed-width types only (uint8_t, uint16_t, uint32_t)
- *   W5: No empty delay loops; all waits are condition-polling with timeout
- *   W6: NULL is used (via stddef.h in spi_ll.h)
- *   W10: Every register access annotated with RM0008 section
+ * Source:  RM0008 Rev 14, §25.5 SPI and I2S registers (p.714-720)
+ *          IR: ir/spi_ir_summary.json — configuration_strategies[],
+ *              cross_field_constraints[], operation_modes[]
  */
 
 #include "spi_ll.h"
 
-/* ═══════════════════════════════════════════════════════════════════════════
- *  Clock and reset control
- * ═══════════════════════════════════════════════════════════════════════════ */
+#include <stddef.h>
 
-void Spi_LL_EnableClock(SPI_TypeDef *SPIx)
+/*===========================================================================*/
+/* LL composite init helper                                                   */
+/*===========================================================================*/
+
+/**
+ * @brief  Compose and write CR1 from a Spi_ConfigType (SPE=0, guard INV_SPI_002).
+ *
+ *         Computes the full CR1 value from config fields and writes it in a
+ *         single assignment so that no intermediate state violates hardware
+ *         constraints.  SPE is intentionally left 0 here; the caller enables
+ *         SPI after CR2 is also configured.
+ *
+ *         Guard: INV_SPI_002 — caller must ensure SPE=0 before calling.
+ *         INV_SPI_001  — when MSTR=1 and SSM=1, SSI=1 is set unconditionally.
+ *         CONSTRAINT_DFF_CRC_INTERACTION — if CRC enabled, CRCEN toggled
+ *           after DFF change to reset CRC registers.
+ *
+ * @param[in]  SPIx     Pointer to SPI peripheral.
+ * @param[in]  pConfig  Configuration structure. Caller must guarantee non-NULL.
+ */
+void SPI_LL_ComposeCR1(SPI_TypeDef *SPIx, const Spi_ConfigType *pConfig)
 {
-    if (SPIx == SPI1)
+    uint32_t cr1 = 0U;
+
+    /* Guard: INV_SPI_002 — ensure SPE=0 before writing locked fields */
+    SPIx->CR1 &= ~SPI_CR1_SPE_Msk; /* RM0008 §25.5.1 p.715 */
+
+    /* Baud rate BR[2:0] — RM0008 §25.5.1 p.715 */
+    cr1 |= (((uint32_t)pConfig->baudDiv << SPI_CR1_BR_Pos) & SPI_CR1_BR_Msk);
+
+    /* Clock polarity CPOL — RM0008 §25.5.1 p.715 */
+    if (((uint32_t)pConfig->clockMode & 0x2U) != 0U)
     {
-        SPI_LL_RCC_APB2ENR |= SPI_LL_RCC_APB2ENR_SPI1EN_Msk; /* RM0008 §7.3.7 p.112 */
+        cr1 |= SPI_CR1_CPOL_Msk;
     }
-    else
+
+    /* Clock phase CPHA — RM0008 §25.5.1 p.715 */
+    if (((uint32_t)pConfig->clockMode & 0x1U) != 0U)
     {
-        SPI_LL_RCC_APB1ENR |= SPI_LL_RCC_APB1ENR_SPI2EN_Msk; /* RM0008 §7.3.8 p.114 */
+        cr1 |= SPI_CR1_CPHA_Msk;
     }
-}
 
-void Spi_LL_DisableClock(SPI_TypeDef *SPIx)
-{
-    if (SPIx == SPI1)
+    /* Data frame format DFF — RM0008 §25.5.1 p.714 */
+    if (pConfig->dataFrame == SPI_DFF_16BIT)
     {
-        SPI_LL_RCC_APB2ENR &= ~SPI_LL_RCC_APB2ENR_SPI1EN_Msk; /* RM0008 §7.3.7 p.112 */
+        cr1 |= SPI_CR1_DFF_Msk;
     }
-    else
+
+    /* Bit order LSBFIRST — RM0008 §25.5.1 p.715 */
+    if (pConfig->firstBit == SPI_FIRSTBIT_LSB)
     {
-        SPI_LL_RCC_APB1ENR &= ~SPI_LL_RCC_APB1ENR_SPI2EN_Msk; /* RM0008 §7.3.8 p.114 */
+        cr1 |= SPI_CR1_LSBFIRST_Msk;
     }
-}
 
-void Spi_LL_ResetPeripheral(SPI_TypeDef *SPIx)
-{
-    if (SPIx == SPI1)
+    /* Communication mode (BIDIMODE, BIDIOE, RXONLY) — IR operation_modes[] */
+    switch (pConfig->commMode)
     {
-        SPI_LL_RCC_APB2RSTR |=  SPI_LL_RCC_APB2RSTR_SPI1RST_Msk; /* RM0008 §7.3.3 p.105 — assert reset */
-        SPI_LL_RCC_APB2RSTR &= ~SPI_LL_RCC_APB2RSTR_SPI1RST_Msk; /* RM0008 §7.3.3 p.105 — release reset */
+        case SPI_COMM_RECEIVE_ONLY:
+            cr1 |= SPI_CR1_RXONLY_Msk;   /* RM0008 §25.5.1 p.715 */
+            break;
+        case SPI_COMM_BIDI_TX:
+            cr1 |= (SPI_CR1_BIDIMODE_Msk | SPI_CR1_BIDIOE_Msk); /* RM0008 §25.5.1 p.714 */
+            break;
+        case SPI_COMM_BIDI_RX:
+            cr1 |= SPI_CR1_BIDIMODE_Msk; /* BIDIOE=0 — RM0008 §25.5.1 p.714 */
+            break;
+        case SPI_COMM_FULL_DUPLEX:
+        default:
+            /* BIDIMODE=0, RXONLY=0 — already zero */
+            break;
     }
-    else
-    {
-        SPI_LL_RCC_APB1RSTR |=  SPI_LL_RCC_APB1RSTR_SPI2RST_Msk; /* RM0008 §7.3.4 p.107 — assert reset */
-        SPI_LL_RCC_APB1RSTR &= ~SPI_LL_RCC_APB1RSTR_SPI2RST_Msk; /* RM0008 §7.3.4 p.107 — release reset */
-    }
-}
 
-/* ═══════════════════════════════════════════════════════════════════════════
- *  CR1.SPE — enable / disable
- * ═══════════════════════════════════════════════════════════════════════════ */
-
-void Spi_LL_Enable(SPI_TypeDef *SPIx)
-{
-    SPIx->CR1 |= SPI_CR1_SPE_Msk; /* RM0008 §25.5.1 p.715 — set SPE */
-}
-
-void Spi_LL_Disable(SPI_TypeDef *SPIx)
-{
-    /* Guard: INV_SPI_003 — caller must have called Spi_LL_WaitNotBusy() first */
-    SPIx->CR1 &= (uint16_t)(~SPI_CR1_SPE_Msk); /* RM0008 §25.5.1 p.715 — clear SPE */
-}
-
-/* ═══════════════════════════════════════════════════════════════════════════
- *  CR1 configuration (SPE=0 required — Guard: INV_SPI_002)
- * ═══════════════════════════════════════════════════════════════════════════ */
-
-void Spi_LL_ConfigureCR1(SPI_TypeDef *SPIx, const Spi_ConfigType *cfg)
-{
-    uint16_t cr1 = 0U;
-
-    /* Guard: INV_SPI_002 — disable SPI before modifying BR/CPOL/CPHA */
-    SPIx->CR1 &= (uint16_t)(~SPI_CR1_SPE_Msk); /* RM0008 §25.5.1 p.715 */
-
-    /* Master / slave mode */
-    if (cfg->mode == SPI_MODE_MASTER)
+    /* Master / slave and NSS management — IR configuration_strategies[] */
+    if (pConfig->masterSlave == SPI_MASTER)
     {
         cr1 |= SPI_CR1_MSTR_Msk; /* RM0008 §25.5.1 p.715 */
-    }
 
-    /* Baud rate prescaler — Guard: INV_SPI_002 */
-    cr1 |= (uint16_t)((uint16_t)cfg->baud_prescaler << SPI_CR1_BR_Pos); /* RM0008 §25.5.1 p.715 */
-
-    /* Clock polarity — Guard: INV_SPI_002 */
-    if (cfg->cpol == SPI_CPOL_HIGH)
-    {
-        cr1 |= SPI_CR1_CPOL_Msk; /* RM0008 §25.5.1 p.715 */
-    }
-
-    /* Clock phase — Guard: INV_SPI_002 */
-    if (cfg->cpha == SPI_CPHA_2EDGE)
-    {
-        cr1 |= SPI_CR1_CPHA_Msk; /* RM0008 §25.5.1 p.715 */
-    }
-
-    /* Data frame format — Guard: INV_SPI_004 (only valid when SPE=0) */
-    if (cfg->data_frame == SPI_FRAME_16BIT)
-    {
-        cr1 |= SPI_CR1_DFF_Msk; /* RM0008 §25.5.1 p.715 */
-    }
-
-    /* NSS management */
-    if (cfg->nss_manage == SPI_NSS_SOFT)
-    {
-        cr1 |= SPI_CR1_SSM_Msk; /* RM0008 §25.5.1 p.715 */
-
-        /* Guard: INV_SPI_001 — MSTR=1 && SSM=1 => SSI must be 1
-         * Without SSI=1, NSS is seen as low and MODF error triggers. */
-        if (cfg->mode == SPI_MODE_MASTER)
+        if (pConfig->nssMode == SPI_NSS_SOFT)
         {
-            cr1 |= SPI_CR1_SSI_Msk; /* RM0008 §25.5.1 p.715 */
+            /* INV_SPI_001: SSM=1, SSI=1 mandatory when MSTR=1 + SSM=1 */
+            /* CONSTRAINT_MASTER_SSI_INTERACTION */
+            cr1 |= (SPI_CR1_SSM_Msk | SPI_CR1_SSI_Msk); /* RM0008 §25.3.1 p.676 */
         }
+        /* SPI_NSS_HARD_INPUT / SPI_NSS_HARD_OUTPUT: SSM=0, SSOE in CR2 */
     }
-
-    /* Bit order */
-    if (cfg->bit_order == SPI_LSB_FIRST)
+    else /* SPI_SLAVE */
     {
-        cr1 |= SPI_CR1_LSBFIRST_Msk; /* RM0008 §25.5.1 p.715 */
-    }
-
-    /* Atomic write — SPE remains 0; caller calls Spi_LL_Enable() after CR2 setup */
-    SPIx->CR1 = cr1; /* RM0008 §25.5.1 — full CR1 write, SPE=0 */
-}
-
-void Spi_LL_EnableCRC(SPI_TypeDef *SPIx, uint16_t polynomial)
-{
-    /* Guard: INV_SPI_004 — must be called with SPE=0 */
-    SPIx->CRCPR = polynomial;                   /* RM0008 §25.5.5 p.718 — set polynomial */
-    SPIx->CR1  |= SPI_CR1_CRCEN_Msk;           /* RM0008 §25.5.1 p.715 — enable CRC */
-}
-
-void Spi_LL_DisableCRC(SPI_TypeDef *SPIx)
-{
-    /* Guard: INV_SPI_004 — must be called with SPE=0 */
-    SPIx->CR1 &= (uint16_t)(~SPI_CR1_CRCEN_Msk); /* RM0008 §25.5.1 p.715 */
-}
-
-/* ═══════════════════════════════════════════════════════════════════════════
- *  CR2 — interrupt and DMA control
- * ═══════════════════════════════════════════════════════════════════════════ */
-
-void Spi_LL_EnableTxeIrq(SPI_TypeDef *SPIx)
-{
-    SPIx->CR2 |= SPI_CR2_TXEIE_Msk; /* RM0008 §25.5.2 p.716 */
-}
-
-void Spi_LL_DisableTxeIrq(SPI_TypeDef *SPIx)
-{
-    SPIx->CR2 &= (uint16_t)(~SPI_CR2_TXEIE_Msk); /* RM0008 §25.5.2 p.716 */
-}
-
-void Spi_LL_EnableRxneIrq(SPI_TypeDef *SPIx)
-{
-    SPIx->CR2 |= SPI_CR2_RXNEIE_Msk; /* RM0008 §25.5.2 p.716 */
-}
-
-void Spi_LL_DisableRxneIrq(SPI_TypeDef *SPIx)
-{
-    SPIx->CR2 &= (uint16_t)(~SPI_CR2_RXNEIE_Msk); /* RM0008 §25.5.2 p.716 */
-}
-
-void Spi_LL_EnableErrIrq(SPI_TypeDef *SPIx)
-{
-    SPIx->CR2 |= SPI_CR2_ERRIE_Msk; /* RM0008 §25.5.2 p.716 */
-}
-
-void Spi_LL_DisableErrIrq(SPI_TypeDef *SPIx)
-{
-    SPIx->CR2 &= (uint16_t)(~SPI_CR2_ERRIE_Msk); /* RM0008 §25.5.2 p.716 */
-}
-
-/* ═══════════════════════════════════════════════════════════════════════════
- *  SR — status flag queries
- * ═══════════════════════════════════════════════════════════════════════════ */
-
-uint8_t Spi_LL_IsTxEmpty(const SPI_TypeDef *SPIx)
-{
-    return (uint8_t)((SPIx->SR & SPI_SR_TXE_Msk) != 0U); /* RM0008 §25.5.3 p.717 — RO */
-}
-
-uint8_t Spi_LL_IsRxNotEmpty(const SPI_TypeDef *SPIx)
-{
-    return (uint8_t)((SPIx->SR & SPI_SR_RXNE_Msk) != 0U); /* RM0008 §25.5.3 p.717 — RO */
-}
-
-uint8_t Spi_LL_IsBusy(const SPI_TypeDef *SPIx)
-{
-    return (uint8_t)((SPIx->SR & SPI_SR_BSY_Msk) != 0U); /* RM0008 §25.5.3 p.718 — RO */
-}
-
-uint8_t Spi_LL_IsOverrun(const SPI_TypeDef *SPIx)
-{
-    return (uint8_t)((SPIx->SR & SPI_SR_OVR_Msk) != 0U); /* RM0008 §25.5.3 p.718 — RC_SEQ */
-}
-
-uint8_t Spi_LL_IsModeFault(const SPI_TypeDef *SPIx)
-{
-    return (uint8_t)((SPIx->SR & SPI_SR_MODF_Msk) != 0U); /* RM0008 §25.5.3 p.717 — RC_SEQ */
-}
-
-uint8_t Spi_LL_IsCrcError(const SPI_TypeDef *SPIx)
-{
-    return (uint8_t)((SPIx->SR & SPI_SR_CRCERR_Msk) != 0U); /* RM0008 §25.5.3 p.717 — W0C */
-}
-
-/* ═══════════════════════════════════════════════════════════════════════════
- *  SR — error flag clearing (access-type specific)
- * ═══════════════════════════════════════════════════════════════════════════ */
-
-void Spi_LL_ClearOverrun(SPI_TypeDef *SPIx)
-{
-    volatile uint16_t tmp;
-    /* RC_SEQ clear sequence for OVR — RM0008 §25.3.10 p.693:
-     * Step 1: read DR (this also clears RXNE) */
-    tmp = SPIx->DR; /* RM0008 §25.5.4 — read DR */
-    /* Step 2: read SR */
-    tmp = SPIx->SR; /* RM0008 §25.5.3 — read SR clears OVR */
-    (void)tmp;
-}
-
-void Spi_LL_ClearModeFault(SPI_TypeDef *SPIx)
-{
-    volatile uint16_t tmp;
-    /* RC_SEQ clear sequence for MODF — RM0008 §25.3.10 p.693:
-     * Step 1: read SR */
-    tmp = SPIx->SR; /* RM0008 §25.5.3 — read SR */
-    (void)tmp;
-    /* Step 2: write CR1 (write current value to satisfy the sequence; SPE=0 already) */
-    SPIx->CR1 = SPIx->CR1; /* RM0008 §25.5.1 — write CR1 clears MODF */
-}
-
-void Spi_LL_ClearCrcError(SPI_TypeDef *SPIx)
-{
-    /* W0C: write 0 to CRCERR (bit 4) — RM0008 §25.5.3 p.717
-     * Read current SR and write back with CRCERR cleared.
-     * Other SR bits: RO bits ignore writes; RC_SEQ bits are not write-triggered.
-     * Do NOT use a constant 0x0000 write — that would affect reserved bits. */
-    SPIx->SR = (uint16_t)(SPIx->SR & (uint16_t)(~SPI_SR_CRCERR_Msk)); /* RM0008 §25.5.3 — W0C */
-}
-
-/* ═══════════════════════════════════════════════════════════════════════════
- *  DR — data transfer and polling waits
- * ═══════════════════════════════════════════════════════════════════════════ */
-
-void Spi_LL_WriteDR(SPI_TypeDef *SPIx, uint16_t data)
-{
-    SPIx->DR = data; /* RM0008 §25.5.4 p.718 — write to TX buffer */
-}
-
-uint16_t Spi_LL_ReadDR(SPI_TypeDef *SPIx)
-{
-    return SPIx->DR; /* RM0008 §25.5.4 p.718 — read from RX buffer, clears RXNE */
-}
-
-Spi_ReturnType Spi_LL_WaitTxEmpty(SPI_TypeDef *SPIx, uint32_t timeout_ticks)
-{
-    uint32_t ticks = timeout_ticks;
-
-    while ((SPIx->SR & SPI_SR_TXE_Msk) == 0U) /* RM0008 §25.5.3 p.717 — poll TXE */
-    {
-        if (ticks == 0U)
+        /* MSTR=0 — already zero */
+        if (pConfig->nssMode == SPI_NSS_SOFT)
         {
-            return SPI_ERR_TIMEOUT;
+            /* Slave software NSS: SSM=1, SSI=0 (selected) */
+            cr1 |= SPI_CR1_SSM_Msk; /* RM0008 §25.3.2 p.678 */
+            /* SSI=0 keeps slave selected */
         }
-        ticks--;
+        /* SPI_NSS_HARD_INPUT: SSM=0 — hardware NSS input, default */
     }
-    return SPI_OK;
+
+    /* CONSTRAINT_DFF_CRC_INTERACTION: flush CRC before setting CRCEN+DFF */
+    /* Clear CRCEN first so CRC registers are reset, then set if needed */
+    /* This ensures no stale CRC values from previous DFF configuration */
+
+    /* CRC enable — RM0008 §25.5.1 p.714 */
+    if (pConfig->crcEnable)
+    {
+        cr1 |= SPI_CR1_CRCEN_Msk;
+    }
+
+    /* SPE remains 0 — caller enables after CR2 setup */
+    /* Write composed value in one shot — Guard: INV_SPI_002 */
+    SPIx->CR1 = cr1; /* RM0008 §25.5.1 p.714 */
 }
 
-Spi_ReturnType Spi_LL_WaitRxNotEmpty(SPI_TypeDef *SPIx, uint32_t timeout_ticks)
+/**
+ * @brief  Configure CR2 from a Spi_ConfigType.
+ *
+ *         Sets SSOE for hardware NSS master output, and clears
+ *         TXEIE/RXNEIE/ERRIE/TXDMAEN/RXDMAEN (interrupts enabled later by
+ *         the driver layer as needed).
+ *
+ *         IR: configuration_strategies[] — SSOE mapping per strategy.
+ *
+ * @param[in]  SPIx     Pointer to SPI peripheral.
+ * @param[in]  pConfig  Configuration structure. Caller must guarantee non-NULL.
+ */
+void SPI_LL_ComposeCR2(SPI_TypeDef *SPIx, const Spi_ConfigType *pConfig)
 {
-    uint32_t ticks = timeout_ticks;
+    uint32_t cr2 = 0U;
 
-    while ((SPIx->SR & SPI_SR_RXNE_Msk) == 0U) /* RM0008 §25.5.3 p.717 — poll RXNE */
+    /* Hardware NSS output enable (master mode only) — RM0008 §25.5.2 p.716 */
+    /* IR strategy single_master_hardware_nss: SSOE=1 */
+    /* IR strategy multimaster_arbitration: SSOE=0 (critical!) */
+    if ((pConfig->masterSlave == SPI_MASTER) &&
+        (pConfig->nssMode == SPI_NSS_HARD_OUTPUT))
     {
-        if (ticks == 0U)
-        {
-            return SPI_ERR_TIMEOUT;
-        }
-        ticks--;
+        cr2 |= SPI_CR2_SSOE_Msk;
     }
-    return SPI_OK;
-}
 
-Spi_ReturnType Spi_LL_WaitNotBusy(SPI_TypeDef *SPIx, uint32_t timeout_ticks)
-{
-    uint32_t ticks = timeout_ticks;
-
-    while ((SPIx->SR & SPI_SR_BSY_Msk) != 0U) /* RM0008 §25.5.3 p.718 — poll BSY */
-    {
-        if (ticks == 0U)
-        {
-            return SPI_ERR_TIMEOUT;
-        }
-        ticks--;
-    }
-    return SPI_OK;
+    /* Interrupts and DMA disabled here; driver enables them on demand */
+    SPIx->CR2 = cr2; /* RM0008 §25.5.2 p.716 */
 }

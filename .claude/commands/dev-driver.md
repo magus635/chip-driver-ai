@@ -157,7 +157,7 @@ mode=full
 
 **codegen-agent 职责**：
 - 严格遵循四层架构（_reg.h → _ll.h → _drv.c → _api.h）
-- 从 `doc-summary.json` 提取寄存器定义、初始化序列、错误处理
+- 从 `ir/<module>_ir_summary.json` 提取寄存器定义、初始化序列、错误处理
 - 实现 Errata workaround（若存在）
 - 确保代码符合 `docs/embedded-c-coding-standard.md` 规范
 
@@ -214,7 +214,7 @@ max_rounds=8
 ```
 
 **增强验证（基于 JSON）：**
-- 使用 `doc-summary.json` 中的 `timing_constraints` 验证实际超时行为
+- 使用 `ir/<module>_ir_summary.json` 中的 `timing_constraints` 验证实际超时行为
 - 使用 `errors[]` 定义验证错误处理是否正确触发
 - 若有 `errata[]`，验证 workaround 是否生效
 

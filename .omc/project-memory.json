@@ -1,6 +1,6 @@
 {
   "version": "1.0.0",
-  "lastScanned": 1775965078010,
+  "lastScanned": 1776464305903,
   "projectRoot": "/Users/qlwang/Downloads/chip-driver-ai",
   "techStack": {
     "languages": [],
@@ -39,23 +39,23 @@
     "build": {
       "path": "build",
       "purpose": "Build output",
-      "fileCount": 13,
-      "lastAccessed": 1775965077998,
+      "fileCount": 10,
+      "lastAccessed": 1776464305891,
       "keyFiles": [
-        "can_driver.o",
-        "can_drv.o",
         "firmware.bin",
         "firmware.elf",
-        "firmware.hex"
+        "firmware.hex",
+        "last-compile.log",
+        "last-link.log"
       ]
     },
     "config": {
       "path": "config",
       "purpose": "Configuration files",
       "fileCount": 3,
-      "lastAccessed": 1775965077998,
+      "lastAccessed": 1776464305891,
       "keyFiles": [
-        "STM32F407VGT6.ld",
+        "STM32F103C8T6.ld",
         "openocd.cfg",
         "project.env"
       ]
@@ -64,20 +64,30 @@
       "path": "docs",
       "purpose": "Documentation",
       "fileCount": 5,
-      "lastAccessed": 1775965077998,
+      "lastAccessed": 1776464305891,
       "keyFiles": [
-        "STM32F407_CAN_Reference.md",
+        "STM32F103_CAN_Reference.md",
         "architecture-guidelines.md",
         "embedded-c-coding-standard.md",
         "ir-specification.md",
         "stm32f103_reference_manual.pdf"
       ]
     },
+    "ir": {
+      "path": "ir",
+      "purpose": null,
+      "fileCount": 2,
+      "lastAccessed": 1776464305891,
+      "keyFiles": [
+        "spi_ir_summary.json",
+        "spi_ir_summary.md"
+      ]
+    },
     "scripts": {
       "path": "scripts",
       "purpose": "Build/utility scripts",
-      "fileCount": 7,
-      "lastAccessed": 1775965077998,
+      "fileCount": 8,
+      "lastAccessed": 1776464305891,
       "keyFiles": [
         "check-arch.sh",
         "check-env.sh",
@@ -90,117 +100,135 @@
       "path": "src",
       "purpose": "Source code",
       "fileCount": 1,
-      "lastAccessed": 1775965077998,
+      "lastAccessed": 1776464305891,
       "keyFiles": []
     }
   },
   "hotPaths": [
     {
-      "path": "",
-      "accessCount": 4,
-      "lastAccessed": 1775982477957,
-      "type": "directory"
-    },
-    {
-      "path": ".claude/review-report.md",
-      "accessCount": 4,
-      "lastAccessed": 1775982933202,
-      "type": "file"
-    },
-    {
-      "path": ".claude/lib/session-state.json",
-      "accessCount": 3,
-      "lastAccessed": 1775989859968,
-      "type": "file"
-    },
-    {
-      "path": ".claude/doc-summary.md",
-      "accessCount": 2,
-      "lastAccessed": 1775965311300,
-      "type": "file"
-    },
-    {
-      "path": "docs/spi_ir.json",
-      "accessCount": 2,
-      "lastAccessed": 1775965876437,
-      "type": "file"
-    },
-    {
-      "path": "ir/spi_ir_summary.md",
-      "accessCount": 2,
-      "lastAccessed": 1775982484210,
-      "type": "file"
-    },
-    {
-      "path": "ir/spi_ir.json",
-      "accessCount": 2,
-      "lastAccessed": 1775983194517,
-      "type": "file"
-    },
-    {
-      "path": "src/drivers/Spi/src/spi_ll.c",
-      "accessCount": 2,
-      "lastAccessed": 1775985231455,
-      "type": "file"
-    },
-    {
-      "path": "docs/ir-specification.md",
-      "accessCount": 1,
-      "lastAccessed": 1775965083851,
-      "type": "file"
-    },
-    {
-      "path": ".claude/agents/reviewer-agent.md",
-      "accessCount": 1,
-      "lastAccessed": 1775965571258,
-      "type": "file"
-    },
-    {
-      "path": ".claude/agents/doc-analyst.md",
-      "accessCount": 1,
-      "lastAccessed": 1775966452314,
-      "type": "file"
-    },
-    {
-      "path": "src/drivers/Spi/include/spi_reg.h",
-      "accessCount": 1,
-      "lastAccessed": 1775982485206,
-      "type": "file"
-    },
-    {
-      "path": "src/drivers/Spi/include/spi_types.h",
-      "accessCount": 1,
-      "lastAccessed": 1775982485534,
-      "type": "file"
-    },
-    {
-      "path": "src/drivers/Spi/include/spi_cfg.h",
-      "accessCount": 1,
-      "lastAccessed": 1775982486224,
-      "type": "file"
-    },
-    {
-      "path": "src/drivers/Spi/include/spi_ll.h",
-      "accessCount": 1,
-      "lastAccessed": 1775983889992,
-      "type": "file"
-    },
-    {
-      "path": "src/drivers/Spi/include/spi_api.h",
-      "accessCount": 1,
-      "lastAccessed": 1775983890252,
+      "path": "ir/spi_ir_summary.json",
+      "accessCount": 9,
+      "lastAccessed": 1776487230501,
       "type": "file"
     },
     {
       "path": "src/drivers/Spi/src/spi_drv.c",
-      "accessCount": 1,
-      "lastAccessed": 1775984007425,
+      "accessCount": 4,
+      "lastAccessed": 1776487458342,
+      "type": "file"
+    },
+    {
+      "path": "docs/ir-specification.md",
+      "accessCount": 3,
+      "lastAccessed": 1776466241590,
+      "type": "file"
+    },
+    {
+      "path": "scripts/validate-ir.py",
+      "accessCount": 3,
+      "lastAccessed": 1776466294923,
+      "type": "file"
+    },
+    {
+      "path": "src/drivers/Spi/include/spi_api.h",
+      "accessCount": 3,
+      "lastAccessed": 1776487441580,
+      "type": "file"
+    },
+    {
+      "path": "src/drivers/Spi/include/spi_ll.h",
+      "accessCount": 3,
+      "lastAccessed": 1776487442196,
+      "type": "file"
+    },
+    {
+      "path": "src/drivers/Spi/include/spi_types.h",
+      "accessCount": 3,
+      "lastAccessed": 1776487442978,
+      "type": "file"
+    },
+    {
+      "path": "src/drivers/Spi/include/spi_cfg.h",
+      "accessCount": 3,
+      "lastAccessed": 1776487453424,
+      "type": "file"
+    },
+    {
+      "path": "src/drivers/Spi/include/spi_reg.h",
+      "accessCount": 3,
+      "lastAccessed": 1776487453659,
+      "type": "file"
+    },
+    {
+      "path": "src/drivers/Spi/src/spi_ll.c",
+      "accessCount": 3,
+      "lastAccessed": 1776487454071,
+      "type": "file"
+    },
+    {
+      "path": "CLAUDE.md",
+      "accessCount": 2,
+      "lastAccessed": 1776464636640,
       "type": "file"
     },
     {
       "path": "src/drivers/Spi/src/spi_isr.c",
+      "accessCount": 2,
+      "lastAccessed": 1776487458908,
+      "type": "file"
+    },
+    {
+      "path": ".claude/review-summary.txt",
+      "accessCount": 2,
+      "lastAccessed": 1776487635795,
+      "type": "file"
+    },
+    {
+      "path": "ir",
       "accessCount": 1,
-      "lastAccessed": 1775984026420,
+      "lastAccessed": 1776464550615,
+      "type": "directory"
+    },
+    {
+      "path": "docs",
+      "accessCount": 1,
+      "lastAccessed": 1776465426923,
+      "type": "directory"
+    },
+    {
+      "path": ".claude/agents/doc-analyst.md",
+      "accessCount": 1,
+      "lastAccessed": 1776465436431,
+      "type": "file"
+    },
+    {
+      "path": "ir/spi_ir_summary.md",
+      "accessCount": 1,
+      "lastAccessed": 1776465719298,
+      "type": "file"
+    },
+    {
+      "path": ".claude/r8-review-report.md",
+      "accessCount": 1,
+      "lastAccessed": 1776465801782,
+      "type": "file"
+    },
+    {
+      "path": "docs/stm32f103_reference_manual.pdf",
+      "accessCount": 1,
+      "lastAccessed": 1776466241914,
+      "type": "file"
+    },
+    {
+      "path": "docs/embedded-c-coding-standard.md",
+      "accessCount": 1,
+      "lastAccessed": 1776487230134,
+      "type": "file"
+    },
+    {
+      "path": ".claude/r8-review-report-codegen.md",
+      "accessCount": 1,
+      "lastAccessed": 1776487589443,
       "type": "file"
     }
   ],
