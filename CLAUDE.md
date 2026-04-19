@@ -1,5 +1,9 @@
 # Chip Driver AI Collaboration System
-# 芯片驱动 AI 协作系统 · 主规则文件
+芯片驱动 AI 协作系统 · 主规则文件
+
+版本: 1.0
+最后修改: 2026-04-20
+维护者: repository maintainers
 
 ## 项目角色
 
@@ -30,12 +34,26 @@
 - 编译自修复循环：最多 **15** 次，超出后停止并输出诊断摘要
 - 链接自修复循环：最多 **10** 次，超出后停止并输出诊断摘要
 - 调试修复循环：最多 **8** 轮（每轮含完整的编译→链接→烧录），超出后请求人工介入
+- **计数范围**：编译和链接的计数是**全局累计**（跨越所有调试轮），调试轮计数独立；每次修复后计数+1，达到上限时暂停
 - 每次修复必须记录到 `.claude/repair-log.md`，禁止对同一错误重复相同修复
 
 ### R5 · 修复逻辑
-- 编译错误：先定位错误文件和行号，理解语义原因，再修改，禁止盲目注释掉报错行
-- 链接错误：必须读取 `.map` 文件定位未定义符号的真实来源，再决定是补充实现还是补充链接文件
-- 运行错误：先提出假设（寄存器配置错误/时序错误/逻辑错误），再对照文档验证假设，最后修改
+遵循 **investigate → analyze → hypothesize → implement** 流程：
+- **编译错误**：
+  1. 定位错误文件和行号
+  2. 生成假设（缺头文件/类型不匹配/宏未定义/整数位宽不符）
+  3. 查阅 IR JSON、C 编码规范、typedef 定义以验证假设
+  4. 执行修改，禁止盲目注释掉报错行
+- **链接错误**：
+  1. 定位未定义符号名
+  2. 生成假设（头文件缺失/实现未链接/弱符号冲突/别名错误）
+  3. 读取 `.map` 文件与 IR JSON 追踪符号来源，对照链接脚本
+  4. 决策：补充实现还是补充链接文件，还是修改符号别名
+- **运行错误**：
+  1. 采集 before/after 运行快照（UART 日志、寄存器值、硬件状态）
+  2. 生成假设（寄存器配置不当/时序违反/逻辑错误）
+  3. 对照芯片手册验证假设，查阅 Errata 表与 IR 的 `disable_procedures`
+  4. 执行修改并验证快照对比
 
 ### R6 · 工具使用规范
 - 使用 `Bash` 工具执行 `scripts/` 下的封装脚本，不直接拼接 toolchain 命令
@@ -43,13 +61,14 @@
 - 烧录和调试命令会访问硬件，执行前输出确认提示
 - `scripts/compile.sh` 已集成架构合规检查（`check-arch.sh`），编译前自动运行。若检查不通过，编译会被阻断，必须先修复违规项
 - 可通过 `scripts/check-arch.sh --fix-hint` 单独运行检查并查看修复建议
+- 脚本接口规范：每个 `scripts/` 下的脚本应实现 `--help`、`--dry-run`、`--log <file>` 选项，返回统一退出码（0 成功，非0 失败），并记录可重放的底层命令以便审计。
 
 ### R7 · 上下文延续
 - 每次进入新的修复轮次前，读取 `.claude/repair-log.md` 了解历史
 - 调试阶段读取 `.claude/debug-session.md` 获取上一轮运行快照
 - 在代码注释中记录关键决策，保持代码可读性
 
-### R8 · 硬件操作反模式检查（代码生成后必须自检）
+### R8 · 硬件操作反模式检查
 
 生成或修改任何 `_ll.h` / `_ll.c` / `_drv.c` / `_api.c` 文件后，**必须逐条自检**以下清单。
 任何一条违规都必须在提交编译前修复。
@@ -121,6 +140,7 @@ AI推荐: <推荐选项编号及理由>
 | `scripts/` | 封装的编译/链接/烧录/调试命令行脚本 |
 | `.claude/repair-log.md` | 自动追加的修复历史日志 |
 | `.claude/debug-session.md` | 调试快照，每轮运行后更新 |
+| `.claude/review-decisions.md` | 人工审核决策记录表（强制审核场景的决定与根据） |
 
 ---
 
@@ -130,60 +150,64 @@ AI推荐: <推荐选项编号及理由>
 |---|---|
 | `doc-analyst` | 读取并结构化芯片手册，按 `docs/ir-specification.md` 规范输出两份产物：(1) **`ir/<module>_ir_summary.json`** - code-gen 消费的真值源（必须执行 §5.2~5.3 的完整性检查）；(2) **`ir/<module>_ir_summary.md`** - 人工审读版本（供人类理解，code-gen 不消费）。完整性检查包含：配置矩阵穷举、配置策略提取、跨字段约束识别、初始化前置条件标注、Errata 可用性检查。运行 `python3 scripts/validate-ir.py` 验证 IR 完整性 |
 | `code-gen` | 读取 doc-analyst 产出的 IR JSON，按架构分层和编码规范生成驱动代码。**必须消费** `configuration_strategies[]` 和 `cross_field_constraints[]`，在初始化代码中插入 guard 检查（如 INV_SPI_002）。寄存器层从 IR 直接映射（确定性），驱动逻辑层由 AI 推理生成 |
-| `reviewer-agent` | **编译前合规审查**（质量关卡）：执行 `scripts/check-arch.sh` 自动检查 + R8 反模式逐条人工审查。不通过则打回 code-gen 修改，禁止带违规代码进入编译 |
-| `compiler-agent` | 执行编译→捕获错误→定位→修复，循环至成功 |
-| `linker-agent` | 执行链接→分析 .map→定位符号问题→修复，循环至成功 |
-| `debugger-agent` | 烧录→读取运行输出→对照文档验证→输出结论 |
+| `reviewer-agent` | **编译前合规审查**（质量关卡）：分两层执行。**自动化阶段**：运行 `scripts/check-arch.sh`（W1C 操作检查、类型定长检查、头文件依赖检查）和 `scripts/check-invariants.py`（前置条件守卫、lock 字段操作检查）生成报表。**人工复核阶段**（强制审核场景，见 R9）：寄存器位域不明确、文档矛盾、Errata 影响、多方案选择 → 记录到 `.claude/review-decisions.md`。不通过则打回 code-gen 修改，禁止带违规代码进入编译 |
+| `compiler-agent` | 执行编译→捕获错误→定位→修复，循环至成功。遵守 R5 假设驱动流程，最多 15 次循环（见 R4），超限后输出诊断摘要并向 reviewer-agent/user 报告 |
+| `linker-agent` | 执行链接→分析 .map→定位符号问题→修复，循环至成功。遵守 R5 假设驱动流程，最多 10 次循环（见 R4），超限后输出诊断摘要并向 reviewer-agent/user 报告 |
+| `debugger-agent` | **烧录与验证**（借鉴 gstack-qa 框架）：1) 采集 before/after 运行快照（UART 输出日志、关键寄存器值、中断事件记录）；2) 与 IR 中的预期行为对比（配置矩阵、disable_procedures）；3) 生成健康度评分（通过/告警/失败）与修复建议；4) 输出结论与下一步行动。超过 8 轮调试修复循环后请求人工介入。 |
 
 ### Agent 工作流（强制执行顺序）
 
+```mermaid
+flowchart LR
+  docs[docs/ 芯片手册] --> docanalyst[doc-analyst<br/>生成 IR JSON & MD]
+  docanalyst --> IRjson[IR JSON]
+  docanalyst --> IRmd[IR Markdown]
+  IRjson --> codegen[code-gen<br/>生成驱动代码]
+  codegen --> reviewer[reviewer-agent<br/>合规审查（质量关卡）]
+  reviewer -->|pass| compiler[compiler-agent<br/>编译修复循环]
+  reviewer -->|fail| codegen
+  compiler --> linker[linker-agent<br/>链接修复循环]
+  linker --> debugger[debugger-agent<br/>烧录/调试验证]
 ```
-docs/ 芯片手册
-    │
-    ▼
-┌──────────────────────┐
-│   doc-analyst        │
-│  生成 IR JSON + Markdown
-└──────────┬───────────┘
-           │
-    ┌──────┴──────┐
-    │             │
-    ▼             ▼
-IR JSON      IR Markdown
-(code消费)   (人工审读)
-    │
-    ▼
-┌──────────────┐
-│  code-gen    │────▶ 驱动代码
-│ 从 IR 读取    │
-└──────────────┘
-    │
-    ▼
-┌─────────────────┐     ┌─────────────────┐
-│ reviewer-agent  │────▶│ compiler-agent  │
-│ 合规审查(R8+脚本)│     │   编译修复       │
-└────────┬────────┘     └─────────────────┘
-         │ 不通过：打回     │ 成功
-         │               │
-         └──────┬────────┘
-                ▼
-        ┌──────────────┐
-        │ linker-agent │
-        │  链接修复     │
-        └──────┬───────┘
-               │
-               ▼
-        ┌──────────────┐
-        │debugger-agent│
-        │ 烧录/调试验证 │
-        └──────────────┘
-```
+
+### Agent 调用机制
+- 触发方式：手动脚本、CI job 或由外部 orchestrator 调用（示例：CI 在 PR 合并后触发编译流水线）。
+- Gate：`doc-analyst` 完成后**必须**运行 `python3 scripts/validate-ir.py` 作为 IR 合规门禁，未通过阻断后续 `code-gen` 步骤。
+- **reviewer-agent 工作流（分两层）**：
+  - **自动化检查阶段**：运行 `scripts/check-arch.sh`（W1C/类型/include 违规检查）和 `scripts/check-invariants.py`（守卫/锁字段操作检查），生成合规报表；失败 → 打回 code-gen + 记录到 `.claude/repair-log.md`
+  - **人工复核阶段**（强制审核场景，见 R9）：当代码涉及寄存器位域不明确、文档矛盾、Errata 影响、多方案选择等 → 输出 [REVIEW_REQUEST] 格式请求 → 等待用户回复 → 将决策记录到 `.claude/review-decisions.md` → 继续流程或打回 code-gen
+- 脚本接口要求：每个 `scripts/` 下的脚本应支持 `--help`、`--dry-run`、`--log <file>`，并在 CI/自动化模式下返回统一退出码（0 成功，非0 失败）。
 
 **关键约束**：
 - **IR JSON 是唯一真值源**：code-gen 必须从 `ir/<module>_ir_summary.json` 读取，禁止直接读手册或 Markdown
 - **Markdown 仅供审读**：不作为代码生成的输入，仅用于人工理解和验证
 - reviewer-agent 是**质量关卡**（Quality Gate），不通过则代码不得进入编译阶段
-- 每次 reviewer-agent 发现的问题，追加记录到 `.claude/review-log.md`，防止同类问题反复出现
+ - 每次 reviewer-agent 发现的问题，追加记录到 `.claude/review-decisions.md`，防止同类问题反复出现
+
+---
+
+## 初始化步骤
+
+首次 clone 后执行以下步骤（首次运行前必须完成）：
+
+```bash
+# 1. 设置环境
+source config/project.env
+
+# 2. 初始化 .claude 目录结构（若不存在）
+mkdir -p .claude
+
+# 3. 验证 IR 完整性（doc-analyst 产物必须已生成）
+python3 scripts/validate-ir.py
+
+# 4. 确保 scripts/ 下的脚本可执行
+chmod +x scripts/*.sh scripts/*.py
+```
+
+关键门禁：
+- 运行 code-gen 前必须通过 `scripts/validate-ir.py`
+- 提交代码编译前必须通过 reviewer-agent（自动化检查 + 人工复核）
+- 每次修复失败都应记录到 `.claude/repair-log.md`
 
 ---
 

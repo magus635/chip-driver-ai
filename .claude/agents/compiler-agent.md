@@ -160,6 +160,245 @@ bash scripts/compile.sh
 
 ---
 
+## CLAUDE.md R4 迭代上限与计数规范（V2.1 新增）
+
+> **硬性约束**：编译自修复循环**全局累计最多 15 次**（跨越整个编译→链接→调试工作流）。
+> 参见 CLAUDE.md R4 "计数范围" 小节。
+
+### 计数机制
+
+- **范围**：全局累计计数（不因任务重启而重置，除非用户明确清空 `.claude/repair-log.md`）
+- **起点**：compiler-agent 首次启动时，从 `.claude/repair-log.md` 中统计已有的 `[COMPILE]` 条目数，作为初始计数
+- **增长**：每执行一次 FIX 操作就 +1
+- **上限**：达到 15 时，停止并输出诊断摘要（见 4.5 节）
+- **链接修复**：linker-agent 有独立的 10 次上限，不影响编译上限计数
+
+### 达到上限时的行为
+
+**当编译修复次数 == 15**：
+1. 立刻停止，不再尝试修复
+2. 输出 `COMPILE_FAILED_MAX_ITER`
+3. 生成诊断摘要（见下文），记录到 `.claude/repair-log.md`
+4. 向用户报告"需要人工介入"
+
+**诊断摘要格式**：
+```markdown
+## [COMPILE] 达到修复上限 · 诊断摘要
+
+**会话统计**
+- 累计修复次数：15
+- 编译失败次数：15
+- 最终错误类别：[列出前 3 多的错误类别]
+- 修复成功率：X% (Y/15)
+
+**核心问题**
+- [问题 1：错误不收敛原因分析]
+- [问题 2：修复策略失效原因]
+- [问题 3：可能的根本原因]
+
+**建议**
+1. [用户应该检查的代码部分]
+2. [建议咨询的硬件文档章节]
+3. [可能需要 reviewer-agent 重新审视的设计缺陷]
+
+**下一步**
+- 需要人工代码审查（reviewer-agent 介入）
+- 或需要验证 IR JSON 完整性（doc-analyst 介入）
+- 或需要代码重构（code-gen 介入）
+```
+
+**示例**：
+```markdown
+## [COMPILE] 达到修复上限 · 诊断摘要
+
+**会话统计**
+- 累计修复次数：15
+- 编译失败次数：15
+- 最终错误类别：type_error(7), declaration_error(5), syntax_error(3)
+- 修复成功率：0% (0/15)
+
+**核心问题**
+- 问题 1：所有 type_error 指向 `spi_drv.c` 中的 `SPI_HandleTypeDef` 结构体，但该结构体从未在 IR JSON 中定义
+- 问题 2：修复策略反复尝试添加类型强制转换，但根本问题是结构体定义缺失
+- 问题 3：IR JSON 中 `peripheral.types[]` 未包含 `SPI_HandleTypeDef`
+
+**建议**
+1. 检查 code-gen 是否正确读取了 IR JSON 的 `types[]` 字段
+2. 检查 doc-analyst 是否遗漏了驱动状态结构体的定义
+3. 可能需要重新生成 `types.h` 文件
+
+**下一步**
+- doc-analyst 重新审视 IR JSON，检查 types[] 是否完整
+- code-gen 重新审视代码生成逻辑
+```
+
+---
+
+## CLAUDE.md R5 修复逻辑：假设驱动流程（V2.1 新增）
+
+> **关键原则**：编译错误修复必须遵循 `investigate → analyze → hypothesize → implement` 流程。
+> **禁止盲目修复**：不能凭直觉注释代码或添加强制转换。
+
+### 修复流程详解
+
+#### 阶段 1：Investigate（定位错误）
+
+```
+输入：编译错误消息
+
+步骤：
+1. 提取错误的 {file, line, error_type, symbol}
+2. 读取该行源代码及上下文 (±5 行)
+3. 追踪符号来源：
+   - 若是变量/函数：定位声明处和所有 #include
+   - 若是类型：定位 typedef 和头文件
+4. 记录当前的"表观症状"
+```
+
+**示例 — 缺头文件**：
+```
+错误：src/can_drv.c:45: error: 'CAN_BaseAddr' undeclared
+定位：第 45 行是 "uint32_t base = CAN_BaseAddr;"
+追踪：grep 整个 src/，找不到 CAN_BaseAddr 定义
+搜索：ir/can_ir_summary.json，找到 "base_address": 0x40006800
+假设：CAN_BaseAddr 应该在 can_reg.h 中定义为 #define 或 enum
+```
+
+#### 阶段 2：Analyze（根因分析）
+
+```
+输入：症状 + 代码上下文
+
+根据错误类别分析可能的原因：
+
+【A】declaration_error / undeclared_identifier
+  可能原因：
+  - 头文件未 include
+  - 符号拼写错误（CAN_BASE vs CAN_baseaddr）
+  - 符号应该在 IR JSON 生成，但 code-gen 遗漏了
+
+【B】type_error / implicit conversion
+  可能原因：
+  - 类型定义缺失（typedef 未在头文件）
+  - 类型宽度错误（uint32_t vs int）
+  - 指针/非指针混用
+
+【C】syntax_error
+  可能原因：
+  - 代码语法错误
+  - 括号不匹配
+  - 宏定义有误
+
+【D】preprocessor_error
+  可能原因：
+  - 条件编译 (#ifdef) 错误
+  - 宏定义递归或循环依赖
+```
+
+**示例 — 分析过程**：
+```
+症状：'CAN_BaseAddr' undeclared in src/can_drv.c:45
+分析树：
+├─ 头文件检查
+│  ├─ src/can_drv.c 已 include "can_reg.h" ✓
+│  ├─ can_reg.h 是否定义了 CAN_BaseAddr？
+│  │  └─ 否（检查 can_reg.h 内容）
+│  └─ 应该定义在哪个文件？
+│     └─ 根据 IR JSON，应该在 can_reg.h 的 "bases[]" 部分
+├─ IR JSON 完整性检查
+│  ├─ ir/can_ir_summary.json 是否有 "base_address"？
+│  │  └─ 是：0x40006800
+│  └─ code-gen 是否生成了 can_reg.h？
+│     └─ 是，但可能定义的宏名不同
+└─ 拼写检查
+   ├─ 代码中是 "CAN_BaseAddr"（驼峰）
+   ├─ can_reg.h 中应该是 "CAN_BASE"（大写）
+   └─ 匹配规范：CMSIS 约定用全大写
+```
+
+#### 阶段 3：Hypothesize（假设修复）
+
+```
+根据分析结果，列出可能的修复方案（按可能性排序）：
+
+假设 A（置信度 0.9）：
+- 根因：code-gen 生成的宏名为 CAN_BASE，但代码中拼写为 CAN_BaseAddr
+- 修复：在 src/can_drv.c:45 改为 "uint32_t base = CAN_BASE;"
+- 验证方式：grep 寻找 CAN_BASE 定义，检查 can_reg.h
+
+假设 B（置信度 0.7）：
+- 根因：can_reg.h 未生成或未 include
+- 修复：在 src/can_drv.c 顶部添加 "#include \"can_reg.h\""
+- 验证方式：编译后检查是否有其他 undeclared 错误
+
+假设 C（置信度 0.3）：
+- 根因：符号应该动态生成
+- 修复：需要 code-gen 重新生成代码
+- 验证方式：等待 code-gen 修复
+```
+
+#### 阶段 4：Implement（执行修复）
+
+```
+按置信度高低依次尝试修复（不是全部一次性尝试）。
+
+第一轮：实施假设 A
+1. 定位错误行：src/can_drv.c:45
+2. 读取当前代码：uint32_t base = CAN_BaseAddr;
+3. 修改为：uint32_t base = CAN_BASE;
+4. 记录到修复日志：
+   时间：2026-04-20 10:30:45
+   文件：src/can_drv.c:45
+   错误：'CAN_BaseAddr' undeclared
+   修复：改为 CAN_BASE（根据 can_reg.h 宏定义）
+   根因分析：拼写错误/命名约定不一致
+   置信度：0.9
+5. 编译并检查：若通过，完成本轮；若失败，分析新错误
+
+第二轮（如需）：若第一轮编译仍失败，分析新错误并回到 Phase 1
+```
+
+---
+
+## 修复日志规范与追踪（V2.1 新增）
+
+### 日志文件：`.claude/repair-log.md`
+
+**用途**：全工作流的统一修复历史记录（编译、链接、调试共用）
+
+**格式**（追加模式）：
+```markdown
+## [COMPILE] 第N轮 · YYYY-MM-DD HH:MM:SS
+
+### 错误情况
+- **文件:行**：src/can_drv.c:45
+- **错误类型**：declaration_error / undeclared_identifier
+- **符号**：CAN_BaseAddr
+- **错误消息**：`error: 'CAN_BaseAddr' undeclared (first use in this function)`
+
+### 分析过程（R5）
+- **Investigate**：确认 CAN_BaseAddr 未在任何头文件定义
+- **Analyze**：grep 发现 can_reg.h 定义了 CAN_BASE（大写），拼写不一致
+- **Hypothesize**：假设 A（拼写错误，置信度 0.9）> 假设 B（include 缺失，置信度 0.7）
+- **Root Cause**：code-gen 生成的宏与驱动代码拼写不一致
+
+### 修复执行
+- **方案**：改为 CAN_BASE
+- **操作**：replace_string_in_file src/can_drv.c，行 45
+- **依据**：CMSIS 约定全大写命名；can_reg.h 确认定义
+
+### 修复结果
+- **编译结果**：✓ 通过本行编译，继续下一错误
+- **新增错误**：否
+- **修复历史**：避免对同一错误重复相同修复
+```
+
+**禁止规则**：
+- 不得对同一文件:行的同一错误进行相同修复超过 1 次
+- 若连续 3 次同一错误修复无效 → 升级为 COMPILE_STUCK
+
+---
+
 ## 退出约定
 
 请你的最后一条消息清楚地写明以下退出码之一：

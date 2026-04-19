@@ -349,6 +349,34 @@ END_SEQUENCE
 - `confidence < 0.85` 的 invariant 必须同时写入 `pending_reviews`，列出多种解读
 - 提取的 invariant 数量 ≥ 该外设寄存器章节中"must"/"only"/"before"/"not allowed" 等关键词出现次数的 60%（粗略覆盖率指标）
 
+#### F.3 关闭序列提取 (Disable Procedures · 强制)
+
+> **痛点**：仅有初始化序列还不够（CLAUDE.md R8.12），还需完整的模式特定关闭序列，不同通信模式的关闭步骤和顺序各不相同。
+> **必须**从手册的 "Disable"、"Shutdown"、"DeInit" 等章节提取所有关闭变体。
+
+**提取规则**（对应 CLAUDE.md R8.12）：
+1. 搜索手册中关键词：\"disable\"、\"shutdown\"、\"deinitialization\"、\"stop communication\"、\"reset procedure\"
+2. 按通信模式分类提取（如 SPI 的 full_duplex / receive_only / bidirectional_rx）
+3. 每个序列必须标注来源文档、步骤顺序、前置条件、预期结果
+
+**输出格式**（写入 `functional_model.disable_procedures[]`）：
+
+```json
+{
+  "id": "DIS_<MOD>_<MODE>_<NNN>",
+  "mode": "full_duplex | receive_only | bidirectional_rx | transmit_only",
+  "sequence_steps": [
+    {"step": 1, "action": "CLEAR_BIT(SPI->CR1, SPE)", "condition": "if SPE==1", "source": "RM0008 §25.3.8"},
+    {"step": 2, "action": "WAIT(SPI->SR.BSY == 0)", "timeout_ms": 100, "source": "RM0008 §25.3.8"},
+    {"step": 3, "action": "READ(SPI->DR) if RXNE==1", "effect": "清除残留数据", "source": "RM0008 §25.3.8"}
+  ],
+  "preconditions": ["SPE==1"],
+  "postconditions": ["SPE==0", "SR.RXNE==0", "SR.TXE==1"],
+  "source": "RM0008 §25.3.8",
+  "confidence": 0.95
+}
+```
+
 #### G. 高级并发特性 (Advanced Concurrent Features)
 - **多缓冲区/多邮箱管理**：提取所有硬件缓存（如 CAN 的 3 个 TX 邮箱优先级仲裁机制）。
 - **DMA 高级模式**：提取双缓冲（Double Buffer）、循环模式（Circular）、外设流控（Flow Control）属性。
@@ -356,6 +384,73 @@ END_SEQUENCE
 
 #### H. 已知硬件缺陷 (Errata)（新增）
 若在步骤 1.2 中发现相关勘误条目，在此章节完整列出。
+
+### 3.5 Confidence 赋值标准与完整性检查
+
+#### Confidence 赋值规则
+
+为每个关键字段赋予置信度得分（0.0-1.0），基于以下标准：
+
+| 置信度范围 | 赋值标准 | 示例 |
+|-----------|--------|------|
+| 0.95-1.0 | 直接来自官方手册表格，无歧义 | 寄存器地址、位名来自寄存器总表 |
+| 0.85-0.95 | 来自手册文字描述但需解读 | "位操作前必须禁用 SPE" 转为 invariant |
+| 0.70-0.85 | 多份文档交叉确认或需人工补充 | 中断向量号需从 DS Vector Table 补充确认 |
+| 0.50-0.70 | 从不同芯片文档类比推导，高风险 | GPIO 复用功能从硬件设计文档推断 |
+| <0.50 | 需要人工审核，禁止提交 | 非官方渠道获得的信息、推测性填写 |
+
+**强制规则**：
+- 所有寄存器地址、位域定义：必须 ≥ 0.90（直接来自 RM/DS 表格）
+- 初始化/关闭序列：必须 ≥ 0.85（手册有明确步骤描述）
+- Errata、已知限制：必须 ≥ 0.80（官方勘误表）
+- confidence < 0.85 的字段必须标注 `pending_review: true` 并列出不确定原因
+
+#### 完整性检查清单（强制）
+
+提交 IR JSON 前，必须逐条验证以下指标：
+
+```markdown
+### 完整性检查报告
+
+#### 配置矩阵穷举
+- [ ] 时钟配置变体数：___ （如 SPI 分频因子 BR=0-7 共 8 种）
+- [ ] 通信模式变体数：___ （如 SPI 的 full_duplex、receive_only、transmit_only）
+- [ ] 配置策略 (configuration_strategies) 覆盖率：___ %
+
+#### 约束提取
+- [ ] 硬件不变式 (invariants) 提取数：___ 个
+- [ ] 与手册中 "must"、"only"、"before" 等关键词出现次数的比率：___ % （需 ≥ 60%）
+- [ ] 跨字段约束识别数：___ 个（如 "CR1.SPE==1 implies !writable(CR1.BR)"）
+
+#### 初始化前置条件
+- [ ] Init 步骤总数：___ 步
+- [ ] 每步都有 layer 标注 ("ll" / "drv")：是/否
+- [ ] 每步都有 source 标注：是/否
+- [ ] 是否包含时钟使能、复位、GPIO 配置、中断使能：是/否
+
+#### 关闭序列 (Disable Procedures)
+- [ ] 提取的关闭序列变体数：___ 个
+- [ ] 所有通信模式都有对应关闭序列：是/否
+- [ ] DeInit 步骤顺序与 RM 推荐一致：是/否
+
+#### Errata 可用性
+- [ ] 是否检查了勘误表（即使为空）：是/否
+- [ ] 硬件缺陷条目数：___ 条
+- [ ] 每个缺陷都标注了 Workaround：是/否
+
+#### 外部依赖（V2.1 新增）
+- [ ] 多实例基地址：是否覆盖所有实例（SPI1/2/3）
+- [ ] 时钟使能：是否标注了 RCC 寄存器、位名、位位置
+- [ ] GPIO 配置：是否明确了输出模式、上下拉要求
+- [ ] 中断向量号：是否从 DS Vector Table 确认
+- [ ] DMA 通道：是否从 DS DMA Request Mapping 确认
+
+#### 机器可解析性
+- [ ] IR JSON 是否通过 `jq . ir/<module>_ir_summary.json` 验证
+- [ ] 所有关键字段是否都有 source 标注
+- [ ] access type 是否使用了规范枚举（RW/RO/WO/W1C/W0C/W1S/RC/RC_SEQ）
+- [ ] confidence 字段范围是否都在 0.0-1.0
+```
 
 ### 4. 输出文件
 
@@ -397,6 +492,54 @@ END_SEQUENCE
 - 所有清除序列必须引用 `atomic_sequences` 中的 ID
 - GPIO 配置必须明确 `mode`（AF_PP/AF_OD/INPUT）和 `pull`（NONE/PULL_UP/PULL_DOWN）
 
+### 4.4 错误处理流程（V2.1 新增）
+
+#### 文档矛盾处理
+
+若手册中存在矛盾或歧义，按以下优先级处理：
+
+**优先级 1（采纳官方澄清）**：
+- 若同一手册的不同章节有矛盾，采纳最后更新的章节
+- 若 Errata 表修正了主文本，采纳 Errata 版本
+- 在 IR JSON 中用 `pending_review` 标注冲突并记录原因
+
+**优先级 2（对齐硬件实现）**：
+- 若 Reference Manual 与 Datasheet 矛盾，优先采纳 Datasheet（更接近硅实现）
+- 在 IR JSON 中标注两份文档的结论，让人工审核选择
+
+**优先级 3（要求人工审核）**：
+- 若多份官方文档的结论不一致，设 `confidence < 0.70` 并写入 `pending_reviews[]`，暂停提交
+- 输出 `DOC_CONTRADICTION` 状态，等待用户确认
+
+**示例**：
+```json
+{
+  "field": "CR1.BR",
+  "pending_review": true,
+  "reason": "RM0090 §28.3.2 与 DS9716 表 45 对分频因子范围描述矛盾",
+  "candidates": [
+    {"source": "RM0090", "value": "BR=[0:2], 范围 0-7"},
+    {"source": "DS9716", "value": "BR=[0:3], 范围 0-15"}
+  ],
+  "confidence": 0.65
+}
+```
+
+#### PDF 读取失败处理
+
+若 PDF 无法被正常提取（如损坏、加密、图片型扫描件）：
+1. 尝试 OCR（如果扫描件）或联系用户提供文本版本
+2. 若无法获取，在 IR 中对应字段标注 `"source": "PDF extract failed, manual input needed"`
+3. 设 `confidence: 0.0` 并暂停提交，输出 `DOC_EXTRACTION_FAILURE`
+
+#### 缺失关键信息处理
+
+若某些关键信息在文档中完全缺失（如未找到中断向量号）：
+
+1. **可选信息**（如 DMA 配置）：标注 `null` 并 `confidence: 0.0`，继续提交
+2. **必需信息**（如寄存器基地址）：标注 `"source": "NOT_FOUND_IN_DOCS"` 并设 `pending_review: true`，等待人工补充
+3. 输出 `DOC_INCOMPLETE` 状态，列出缺失清单
+
 ### 5. 更新缓存
 
 解析完成后，保存文档哈希：
@@ -406,9 +549,12 @@ cp /tmp/docs_hash_new.txt .claude/doc-cache.hash
 
 ### 6. 返回状态
 
-- 成功：`DOC_ANALYSIS_COMPLETE`，附关键发现摘要
-- 文档不足：`DOC_INCOMPLETE`，列出缺失信息清单
-- 缓存命中：`DOC_CACHE_HIT`，跳过解析直接返回
+- `DOC_ANALYSIS_COMPLETE`：成功提交，所有关键字段已提取且 confidence ≥ 0.85
+- `DOC_ANALYSIS_WITH_REVIEWS`：提交但有待审核项（部分 confidence < 0.85），需人工确认
+- `DOC_INCOMPLETE`：缺少必需信息，列出缺失清单，暂不提交
+- `DOC_CONTRADICTION`：多份文档矛盾，需用户选择，暂不提交
+- `DOC_EXTRACTION_FAILURE`：PDF 或文件提取失败，需人工干预
+- `DOC_CACHE_HIT`：文档未变化，复用缓存的 IR
 
 ---
 
