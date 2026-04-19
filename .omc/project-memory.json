@@ -113,14 +113,32 @@
     },
     {
       "path": ".claude/commands/dev-driver.md",
-      "accessCount": 6,
-      "lastAccessed": 1776558284450,
+      "accessCount": 7,
+      "lastAccessed": 1776558526386,
       "type": "file"
     },
     {
       "path": ".claude/agents/codegen-agent.md",
-      "accessCount": 5,
-      "lastAccessed": 1776558261612,
+      "accessCount": 7,
+      "lastAccessed": 1776637297409,
+      "type": "file"
+    },
+    {
+      "path": "ir/can_ir_summary.json",
+      "accessCount": 6,
+      "lastAccessed": 1776637280440,
+      "type": "file"
+    },
+    {
+      "path": ".claude/agents/doc-analyst.md",
+      "accessCount": 4,
+      "lastAccessed": 1776558690693,
+      "type": "file"
+    },
+    {
+      "path": "src/drivers/Can/include/can_ll.h",
+      "accessCount": 4,
+      "lastAccessed": 1776638679187,
       "type": "file"
     },
     {
@@ -136,6 +154,18 @@
       "type": "file"
     },
     {
+      "path": ".claude/settings.local.json",
+      "accessCount": 3,
+      "lastAccessed": 1776558464384,
+      "type": "file"
+    },
+    {
+      "path": "docs/ir-specification.md",
+      "accessCount": 3,
+      "lastAccessed": 1776559138961,
+      "type": "file"
+    },
+    {
       "path": ".claude/agents/compiler-agent.md",
       "accessCount": 2,
       "lastAccessed": 1776558174323,
@@ -145,12 +175,6 @@
       "path": ".claude/agents/linker-agent.md",
       "accessCount": 2,
       "lastAccessed": 1776558181341,
-      "type": "file"
-    },
-    {
-      "path": ".claude/agents/doc-analyst.md",
-      "accessCount": 2,
-      "lastAccessed": 1776558198309,
       "type": "file"
     },
     {
@@ -166,15 +190,129 @@
       "type": "file"
     },
     {
-      "path": "docs/ir-specification.md",
-      "accessCount": 1,
-      "lastAccessed": 1776556872705,
+      "path": "ir/can_ir_summary.md",
+      "accessCount": 2,
+      "lastAccessed": 1776558888019,
       "type": "file"
     },
     {
       "path": "ir/spi_ir_summary.json",
+      "accessCount": 2,
+      "lastAccessed": 1776559152476,
+      "type": "file"
+    },
+    {
+      "path": "docs/embedded-c-coding-standard.md",
+      "accessCount": 2,
+      "lastAccessed": 1776637298080,
+      "type": "file"
+    },
+    {
+      "path": "src/drivers/Spi/include/spi_reg.h",
+      "accessCount": 2,
+      "lastAccessed": 1776637304907,
+      "type": "file"
+    },
+    {
+      "path": "src/drivers/Spi/include/spi_types.h",
+      "accessCount": 2,
+      "lastAccessed": 1776637304971,
+      "type": "file"
+    },
+    {
+      "path": "src/drivers/Spi/include/spi_cfg.h",
+      "accessCount": 2,
+      "lastAccessed": 1776637305310,
+      "type": "file"
+    },
+    {
+      "path": "src/drivers/Spi/include/spi_ll.h",
+      "accessCount": 2,
+      "lastAccessed": 1776637305605,
+      "type": "file"
+    },
+    {
+      "path": "src/drivers/Spi/include/spi_api.h",
+      "accessCount": 2,
+      "lastAccessed": 1776637306027,
+      "type": "file"
+    },
+    {
+      "path": "src/drivers/Spi/src/spi_drv.c",
+      "accessCount": 2,
+      "lastAccessed": 1776637312750,
+      "type": "file"
+    },
+    {
+      "path": "src/drivers/Spi/src/spi_isr.c",
+      "accessCount": 2,
+      "lastAccessed": 1776637313292,
+      "type": "file"
+    },
+    {
+      "path": "src/drivers/Spi/src/spi_ll.c",
+      "accessCount": 2,
+      "lastAccessed": 1776638634765,
+      "type": "file"
+    },
+    {
+      "path": "src/drivers/Can/src/can_drv.c",
+      "accessCount": 2,
+      "lastAccessed": 1776638687223,
+      "type": "file"
+    },
+    {
+      "path": "docs/STM32F103_CAN_Reference.md",
       "accessCount": 1,
-      "lastAccessed": 1776556872848,
+      "lastAccessed": 1776558698911,
+      "type": "file"
+    },
+    {
+      "path": "scripts/validate-ir.py",
+      "accessCount": 1,
+      "lastAccessed": 1776558966802,
+      "type": "file"
+    },
+    {
+      "path": "",
+      "accessCount": 1,
+      "lastAccessed": 1776559338914,
+      "type": "directory"
+    },
+    {
+      "path": "src/drivers/Can/include/can_reg.h",
+      "accessCount": 1,
+      "lastAccessed": 1776638074155,
+      "type": "file"
+    },
+    {
+      "path": "src/drivers/Can/include/can_types.h",
+      "accessCount": 1,
+      "lastAccessed": 1776638135253,
+      "type": "file"
+    },
+    {
+      "path": "src/drivers/Can/include/can_cfg.h",
+      "accessCount": 1,
+      "lastAccessed": 1776638159337,
+      "type": "file"
+    },
+    {
+      "path": "src/drivers/Can/include/can_api.h",
+      "accessCount": 1,
+      "lastAccessed": 1776638345550,
+      "type": "file"
+    },
+    {
+      "path": "src/drivers/Can/src/can_isr.c",
+      "accessCount": 1,
+      "lastAccessed": 1776638461984,
+      "type": "file"
+    },
+    {
+      "path": "src/drivers/Can/src/can_ll.c",
+      "accessCount": 1,
+      "lastAccessed": 1776638722217,
       "type": "file"
     }
   ],

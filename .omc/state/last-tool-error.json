@@ -1,7 +1,0 @@
-{
-  "tool_name": "Read",
-  "tool_input_preview": "{\"file_path\":\"/Users/qlwang/Downloads/chip-driver-ai\"}",
-  "error": "EISDIR: illegal operation on a directory, read '/Users/qlwang/Downloads/chip-driver-ai'",
-  "timestamp": "2026-04-19T00:00:57.767Z",
-  "retry_count": 1
-}

@@ -1,0 +1,1528 @@
+{
+  "ir_version": "2.0",
+  "peripheral": {
+    "name": "CAN",
+    "full_name": "Controller Area Network",
+    "chip_family": "STM32F1",
+    "chip_model": "STM32F103C8T6",
+    "source_document": "RM0008 Rev 14 (STM32F1xx Reference Manual), STM32F103_CAN_Reference.md",
+    "source_sections": [
+      "Chapter 24 - Controller area network (bxCAN)",
+      "24.4.1 Initialization sequence",
+      "24.4.2 Transmission procedure",
+      "24.4.3 Reception procedure",
+      "24.5 CAN registers",
+      "7.3.x RCC configuration"
+    ],
+    "instances": [
+      {
+        "index": 0,
+        "name": "CAN1",
+        "base_address": "0x40006400",
+        "source": "RM0008 \u00a724.0, STM32F103_CAN_Reference.md \u00a71"
+      }
+    ],
+    "registers": [
+      {
+        "name": "MCR",
+        "full_name": "Master Control Register",
+        "offset": "0x00",
+        "width": 32,
+        "access": "RW",
+        "reset_value": "0x00010002",
+        "description": "CAN master control register - controls initialization, sleep, and operational modes",
+        "source": "RM0008 \u00a724.4.1, STM32F103_CAN_Reference.md \u00a74.1",
+        "confidence": 0.99,
+        "bitfields": [
+          {
+            "name": "INRQ",
+            "bits": "0",
+            "bit_offset": 0,
+            "bit_width": 1,
+            "access": "RW",
+            "reset_value": 0,
+            "description": "Initialization request - writing 1 requests entry into initialization mode",
+            "source": "RM0008 \u00a724.4.1 Table 186"
+          },
+          {
+            "name": "SLEEP",
+            "bits": "1",
+            "bit_offset": 1,
+            "bit_width": 1,
+            "access": "RW",
+            "reset_value": 1,
+            "description": "Sleep mode request - writing 1 requests sleep mode",
+            "source": "RM0008 \u00a724.4.1, STM32F103_CAN_Reference.md \u00a74.1"
+          },
+          {
+            "name": "TXFP",
+            "bits": "2",
+            "bit_offset": 2,
+            "bit_width": 1,
+            "access": "RW",
+            "reset_value": 0,
+            "description": "Transmit FIFO priority - 0=identifier based, 1=request order",
+            "source": "RM0008 \u00a724.4.1, STM32F103_CAN_Reference.md \u00a74.1"
+          },
+          {
+            "name": "RFLM",
+            "bits": "3",
+            "bit_offset": 3,
+            "bit_width": 1,
+            "access": "RW",
+            "reset_value": 0,
+            "description": "Receive FIFO locked mode",
+            "source": "RM0008 \u00a724.4.1, STM32F103_CAN_Reference.md \u00a74.1"
+          },
+          {
+            "name": "NART",
+            "bits": "4",
+            "bit_offset": 4,
+            "bit_width": 1,
+            "access": "RW",
+            "reset_value": 0,
+            "description": "No automatic retransmission - 1 to disable auto-retransmit",
+            "source": "RM0008 \u00a724.4.1, STM32F103_CAN_Reference.md \u00a74.1"
+          },
+          {
+            "name": "AWUM",
+            "bits": "5",
+            "bit_offset": 5,
+            "bit_width": 1,
+            "access": "RW",
+            "reset_value": 0,
+            "description": "Automatic wakeup mode",
+            "source": "RM0008 \u00a724.4.1, STM32F103_CAN_Reference.md \u00a74.1"
+          },
+          {
+            "name": "ABOM",
+            "bits": "6",
+            "bit_offset": 6,
+            "bit_width": 1,
+            "access": "RW",
+            "reset_value": 0,
+            "description": "Automatic bus-off recovery mode - 1 enables automatic recovery from bus-off",
+            "source": "RM0008 \u00a724.4.1, STM32F103_CAN_Reference.md \u00a74.1"
+          },
+          {
+            "name": "TTCM",
+            "bits": "7",
+            "bit_offset": 7,
+            "bit_width": 1,
+            "access": "RW",
+            "reset_value": 0,
+            "description": "Time triggered communication mode",
+            "source": "RM0008 \u00a724.4.1, STM32F103_CAN_Reference.md \u00a74.1"
+          },
+          {
+            "name": "RESET",
+            "bits": "15",
+            "bit_offset": 15,
+            "bit_width": 1,
+            "access": "RW",
+            "reset_value": 0,
+            "description": "Software reset - write 1 to reset CAN peripheral",
+            "source": "RM0008 \u00a724.4.1, STM32F103_CAN_Reference.md \u00a74.1"
+          },
+          {
+            "name": "DBF",
+            "bits": "16",
+            "bit_offset": 16,
+            "bit_width": 1,
+            "access": "RW",
+            "reset_value": 1,
+            "description": "Debug freeze - 1 to freeze CAN during debug",
+            "source": "RM0008 \u00a724.4.1, STM32F103_CAN_Reference.md \u00a74.1"
+          }
+        ]
+      },
+      {
+        "name": "MSR",
+        "full_name": "Master Status Register",
+        "offset": "0x04",
+        "width": 32,
+        "access": "RO",
+        "reset_value": "0x00000C02",
+        "description": "CAN master status register - read-only status flags",
+        "source": "RM0008 \u00a724.4.1, STM32F103_CAN_Reference.md \u00a74.2",
+        "confidence": 0.99,
+        "bitfields": [
+          {
+            "name": "INAK",
+            "bits": "0",
+            "bit_offset": 0,
+            "bit_width": 1,
+            "access": "RO",
+            "reset_value": 0,
+            "description": "Initialization mode acknowledge - 1 when in initialization mode",
+            "source": "RM0008 \u00a724.4.1, STM32F103_CAN_Reference.md \u00a74.2"
+          },
+          {
+            "name": "SLAK",
+            "bits": "1",
+            "bit_offset": 1,
+            "bit_width": 1,
+            "access": "RO",
+            "reset_value": 1,
+            "description": "Sleep mode acknowledge - 1 when in sleep mode",
+            "source": "RM0008 \u00a724.4.1, STM32F103_CAN_Reference.md \u00a74.2"
+          },
+          {
+            "name": "ERRI",
+            "bits": "2",
+            "bit_offset": 2,
+            "bit_width": 1,
+            "access": "RC_W1",
+            "reset_value": 0,
+            "description": "Error interrupt flag - cleared by writing 1",
+            "source": "RM0008 \u00a724.4.1, STM32F103_CAN_Reference.md \u00a74.2"
+          },
+          {
+            "name": "WKUI",
+            "bits": "3",
+            "bit_offset": 3,
+            "bit_width": 1,
+            "access": "RC_W1",
+            "reset_value": 0,
+            "description": "Wakeup interrupt flag - cleared by writing 1",
+            "source": "RM0008 \u00a724.4.1, STM32F103_CAN_Reference.md \u00a74.2"
+          },
+          {
+            "name": "SLAKI",
+            "bits": "4",
+            "bit_offset": 4,
+            "bit_width": 1,
+            "access": "RC_W1",
+            "reset_value": 0,
+            "description": "Sleep interrupt flag - cleared by writing 1",
+            "source": "RM0008 \u00a724.4.1, STM32F103_CAN_Reference.md \u00a74.2"
+          },
+          {
+            "name": "TXM",
+            "bits": "8",
+            "bit_offset": 8,
+            "bit_width": 1,
+            "access": "RO",
+            "reset_value": 0,
+            "description": "Transmit mode - 1 when transmitting",
+            "source": "RM0008 \u00a724.4.1, STM32F103_CAN_Reference.md \u00a74.2"
+          },
+          {
+            "name": "RXM",
+            "bits": "9",
+            "bit_offset": 9,
+            "bit_width": 1,
+            "access": "RO",
+            "reset_value": 0,
+            "description": "Receive mode - 1 when receiving",
+            "source": "RM0008 \u00a724.4.1, STM32F103_CAN_Reference.md \u00a74.2"
+          },
+          {
+            "name": "SAMP",
+            "bits": "10",
+            "bit_offset": 10,
+            "bit_width": 1,
+            "access": "RO",
+            "reset_value": 1,
+            "description": "Last sample point value",
+            "source": "RM0008 \u00a724.4.1, STM32F103_CAN_Reference.md \u00a74.2"
+          },
+          {
+            "name": "RX",
+            "bits": "11",
+            "bit_offset": 11,
+            "bit_width": 1,
+            "access": "RO",
+            "reset_value": 1,
+            "description": "CAN RX pin current level",
+            "source": "RM0008 \u00a724.4.1, STM32F103_CAN_Reference.md \u00a74.2"
+          }
+        ]
+      },
+      {
+        "name": "TSR",
+        "full_name": "Transmit Status Register",
+        "offset": "0x08",
+        "width": 32,
+        "access": "RW",
+        "reset_value": "0x1C000000",
+        "description": "Transmit status register - manages 3 transmit mailboxes",
+        "source": "RM0008 \u00a724.4.2, STM32F103_CAN_Reference.md \u00a74.3",
+        "confidence": 0.99,
+        "bitfields": [
+          {
+            "name": "RQCP0",
+            "bits": "0",
+            "bit_offset": 0,
+            "bit_width": 1,
+            "access": "RC_W1",
+            "reset_value": 0,
+            "description": "Request complete for mailbox 0 - cleared by writing 1",
+            "source": "RM0008 \u00a724.4.2, STM32F103_CAN_Reference.md \u00a74.3"
+          },
+          {
+            "name": "TXOK0",
+            "bits": "1",
+            "bit_offset": 1,
+            "bit_width": 1,
+            "access": "RO",
+            "reset_value": 0,
+            "description": "Transmission OK for mailbox 0",
+            "source": "RM0008 \u00a724.4.2, STM32F103_CAN_Reference.md \u00a74.3"
+          },
+          {
+            "name": "ALST0",
+            "bits": "2",
+            "bit_offset": 2,
+            "bit_width": 1,
+            "access": "RO",
+            "reset_value": 0,
+            "description": "Arbitration lost for mailbox 0",
+            "source": "RM0008 \u00a724.4.2, STM32F103_CAN_Reference.md \u00a74.3"
+          },
+          {
+            "name": "TERR0",
+            "bits": "3",
+            "bit_offset": 3,
+            "bit_width": 1,
+            "access": "RO",
+            "reset_value": 0,
+            "description": "Transmission error for mailbox 0",
+            "source": "RM0008 \u00a724.4.2, STM32F103_CAN_Reference.md \u00a74.3"
+          },
+          {
+            "name": "ABRQ0",
+            "bits": "7",
+            "bit_offset": 7,
+            "bit_width": 1,
+            "access": "RW",
+            "reset_value": 0,
+            "description": "Abort request for mailbox 0 - write 1 to abort transmission",
+            "source": "RM0008 \u00a724.4.2, STM32F103_CAN_Reference.md \u00a74.3"
+          },
+          {
+            "name": "RQCP1",
+            "bits": "8",
+            "bit_offset": 8,
+            "bit_width": 1,
+            "access": "RC_W1",
+            "reset_value": 0,
+            "description": "Request complete for mailbox 1",
+            "source": "RM0008 \u00a724.4.2, STM32F103_CAN_Reference.md \u00a74.3"
+          },
+          {
+            "name": "TXOK1",
+            "bits": "9",
+            "bit_offset": 9,
+            "bit_width": 1,
+            "access": "RO",
+            "reset_value": 0,
+            "description": "Transmission OK for mailbox 1",
+            "source": "RM0008 \u00a724.4.2, STM32F103_CAN_Reference.md \u00a74.3"
+          },
+          {
+            "name": "ALST1",
+            "bits": "10",
+            "bit_offset": 10,
+            "bit_width": 1,
+            "access": "RO",
+            "reset_value": 0,
+            "description": "Arbitration lost for mailbox 1",
+            "source": "RM0008 \u00a724.4.2, STM32F103_CAN_Reference.md \u00a74.3"
+          },
+          {
+            "name": "TERR1",
+            "bits": "11",
+            "bit_offset": 11,
+            "bit_width": 1,
+            "access": "RO",
+            "reset_value": 0,
+            "description": "Transmission error for mailbox 1",
+            "source": "RM0008 \u00a724.4.2, STM32F103_CAN_Reference.md \u00a74.3"
+          },
+          {
+            "name": "ABRQ1",
+            "bits": "15",
+            "bit_offset": 15,
+            "bit_width": 1,
+            "access": "RW",
+            "reset_value": 0,
+            "description": "Abort request for mailbox 1",
+            "source": "RM0008 \u00a724.4.2, STM32F103_CAN_Reference.md \u00a74.3"
+          },
+          {
+            "name": "RQCP2",
+            "bits": "16",
+            "bit_offset": 16,
+            "bit_width": 1,
+            "access": "RC_W1",
+            "reset_value": 0,
+            "description": "Request complete for mailbox 2",
+            "source": "RM0008 \u00a724.4.2, STM32F103_CAN_Reference.md \u00a74.3"
+          },
+          {
+            "name": "TXOK2",
+            "bits": "17",
+            "bit_offset": 17,
+            "bit_width": 1,
+            "access": "RO",
+            "reset_value": 0,
+            "description": "Transmission OK for mailbox 2",
+            "source": "RM0008 \u00a724.4.2, STM32F103_CAN_Reference.md \u00a74.3"
+          },
+          {
+            "name": "ALST2",
+            "bits": "18",
+            "bit_offset": 18,
+            "bit_width": 1,
+            "access": "RO",
+            "reset_value": 0,
+            "description": "Arbitration lost for mailbox 2",
+            "source": "RM0008 \u00a724.4.2, STM32F103_CAN_Reference.md \u00a74.3"
+          },
+          {
+            "name": "TERR2",
+            "bits": "19",
+            "bit_offset": 19,
+            "bit_width": 1,
+            "access": "RO",
+            "reset_value": 0,
+            "description": "Transmission error for mailbox 2",
+            "source": "RM0008 \u00a724.4.2, STM32F103_CAN_Reference.md \u00a74.3"
+          },
+          {
+            "name": "ABRQ2",
+            "bits": "23",
+            "bit_offset": 23,
+            "bit_width": 1,
+            "access": "RW",
+            "reset_value": 0,
+            "description": "Abort request for mailbox 2",
+            "source": "RM0008 \u00a724.4.2, STM32F103_CAN_Reference.md \u00a74.3"
+          },
+          {
+            "name": "CODE",
+            "bits": "25:24",
+            "bit_offset": 24,
+            "bit_width": 2,
+            "access": "RO",
+            "reset_value": 0,
+            "description": "Mailbox code - next empty mailbox number (0-2)",
+            "source": "RM0008 \u00a724.4.2, STM32F103_CAN_Reference.md \u00a74.3"
+          },
+          {
+            "name": "TME0",
+            "bits": "26",
+            "bit_offset": 26,
+            "bit_width": 1,
+            "access": "RO",
+            "reset_value": 1,
+            "description": "Transmit mailbox 0 empty",
+            "source": "RM0008 \u00a724.4.2, STM32F103_CAN_Reference.md \u00a74.3"
+          },
+          {
+            "name": "TME1",
+            "bits": "27",
+            "bit_offset": 27,
+            "bit_width": 1,
+            "access": "RO",
+            "reset_value": 1,
+            "description": "Transmit mailbox 1 empty",
+            "source": "RM0008 \u00a724.4.2, STM32F103_CAN_Reference.md \u00a74.3"
+          },
+          {
+            "name": "TME2",
+            "bits": "28",
+            "bit_offset": 28,
+            "bit_width": 1,
+            "access": "RO",
+            "reset_value": 1,
+            "description": "Transmit mailbox 2 empty",
+            "source": "RM0008 \u00a724.4.2, STM32F103_CAN_Reference.md \u00a74.3"
+          },
+          {
+            "name": "LOW0",
+            "bits": "29",
+            "bit_offset": 29,
+            "bit_width": 1,
+            "access": "RO",
+            "reset_value": 1,
+            "description": "Mailbox 0 lowest priority",
+            "source": "RM0008 \u00a724.4.2, STM32F103_CAN_Reference.md \u00a74.3"
+          },
+          {
+            "name": "LOW1",
+            "bits": "30",
+            "bit_offset": 30,
+            "bit_width": 1,
+            "access": "RO",
+            "reset_value": 1,
+            "description": "Mailbox 1 lowest priority",
+            "source": "RM0008 \u00a724.4.2, STM32F103_CAN_Reference.md \u00a74.3"
+          },
+          {
+            "name": "LOW2",
+            "bits": "31",
+            "bit_offset": 31,
+            "bit_width": 1,
+            "access": "RO",
+            "reset_value": 1,
+            "description": "Mailbox 2 lowest priority",
+            "source": "RM0008 \u00a724.4.2, STM32F103_CAN_Reference.md \u00a74.3"
+          }
+        ]
+      },
+      {
+        "name": "RF0R",
+        "full_name": "Receive FIFO 0 Register",
+        "offset": "0x0C",
+        "width": 32,
+        "access": "mixed",
+        "reset_value": "0x00000000",
+        "description": "Receive FIFO 0 status and control",
+        "source": "RM0008 \u00a724.4.3, STM32F103_CAN_Reference.md \u00a74.4",
+        "confidence": 0.99,
+        "bitfields": [
+          {
+            "name": "FMP0",
+            "bits": "1:0",
+            "bit_offset": 0,
+            "bit_width": 2,
+            "access": "RO",
+            "reset_value": 0,
+            "description": "FIFO 0 message pending - number of messages (0-3)",
+            "source": "RM0008 \u00a724.4.3, STM32F103_CAN_Reference.md \u00a74.4"
+          },
+          {
+            "name": "FULL0",
+            "bits": "3",
+            "bit_offset": 3,
+            "bit_width": 1,
+            "access": "RC_W1",
+            "reset_value": 0,
+            "description": "FIFO 0 full flag - cleared by writing 1",
+            "source": "RM0008 \u00a724.4.3, STM32F103_CAN_Reference.md \u00a74.4"
+          },
+          {
+            "name": "FOVR0",
+            "bits": "4",
+            "bit_offset": 4,
+            "bit_width": 1,
+            "access": "RC_W1",
+            "reset_value": 0,
+            "description": "FIFO 0 overrun flag - cleared by writing 1",
+            "source": "RM0008 \u00a724.4.3, STM32F103_CAN_Reference.md \u00a74.4"
+          },
+          {
+            "name": "RFOM0",
+            "bits": "5",
+            "bit_offset": 5,
+            "bit_width": 1,
+            "access": "WO",
+            "reset_value": 0,
+            "description": "Release FIFO 0 output mailbox - write 1 to release",
+            "source": "RM0008 \u00a724.4.3, STM32F103_CAN_Reference.md \u00a74.4"
+          }
+        ]
+      },
+      {
+        "name": "RF1R",
+        "full_name": "Receive FIFO 1 Register",
+        "offset": "0x10",
+        "width": 32,
+        "access": "mixed",
+        "reset_value": "0x00000000",
+        "description": "Receive FIFO 1 status and control",
+        "source": "RM0008 \u00a724.4.3, STM32F103_CAN_Reference.md \u00a74.5",
+        "confidence": 0.99,
+        "bitfields": [
+          {
+            "name": "FMP1",
+            "bits": "1:0",
+            "bit_offset": 0,
+            "bit_width": 2,
+            "access": "RO",
+            "reset_value": 0,
+            "description": "FIFO 1 message pending",
+            "source": "RM0008 \u00a724.4.3, STM32F103_CAN_Reference.md \u00a74.5"
+          },
+          {
+            "name": "FULL1",
+            "bits": "3",
+            "bit_offset": 3,
+            "bit_width": 1,
+            "access": "RC_W1",
+            "reset_value": 0,
+            "description": "FIFO 1 full flag",
+            "source": "RM0008 \u00a724.4.3, STM32F103_CAN_Reference.md \u00a74.5"
+          },
+          {
+            "name": "FOVR1",
+            "bits": "4",
+            "bit_offset": 4,
+            "bit_width": 1,
+            "access": "RC_W1",
+            "reset_value": 0,
+            "description": "FIFO 1 overrun flag",
+            "source": "RM0008 \u00a724.4.3, STM32F103_CAN_Reference.md \u00a74.5"
+          },
+          {
+            "name": "RFOM1",
+            "bits": "5",
+            "bit_offset": 5,
+            "bit_width": 1,
+            "access": "WO",
+            "reset_value": 0,
+            "description": "Release FIFO 1 output mailbox",
+            "source": "RM0008 \u00a724.4.3, STM32F103_CAN_Reference.md \u00a74.5"
+          }
+        ]
+      },
+      {
+        "name": "IER",
+        "full_name": "Interrupt Enable Register",
+        "offset": "0x14",
+        "width": 32,
+        "access": "RW",
+        "reset_value": "0x00000000",
+        "description": "CAN interrupt enable register",
+        "source": "RM0008 \u00a724.5, STM32F103_CAN_Reference.md \u00a74.6",
+        "confidence": 0.99,
+        "bitfields": [
+          {
+            "name": "TMEIE",
+            "bits": "0",
+            "bit_offset": 0,
+            "bit_width": 1,
+            "access": "RW",
+            "reset_value": 0,
+            "description": "Transmit mailbox empty interrupt enable",
+            "source": "RM0008 \u00a724.5, STM32F103_CAN_Reference.md \u00a74.6"
+          },
+          {
+            "name": "FMPIE0",
+            "bits": "1",
+            "bit_offset": 1,
+            "bit_width": 1,
+            "access": "RW",
+            "reset_value": 0,
+            "description": "FIFO 0 message pending interrupt enable",
+            "source": "RM0008 \u00a724.5, STM32F103_CAN_Reference.md \u00a74.6"
+          },
+          {
+            "name": "FFIE0",
+            "bits": "2",
+            "bit_offset": 2,
+            "bit_width": 1,
+            "access": "RW",
+            "reset_value": 0,
+            "description": "FIFO 0 full interrupt enable",
+            "source": "RM0008 \u00a724.5, STM32F103_CAN_Reference.md \u00a74.6"
+          },
+          {
+            "name": "FOVIE0",
+            "bits": "3",
+            "bit_offset": 3,
+            "bit_width": 1,
+            "access": "RW",
+            "reset_value": 0,
+            "description": "FIFO 0 overrun interrupt enable",
+            "source": "RM0008 \u00a724.5, STM32F103_CAN_Reference.md \u00a74.6"
+          },
+          {
+            "name": "FMPIE1",
+            "bits": "4",
+            "bit_offset": 4,
+            "bit_width": 1,
+            "access": "RW",
+            "reset_value": 0,
+            "description": "FIFO 1 message pending interrupt enable",
+            "source": "RM0008 \u00a724.5, STM32F103_CAN_Reference.md \u00a74.6"
+          },
+          {
+            "name": "FFIE1",
+            "bits": "5",
+            "bit_offset": 5,
+            "bit_width": 1,
+            "access": "RW",
+            "reset_value": 0,
+            "description": "FIFO 1 full interrupt enable",
+            "source": "RM0008 \u00a724.5, STM32F103_CAN_Reference.md \u00a74.6"
+          },
+          {
+            "name": "FOVIE1",
+            "bits": "6",
+            "bit_offset": 6,
+            "bit_width": 1,
+            "access": "RW",
+            "reset_value": 0,
+            "description": "FIFO 1 overrun interrupt enable",
+            "source": "RM0008 \u00a724.5, STM32F103_CAN_Reference.md \u00a74.6"
+          },
+          {
+            "name": "EWGIE",
+            "bits": "8",
+            "bit_offset": 8,
+            "bit_width": 1,
+            "access": "RW",
+            "reset_value": 0,
+            "description": "Error warning interrupt enable",
+            "source": "RM0008 \u00a724.5, STM32F103_CAN_Reference.md \u00a74.6"
+          },
+          {
+            "name": "EPVIE",
+            "bits": "9",
+            "bit_offset": 9,
+            "bit_width": 1,
+            "access": "RW",
+            "reset_value": 0,
+            "description": "Error passive interrupt enable",
+            "source": "RM0008 \u00a724.5, STM32F103_CAN_Reference.md \u00a74.6"
+          },
+          {
+            "name": "BOFIE",
+            "bits": "10",
+            "bit_offset": 10,
+            "bit_width": 1,
+            "access": "RW",
+            "reset_value": 0,
+            "description": "Bus-off interrupt enable",
+            "source": "RM0008 \u00a724.5, STM32F103_CAN_Reference.md \u00a74.6"
+          },
+          {
+            "name": "LECIE",
+            "bits": "11",
+            "bit_offset": 11,
+            "bit_width": 1,
+            "access": "RW",
+            "reset_value": 0,
+            "description": "Last error code interrupt enable",
+            "source": "RM0008 \u00a724.5, STM32F103_CAN_Reference.md \u00a74.6"
+          },
+          {
+            "name": "ERRIE",
+            "bits": "15",
+            "bit_offset": 15,
+            "bit_width": 1,
+            "access": "RW",
+            "reset_value": 0,
+            "description": "Error interrupt enable",
+            "source": "RM0008 \u00a724.5, STM32F103_CAN_Reference.md \u00a74.6"
+          },
+          {
+            "name": "WKUIE",
+            "bits": "16",
+            "bit_offset": 16,
+            "bit_width": 1,
+            "access": "RW",
+            "reset_value": 0,
+            "description": "Wakeup interrupt enable",
+            "source": "RM0008 \u00a724.5, STM32F103_CAN_Reference.md \u00a74.6"
+          },
+          {
+            "name": "SLKIE",
+            "bits": "17",
+            "bit_offset": 17,
+            "bit_width": 1,
+            "access": "RW",
+            "reset_value": 0,
+            "description": "Sleep interrupt enable",
+            "source": "RM0008 \u00a724.5, STM32F103_CAN_Reference.md \u00a74.6"
+          }
+        ]
+      },
+      {
+        "name": "ESR",
+        "full_name": "Error Status Register",
+        "offset": "0x18",
+        "width": 32,
+        "access": "RW",
+        "reset_value": "0x00000000",
+        "description": "Error status register - error counters and flags",
+        "source": "RM0008 \u00a724.4.6, STM32F103_CAN_Reference.md \u00a74.7",
+        "confidence": 0.99,
+        "bitfields": [
+          {
+            "name": "EWGF",
+            "bits": "0",
+            "bit_offset": 0,
+            "bit_width": 1,
+            "access": "RO",
+            "reset_value": 0,
+            "description": "Error warning flag - REC or TEC > 96",
+            "source": "RM0008 \u00a724.4.6, STM32F103_CAN_Reference.md \u00a74.7"
+          },
+          {
+            "name": "EPVF",
+            "bits": "1",
+            "bit_offset": 1,
+            "bit_width": 1,
+            "access": "RO",
+            "reset_value": 0,
+            "description": "Error passive flag - REC or TEC > 127",
+            "source": "RM0008 \u00a724.4.6, STM32F103_CAN_Reference.md \u00a74.7"
+          },
+          {
+            "name": "BOFF",
+            "bits": "2",
+            "bit_offset": 2,
+            "bit_width": 1,
+            "access": "RO",
+            "reset_value": 0,
+            "description": "Bus-off flag - TEC > 255",
+            "source": "RM0008 \u00a724.4.6, STM32F103_CAN_Reference.md \u00a74.7"
+          },
+          {
+            "name": "LEC",
+            "bits": "6:4",
+            "bit_offset": 4,
+            "bit_width": 3,
+            "access": "RW",
+            "reset_value": 0,
+            "description": "Last error code: 0=no error, 1=stuff error, 2=form error, 3=ack error, 4=bit recessive, 5=bit dominant, 6=CRC error, 7=software set",
+            "source": "RM0008 \u00a724.4.6, STM32F103_CAN_Reference.md \u00a74.7"
+          },
+          {
+            "name": "TEC",
+            "bits": "23:16",
+            "bit_offset": 16,
+            "bit_width": 8,
+            "access": "RO",
+            "reset_value": 0,
+            "description": "Transmit error counter (0-255)",
+            "source": "RM0008 \u00a724.4.6, STM32F103_CAN_Reference.md \u00a74.7"
+          },
+          {
+            "name": "REC",
+            "bits": "31:24",
+            "bit_offset": 24,
+            "bit_width": 8,
+            "access": "RO",
+            "reset_value": 0,
+            "description": "Receive error counter (0-255)",
+            "source": "RM0008 \u00a724.4.6, STM32F103_CAN_Reference.md \u00a74.7"
+          }
+        ]
+      },
+      {
+        "name": "BTR",
+        "full_name": "Bit Timing Register",
+        "offset": "0x1C",
+        "width": 32,
+        "access": "RW",
+        "reset_value": "0x01230000",
+        "description": "Bit timing register - only writable in initialization mode",
+        "source": "RM0008 \u00a724.4.1, STM32F103_CAN_Reference.md \u00a74.8",
+        "confidence": 0.99,
+        "bitfields": [
+          {
+            "name": "BRP",
+            "bits": "9:0",
+            "bit_offset": 0,
+            "bit_width": 10,
+            "access": "RW",
+            "reset_value": 0,
+            "description": "Baud rate prescaler (actual = BRP+1, range 1-1024)",
+            "source": "RM0008 \u00a724.4.1, STM32F103_CAN_Reference.md \u00a74.8"
+          },
+          {
+            "name": "TS1",
+            "bits": "19:16",
+            "bit_offset": 16,
+            "bit_width": 4,
+            "access": "RW",
+            "reset_value": 2,
+            "description": "Time segment 1 (actual = TS1+1, range 1-16 Tq)",
+            "source": "RM0008 \u00a724.4.1, STM32F103_CAN_Reference.md \u00a74.8"
+          },
+          {
+            "name": "TS2",
+            "bits": "22:20",
+            "bit_offset": 20,
+            "bit_width": 3,
+            "access": "RW",
+            "reset_value": 1,
+            "description": "Time segment 2 (actual = TS2+1, range 1-8 Tq)",
+            "source": "RM0008 \u00a724.4.1, STM32F103_CAN_Reference.md \u00a74.8"
+          },
+          {
+            "name": "SJW",
+            "bits": "25:24",
+            "bit_offset": 24,
+            "bit_width": 2,
+            "access": "RW",
+            "reset_value": 0,
+            "description": "Resynchronization jump width (actual = SJW+1, range 1-4 Tq)",
+            "source": "RM0008 \u00a724.4.1, STM32F103_CAN_Reference.md \u00a74.8"
+          },
+          {
+            "name": "LBKM",
+            "bits": "30",
+            "bit_offset": 30,
+            "bit_width": 1,
+            "access": "RW",
+            "reset_value": 0,
+            "description": "Loopback mode - 1 to enable (for debugging)",
+            "source": "RM0008 \u00a724.4.1, STM32F103_CAN_Reference.md \u00a74.8"
+          },
+          {
+            "name": "SILM",
+            "bits": "31",
+            "bit_offset": 31,
+            "bit_width": 1,
+            "access": "RW",
+            "reset_value": 0,
+            "description": "Silent mode - 1 to enable (listens only, no transmission)",
+            "source": "RM0008 \u00a724.4.1, STM32F103_CAN_Reference.md \u00a74.8"
+          }
+        ]
+      },
+      {
+        "name": "FMR",
+        "full_name": "Filter Master Register",
+        "offset": "0x200",
+        "width": 32,
+        "access": "RW",
+        "reset_value": "0x00000001",
+        "description": "Filter master register - manages filter initialization",
+        "source": "RM0008 \u00a724.5, STM32F103_CAN_Reference.md \u00a77.1",
+        "confidence": 0.99,
+        "bitfields": [
+          {
+            "name": "FINIT",
+            "bits": "0",
+            "bit_offset": 0,
+            "bit_width": 1,
+            "access": "RW",
+            "reset_value": 1,
+            "description": "Filter initialization mode - 1 to enter filter init mode",
+            "source": "RM0008 \u00a724.5, STM32F103_CAN_Reference.md \u00a77.1"
+          }
+        ]
+      },
+      {
+        "name": "FM1R",
+        "full_name": "Filter Mode Register",
+        "offset": "0x204",
+        "width": 32,
+        "access": "RW",
+        "reset_value": "0x00000000",
+        "description": "Filter mode register - selects mask or list mode for each filter",
+        "source": "RM0008 \u00a724.5",
+        "confidence": 0.99,
+        "bitfields": [
+          {
+            "name": "FBMx",
+            "bits": "13:0",
+            "bit_offset": 0,
+            "bit_width": 14,
+            "access": "RW",
+            "reset_value": 0,
+            "description": "Filter x mode - 0=mask mode, 1=list mode (one bit per filter 0-13)",
+            "source": "RM0008 \u00a724.5"
+          }
+        ]
+      },
+      {
+        "name": "FS1R",
+        "full_name": "Filter Scale Register",
+        "offset": "0x20C",
+        "width": 32,
+        "access": "RW",
+        "reset_value": "0x00000000",
+        "description": "Filter scale register - selects 16-bit or 32-bit filter width",
+        "source": "RM0008 \u00a724.5",
+        "confidence": 0.99,
+        "bitfields": [
+          {
+            "name": "FSCx",
+            "bits": "13:0",
+            "bit_offset": 0,
+            "bit_width": 14,
+            "access": "RW",
+            "reset_value": 0,
+            "description": "Filter x scale - 0=dual 16-bit, 1=single 32-bit (one bit per filter)",
+            "source": "RM0008 \u00a724.5"
+          }
+        ]
+      },
+      {
+        "name": "FFA1R",
+        "full_name": "Filter FIFO Assignment Register",
+        "offset": "0x214",
+        "width": 32,
+        "access": "RW",
+        "reset_value": "0x00000000",
+        "description": "Filter FIFO assignment register - assigns filter to FIFO 0 or 1",
+        "source": "RM0008 \u00a724.5",
+        "confidence": 0.99,
+        "bitfields": [
+          {
+            "name": "FFAx",
+            "bits": "13:0",
+            "bit_offset": 0,
+            "bit_width": 14,
+            "access": "RW",
+            "reset_value": 0,
+            "description": "Filter x FIFO assignment - 0=FIFO 0, 1=FIFO 1",
+            "source": "RM0008 \u00a724.5"
+          }
+        ]
+      },
+      {
+        "name": "FA1R",
+        "full_name": "Filter Activation Register",
+        "offset": "0x21C",
+        "width": 32,
+        "access": "RW",
+        "reset_value": "0x00000000",
+        "description": "Filter activation register - activates/deactivates filters",
+        "source": "RM0008 \u00a724.5",
+        "confidence": 0.99,
+        "bitfields": [
+          {
+            "name": "FACTx",
+            "bits": "13:0",
+            "bit_offset": 0,
+            "bit_width": 14,
+            "access": "RW",
+            "reset_value": 0,
+            "description": "Filter x activation - 0=inactive, 1=active (one bit per filter)",
+            "source": "RM0008 \u00a724.5"
+          }
+        ]
+      }
+    ],
+    "interrupts": [
+      {
+        "index": 0,
+        "name": "CAN1_TX",
+        "vector_number": 19,
+        "priority_configurable": true,
+        "description": "CAN1 Transmit Interrupt",
+        "source": "RM0008 \u00a724.3.1, Table Vector table",
+        "irq_number": 19
+      },
+      {
+        "index": 1,
+        "name": "CAN1_RX0",
+        "vector_number": 20,
+        "priority_configurable": true,
+        "description": "CAN1 Receive FIFO 0 Interrupt",
+        "source": "RM0008 \u00a724.3.1",
+        "irq_number": 20
+      },
+      {
+        "index": 2,
+        "name": "CAN1_RX1",
+        "vector_number": 21,
+        "priority_configurable": true,
+        "description": "CAN1 Receive FIFO 1 Interrupt",
+        "source": "RM0008 \u00a724.3.1",
+        "irq_number": 21
+      },
+      {
+        "index": 3,
+        "name": "CAN1_SCE",
+        "vector_number": 22,
+        "priority_configurable": true,
+        "description": "CAN1 Status Change / Error Interrupt",
+        "source": "RM0008 \u00a724.3.1",
+        "irq_number": 22
+      }
+    ],
+    "clock": [
+      {
+        "instance": "CAN1",
+        "bus": "APB1",
+        "enable_register": "RCC_APB1ENR",
+        "enable_bit": "CAN1EN",
+        "enable_bit_pos": 25,
+        "reset_register": "RCC_APB1RSTR",
+        "reset_bit": "CAN1RST",
+        "max_frequency_mhz": 36,
+        "source": "STM32F103_CAN_Reference.md \u00a72",
+        "confidence": 0.99
+      }
+    ],
+    "gpio_config": [
+      {
+        "function": "CAN1_TX",
+        "default_pin": "PA12",
+        "alternate_pins": [
+          "PB9 (partial remap)",
+          "PD1 (full remap)"
+        ],
+        "pin_mode": "Alternate function push-pull",
+        "pin_speed": "50 MHz",
+        "source": "STM32F103_CAN_Reference.md \u00a73.1"
+      },
+      {
+        "function": "CAN1_RX",
+        "default_pin": "PA11",
+        "alternate_pins": [
+          "PB8 (partial remap)",
+          "PD0 (full remap)"
+        ],
+        "pin_mode": "Input with pull-up",
+        "pin_speed": "N/A",
+        "source": "STM32F103_CAN_Reference.md \u00a73.1"
+      }
+    ],
+    "configuration_strategies": [
+      {
+        "id": "INIT_BASIC",
+        "name": "Basic Initialization",
+        "description": "Standard CAN initialization with APB1 clock, default pins, normal operation",
+        "steps": [
+          "Enable GPIO clock (RCC_APB2ENR)",
+          "Enable AFIO clock (RCC_APB2ENR) if using remapped pins",
+          "Configure GPIO pins CAN_TX and CAN_RX",
+          "Enable CAN clock (RCC_APB1ENR.CAN1EN = 1)",
+          "Request initialization mode (CAN1.MCR.INRQ = 1)",
+          "Wait for initialization acknowledgment (CAN1.MSR.INAK = 1)",
+          "Configure BTR register with baud rate parameters",
+          "Exit initialization mode (CAN1.MCR.INRQ = 0)",
+          "Wait for normal operation (CAN1.MSR.INAK = 0)",
+          "Configure at least one filter",
+          "Enable interrupts if needed (CAN1.IER)"
+        ],
+        "constraints": [
+          "BTR register is writable only in initialization mode",
+          "At least one filter must be activated for reception",
+          "GPIO pins must be configured before enabling CAN"
+        ],
+        "source": "STM32F103_CAN_Reference.md \u00a79",
+        "prerequisites": [
+          "APB1 clock enabled",
+          "GPIO configured"
+        ]
+      },
+      {
+        "id": "LOOPBACK_DEBUG",
+        "name": "Loopback Mode (Debugging)",
+        "description": "CAN in loopback mode for self-testing without external hardware",
+        "prerequisite_strategy": "INIT_BASIC",
+        "additional_steps": [
+          "Enable loopback mode: CAN1.BTR.LBKM = 1",
+          "Transmitted frames are automatically received in same device"
+        ],
+        "source": "STM32F103_CAN_Reference.md \u00a74.8",
+        "prerequisites": [
+          "APB1 clock enabled",
+          "GPIO configured"
+        ],
+        "constraints": []
+      },
+      {
+        "id": "SILENT_MODE",
+        "name": "Silent Mode (Listen-Only)",
+        "description": "CAN in silent mode - receives only, never transmits",
+        "additional_steps": [
+          "Enable silent mode: CAN1.BTR.SILM = 1",
+          "Device monitors bus but does not participate in arbitration"
+        ],
+        "source": "STM32F103_CAN_Reference.md \u00a74.8",
+        "prerequisites": [
+          "APB1 clock enabled",
+          "GPIO configured"
+        ],
+        "constraints": []
+      },
+      {
+        "id": "AUTO_RECOVERY",
+        "name": "Automatic Bus-Off Recovery",
+        "description": "Enable automatic recovery from bus-off state",
+        "additional_steps": [
+          "Set ABOM bit: CAN1.MCR.ABOM = 1",
+          "CAN will automatically recover from bus-off after 128 consecutive recessive bits"
+        ],
+        "source": "STM32F103_CAN_Reference.md \u00a74.1",
+        "prerequisites": [
+          "APB1 clock enabled",
+          "GPIO configured"
+        ],
+        "constraints": []
+      },
+      {
+        "id": "PIN_REMAP",
+        "name": "GPIO Pin Remapping",
+        "description": "Use alternate GPIO pins instead of default PA11/PA12",
+        "variants": [
+          {
+            "name": "Partial remap (PB8/PB9)",
+            "steps": [
+              "AFIO.MAPR[14:13] = 0b10",
+              "CAN_RX = PB8, CAN_TX = PB9"
+            ]
+          },
+          {
+            "name": "Full remap (PD0/PD1)",
+            "steps": [
+              "AFIO.MAPR[14:13] = 0b11",
+              "CAN_RX = PD0, CAN_TX = PD1"
+            ]
+          }
+        ],
+        "source": "STM32F103_CAN_Reference.md \u00a73.1",
+        "prerequisites": [
+          "APB1 clock enabled",
+          "GPIO configured"
+        ],
+        "constraints": []
+      }
+    ],
+    "cross_field_constraints": [
+      {
+        "id": "INV_CAN_001",
+        "expr": "MCR.INRQ = 1 implies writable(BTR)",
+        "description": "BTR register is writable only when in initialization mode",
+        "scope": "during_init",
+        "violation_effect": "BTR writes are ignored outside initialization mode",
+        "enforced_by": [
+          "code-gen:precondition",
+          "reviewer-agent:static"
+        ],
+        "source": "RM0008 \u00a724.4.1"
+      },
+      {
+        "id": "INV_CAN_002",
+        "expr": "MSR.INAK = 0 && MSR.SLAK = 0 implies CAN_READY",
+        "description": "CAN is ready to operate when not in initialization or sleep mode",
+        "scope": "always",
+        "violation_effect": "CAN is not ready to transmit/receive",
+        "source": "RM0008 \u00a724.4.1"
+      },
+      {
+        "id": "INV_CAN_003",
+        "expr": "FMR.FINIT = 1 implies writable(FM1R || FS1R || FFA1R || FA1R)",
+        "description": "Filter registers are writable only when FMR.FINIT = 1",
+        "scope": "during_init",
+        "violation_effect": "Filter configuration writes are ignored",
+        "source": "RM0008 \u00a724.5"
+      },
+      {
+        "id": "INV_CAN_004",
+        "expr": "FA1R & (1 << i) = 1 implies ((FM1R & (1 << i)) || filter_configured(i))",
+        "description": "At least one filter must be activated for reception to work",
+        "scope": "always",
+        "violation_effect": "No messages will be received",
+        "source": "STM32F103_CAN_Reference.md \u00a710"
+      },
+      {
+        "id": "INV_CAN_005",
+        "expr": "ESR.BOFF = 1 && MCR.ABOM = 1 implies auto_recovery_enabled",
+        "description": "With ABOM enabled, CAN automatically recovers from bus-off",
+        "scope": "always",
+        "source": "RM0008 \u00a724.4.1",
+        "violation_effect": "Register write silently fails or produces undefined behavior"
+      },
+      {
+        "id": "INV_CAN_006",
+        "expr": "TSR.TMEx = 1 implies can_transmit_mailbox_x",
+        "description": "Transmission is possible when mailbox is empty (TME = 1)",
+        "scope": "always",
+        "source": "STM32F103_CAN_Reference.md \u00a710",
+        "violation_effect": "Register write silently fails or produces undefined behavior"
+      },
+      {
+        "id": "INV_CAN_007",
+        "expr": "RF0R.FMP0 > 0 implies can_read_fifo0",
+        "description": "FIFO 0 contains messages when FMP0 > 0",
+        "scope": "always",
+        "source": "STM32F103_CAN_Reference.md \u00a711",
+        "violation_effect": "Register write silently fails or produces undefined behavior"
+      },
+      {
+        "id": "INV_CAN_008",
+        "expr": "ESR.LEC == 0 implies no_recent_error",
+        "description": "Last error code of 0 means no error occurred since last read",
+        "scope": "always",
+        "source": "RM0008 \u00a724.4.6",
+        "violation_effect": "Register write silently fails or produces undefined behavior"
+      }
+    ],
+    "atomic_sequences": [
+      {
+        "id": "SEQ_CAN_INIT_MODE",
+        "name": "Enter Initialization Mode",
+        "description": "Safe sequence to enter initialization mode with timeout",
+        "steps": [
+          {
+            "step": 1,
+            "action": "set_bit",
+            "register": "MCR",
+            "bit": "INRQ",
+            "value": 1,
+            "description": "Request initialization mode"
+          },
+          {
+            "step": 2,
+            "action": "wait_for_bit",
+            "register": "MSR",
+            "bit": "INAK",
+            "expected_value": 1,
+            "timeout_ms": 100,
+            "description": "Wait for initialization acknowledgment"
+          }
+        ],
+        "preconditions": [
+          "CAN clock must be enabled",
+          "Must not already be in initialization mode"
+        ],
+        "postconditions": [
+          "CAN is in initialization mode",
+          "BTR register is writable"
+        ],
+        "source": "STM32F103_CAN_Reference.md \u00a79, step 3-4"
+      },
+      {
+        "id": "SEQ_CAN_EXIT_INIT_MODE",
+        "name": "Exit Initialization Mode",
+        "description": "Safe sequence to exit initialization mode",
+        "steps": [
+          {
+            "step": 1,
+            "action": "clear_bit",
+            "register": "MCR",
+            "bit": "INRQ",
+            "value": 0,
+            "description": "Clear initialization request"
+          },
+          {
+            "step": 2,
+            "action": "wait_for_bit",
+            "register": "MSR",
+            "bit": "INAK",
+            "expected_value": 0,
+            "timeout_ms": 100,
+            "description": "Wait for normal mode acknowledgment"
+          }
+        ],
+        "postconditions": [
+          "CAN is in normal operating mode",
+          "Ready to transmit/receive"
+        ],
+        "source": "STM32F103_CAN_Reference.md \u00a79, step 8-9"
+      },
+      {
+        "id": "SEQ_CAN_ENTER_FILTER_INIT",
+        "name": "Enter Filter Initialization Mode",
+        "description": "Enter filter bank initialization",
+        "steps": [
+          {
+            "step": 1,
+            "action": "set_bit",
+            "register": "FMR",
+            "bit": "FINIT",
+            "value": 1
+          }
+        ],
+        "source": "STM32F103_CAN_Reference.md \u00a710"
+      },
+      {
+        "id": "SEQ_CAN_EXIT_FILTER_INIT",
+        "name": "Exit Filter Initialization Mode",
+        "description": "Exit filter bank initialization",
+        "steps": [
+          {
+            "step": 1,
+            "action": "clear_bit",
+            "register": "FMR",
+            "bit": "FINIT",
+            "value": 0
+          }
+        ],
+        "source": "STM32F103_CAN_Reference.md \u00a710"
+      }
+    ],
+    "errors": [
+      {
+        "id": "CAN_ERR_NONE",
+        "code": 0,
+        "name": "No Error",
+        "description": "No CAN error occurred"
+      },
+      {
+        "id": "CAN_ERR_STUFF",
+        "code": 1,
+        "name": "Stuff Error",
+        "description": "More than 5 consecutive bits of same level detected",
+        "recovery": "Automatic"
+      },
+      {
+        "id": "CAN_ERR_FORM",
+        "code": 2,
+        "name": "Form Error",
+        "description": "Invalid bit sequence or frame format",
+        "recovery": "Automatic"
+      },
+      {
+        "id": "CAN_ERR_ACK",
+        "code": 3,
+        "name": "Acknowledgment Error",
+        "description": "No acknowledging node detected",
+        "recovery": "Automatic"
+      },
+      {
+        "id": "CAN_ERR_BIT_RECESSIVE",
+        "code": 4,
+        "name": "Bit Recessive Error",
+        "description": "Node attempted to send dominant bit but line is recessive",
+        "recovery": "Automatic"
+      },
+      {
+        "id": "CAN_ERR_BIT_DOMINANT",
+        "code": 5,
+        "name": "Bit Dominant Error",
+        "description": "Node attempted to send recessive bit but line is dominant",
+        "recovery": "Automatic"
+      },
+      {
+        "id": "CAN_ERR_CRC",
+        "code": 6,
+        "name": "CRC Error",
+        "description": "Received CRC does not match calculated CRC",
+        "recovery": "Automatic"
+      }
+    ],
+    "timing_constraints": {
+      "baud_rate_equation": "BaudRate = APB1_CLK / ((BRP + 1) * (1 + (TS1 + 1) + (TS2 + 1)))",
+      "apb1_frequency": 36,
+      "apb1_frequency_unit": "MHz",
+      "recommended_sample_point": "75% - 87.5%",
+      "common_baud_rates": [
+        {
+          "baud_rate": 1000000,
+          "brp": 2,
+          "ts1": 8,
+          "ts2": 1,
+          "sjw": 0,
+          "sample_point": "83.3%"
+        },
+        {
+          "baud_rate": 500000,
+          "brp": 5,
+          "ts1": 8,
+          "ts2": 1,
+          "sjw": 0,
+          "sample_point": "83.3%"
+        },
+        {
+          "baud_rate": 250000,
+          "brp": 11,
+          "ts1": 8,
+          "ts2": 1,
+          "sjw": 0,
+          "sample_point": "83.3%"
+        },
+        {
+          "baud_rate": 125000,
+          "brp": 23,
+          "ts1": 8,
+          "ts2": 1,
+          "sjw": 0,
+          "sample_point": "83.3%"
+        },
+        {
+          "baud_rate": 100000,
+          "brp": 29,
+          "ts1": 8,
+          "ts2": 1,
+          "sjw": 0,
+          "sample_point": "83.3%"
+        },
+        {
+          "baud_rate": 50000,
+          "brp": 59,
+          "ts1": 8,
+          "ts2": 1,
+          "sjw": 0,
+          "sample_point": "83.3%"
+        }
+      ]
+    },
+    "functional_model": {
+      "module_type": "State machine with FIFO buffers",
+      "data_flow": "External CAN bus \u2192 RX FIFO (3 slots) \u2192 Application \u2192 TX FIFO (3 mailboxes) \u2192 CAN bus",
+      "control_flow": "Initialization mode \u2192 Normal operation / Sleep mode / Bus-off recovery",
+      "interrupt_model": "Level-triggered on flag bits: TMEIE, FMPIE0/1, FFIE0/1, FOVIE0/1, EWGIE, EPVIE, BOFIE, LECIE, ERRIE, WKUIE, SLKIE",
+      "key_features": [
+        "3 transmit mailboxes with priority handling",
+        "2 receive FIFOs with filter banks",
+        "14 configurable filter groups (STM32F103 CAN1 only)",
+        "Support for standard (11-bit) and extended (29-bit) identifiers",
+        "Error handling with automatic counter management",
+        "Loopback and silent modes for testing",
+        "Automatic bus-off recovery option",
+        "Time-triggered transmission support"
+      ]
+    },
+    "pending_reviews": [
+      {
+        "id": "REVIEW_001",
+        "category": "confidence_check",
+        "item": "Receive mailbox register offsets (RIxR, RDTxR, RDLxR, RDHxR)",
+        "confidence": 0.85,
+        "reason": "Documentation indicates offsets but implementation details for FIFO mailbox access vary by SDK",
+        "multiple_interpretations": [
+          "Direct register access: CAN1->sFIFOMailBox[x].RIR",
+          "Offset-based access: *(volatile uint32_t*)(CAN1_BASE + 0x1B0 + x*0x10)"
+        ]
+      },
+      {
+        "id": "REVIEW_002",
+        "category": "completeness",
+        "item": "Filter configuration detailed examples",
+        "confidence": 0.8,
+        "reason": "14 filter banks exist but specific mask/list mode examples not fully documented in reference"
+      }
+    ],
+    "generation_metadata": {
+      "version": "2.0",
+      "timestamp": "2026-04-19T00:00:00Z",
+      "source_files_processed": [
+        "docs/STM32F103_CAN_Reference.md",
+        "docs/ir-specification.md"
+      ],
+      "register_count": 16,
+      "bitfield_count": 87,
+      "interrupt_count": 4,
+      "configuration_strategies_count": 5,
+      "cross_field_constraints_count": 8,
+      "atomic_sequences_count": 4,
+      "error_codes_count": 7,
+      "analysis_completeness": 0.92,
+      "notes": [
+        "CAN1 is the only CAN peripheral in STM32F103C8T6",
+        "All timing parameters assume APB1 clock = 36 MHz",
+        "Filter banks 0-13 are available (14 total)",
+        "Standard baud rate table covers 50kbps to 1Mbps"
+      ]
+    },
+    "operation_modes": [
+      {
+        "name": "Normal",
+        "description": "CAN bus active, transmit and receive enabled",
+        "init_flags": {
+          "INRQ": 0,
+          "SLEEP": 0
+        }
+      },
+      {
+        "name": "Initialization",
+        "description": "Configuration mode, bus inactive",
+        "init_flags": {
+          "INRQ": 1
+        }
+      },
+      {
+        "name": "Sleep",
+        "description": "Low-power sleep mode",
+        "init_flags": {
+          "SLEEP": 1
+        }
+      }
+    ]
+  }
+}
