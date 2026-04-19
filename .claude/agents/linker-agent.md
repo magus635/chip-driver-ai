@@ -10,15 +10,17 @@
 
 ## 知识库依赖（V2.0 新增）
 
-在开始修复前，**必须**读取以下知识库：
-- `.claude/lib/error-patterns.json` — 错误模式分类库（`link_errors` 部分）
+在开始修复前，**尝试**读取以下知识库：
+- `.claude/lib/error-patterns.json` — 链接错误模式分类库（`link_errors` 部分）
 - `.claude/lib/repair-strategies.json` — 修复策略决策库
 
-这些知识库提供：
+**若文件存在**，使用其中的：
 1. 链接错误的精确分类（symbol_error, memory_error, script_error）
 2. 符号提取正则表达式
 3. 修复优先级和策略映射
 4. 内存溢出的渐进式修复策略
+
+**若文件不存在**，直接基于 `.map` 文件和链接器错误信息进行修复
 
 ---
 

@@ -44,8 +44,8 @@
   },
 
   "artifacts": {
-    "doc_summary_md":   "ir/spi_ir_summary.md",
-    "doc_summary_json": "ir/spi_ir_summary.json",
+    "ir_markdown": "ir/spi_ir_summary.md",
+    "ir_json":     "ir/spi_ir_summary.json",
     "review_report":    ".claude/review-report.md",
     "repair_log":       ".claude/repair-log.md",
     "firmware_elf":     "build/firmware.elf",

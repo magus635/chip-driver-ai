@@ -12,7 +12,8 @@
 
 - `flash_script`：烧录脚本路径（默认 `scripts/flash.sh`）
 - `debug_script`：调试快照脚本路径（默认 `scripts/debug-snapshot.sh`）
-- `doc_summary`：文档摘要路径（默认 `ir/{module}_ir_summary.md`）
+- `ir_json`：IR JSON 文件路径（默认 `ir/{module}_ir_summary.json` - **用于获取精确的期望行为和寄存器属性**）
+- `ir_markdown`：IR Markdown 文件路径（默认 `ir/{module}_ir_summary.md` - **用于快速理解模块功能和初始化流程**）
 - `session_file`：调试会话记录文件（默认 `.claude/debug-session.md`）
 - `max_rounds`：最大调试轮次（默认 8）
 
@@ -46,11 +47,18 @@ bash scripts/debug-snapshot.sh > .claude/runtime-output.txt
 ### 阶段 4 · 结果分析
 
 读取以下材料：
-1. `.claude/runtime-output.txt`（实际输出）
-2. `$doc_summary`（期望行为）
-3. 驱动源文件（`src/` 目录，对照逻辑）
+1. `.claude/runtime-output.txt`（实际输出 - 寄存器值、串口输出、变量状态）
+2. **IR JSON** `$ir_json`（期望的精确状态转移和寄存器配置）
+3. **IR Markdown** `$ir_markdown`（模块功能概览和初始化流程概要）
+4. 驱动源文件（`src/` 目录，对照代码逻辑和 IR 的对应关系）
 
-分析寄存器读值和串口输出，是否符合手册期望。提出你的修复建议或者指出需要调整的地方。
+**分析步骤**：
+- 使用 IR JSON 的 `configuration_strategies[]` 检查初始化顺序是否正确
+- 使用 IR JSON 的 `registers[]` 逐字段验证寄存器读值是否符合预期
+- 使用 IR Markdown 快速理解模块在整个系统中的地位
+- 对照驱动代码，确认实现与 IR 的一致性
+
+分析寄存器读值和串口输出，是否符合 IR JSON 中的期望行为。提出你的修复建议或者指出需要调整的地方。
 
 ### 阶段 5 · 输出结论
 

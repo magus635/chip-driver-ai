@@ -7,13 +7,36 @@
 ---
 
 ## 审查触发与输入
-当 `doc-analyst` 完成文档摘要，或寄存器头文件（`_reg.h`）生成完毕后触发。
+
+reviewer-agent 在**两个不同阶段**被触发：
+
+### 审查阶段 1：IR 完整性审查（doc-analyst 完成后）
+**触发时机**：doc-analyst 输出 `ir/<module>_ir_summary.json` 和 `ir/<module>_ir_summary.md` 后
 
 **接收参数**：
-- `doc_summary`: 寄存器与状态机摘要文件（如 `ir/{module}_ir_summary.md`）
-- `doc_summary_json`: JSON 结构化摘要（如 `ir/{module}_ir_summary.json`）
-- `target_files`: 待审查的头文件或映射代码（如有）
+- `ir_json`: IR JSON 文件（如 `ir/<module>_ir_summary.json`）
+- `ir_markdown`: IR Markdown 文件（如 `ir/{module}_ir_summary.md`）
 - `module`: 当前模块名称
+
+**审查职责**：
+- 验证 IR JSON 的完整性（配置策略、约束、初始化序列）
+- 检查 `confidence` 字段，标记需人工审核的项
+- 验证 Errata 覆盖率
+- 输出：通过/不通过，拒绝则打回 doc-analyst 修改
+
+### 审查阶段 2：代码合规审查（codegen 完成后）
+**触发时机**：code-gen 生成 `_reg.h`, `_ll.h`, `_drv.c`, `_api.h` 后
+
+**接收参数**：
+- `target_files`: 生成的驱动代码文件列表（`_reg.h`, `_ll.h`, `_drv.c`, `_api.h`）
+- `ir_json`: IR JSON 文件（用于对比验证）
+- `module`: 当前模块名称
+
+**审查职责**：
+- 执行 `scripts/check-arch.sh` 进行自动架构检查
+- 手工执行 R8 反模式检查（12 条检查清单）
+- 验证代码与 IR JSON 的一致性
+- 输出：通过/不通过，拒绝则打回 code-gen 修改
 
 ---
 

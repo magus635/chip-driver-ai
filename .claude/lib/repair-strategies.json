@@ -146,7 +146,7 @@
       },
       {
         "step": 3,
-        "action": "check_doc_summary",
+        "action": "check_ir_json",
         "file": "ir/{module}_ir_summary.json",
         "on_found": "symbol_should_be_generated"
       },

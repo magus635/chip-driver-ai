@@ -1,6 +1,6 @@
 {
   "version": "1.0.0",
-  "lastScanned": 1776464305903,
+  "lastScanned": 1776555733995,
   "projectRoot": "/Users/qlwang/Downloads/chip-driver-ai",
   "techStack": {
     "languages": [],
@@ -40,7 +40,7 @@
       "path": "build",
       "purpose": "Build output",
       "fileCount": 10,
-      "lastAccessed": 1776464305891,
+      "lastAccessed": 1776555733980,
       "keyFiles": [
         "firmware.bin",
         "firmware.elf",
@@ -53,7 +53,7 @@
       "path": "config",
       "purpose": "Configuration files",
       "fileCount": 3,
-      "lastAccessed": 1776464305891,
+      "lastAccessed": 1776555733980,
       "keyFiles": [
         "STM32F103C8T6.ld",
         "openocd.cfg",
@@ -64,7 +64,7 @@
       "path": "docs",
       "purpose": "Documentation",
       "fileCount": 5,
-      "lastAccessed": 1776464305891,
+      "lastAccessed": 1776555733980,
       "keyFiles": [
         "STM32F103_CAN_Reference.md",
         "architecture-guidelines.md",
@@ -77,7 +77,7 @@
       "path": "ir",
       "purpose": null,
       "fileCount": 2,
-      "lastAccessed": 1776464305891,
+      "lastAccessed": 1776555733980,
       "keyFiles": [
         "spi_ir_summary.json",
         "spi_ir_summary.md"
@@ -87,7 +87,7 @@
       "path": "scripts",
       "purpose": "Build/utility scripts",
       "fileCount": 8,
-      "lastAccessed": 1776464305891,
+      "lastAccessed": 1776555733981,
       "keyFiles": [
         "check-arch.sh",
         "check-env.sh",
@@ -100,135 +100,81 @@
       "path": "src",
       "purpose": "Source code",
       "fileCount": 1,
-      "lastAccessed": 1776464305891,
+      "lastAccessed": 1776555733981,
       "keyFiles": []
     }
   },
   "hotPaths": [
     {
-      "path": "ir/spi_ir_summary.json",
-      "accessCount": 9,
-      "lastAccessed": 1776487230501,
+      "path": "CLAUDE.md",
+      "accessCount": 8,
+      "lastAccessed": 1776557163840,
       "type": "file"
     },
     {
-      "path": "src/drivers/Spi/src/spi_drv.c",
-      "accessCount": 4,
-      "lastAccessed": 1776487458342,
+      "path": ".claude/commands/dev-driver.md",
+      "accessCount": 6,
+      "lastAccessed": 1776558284450,
+      "type": "file"
+    },
+    {
+      "path": ".claude/agents/codegen-agent.md",
+      "accessCount": 5,
+      "lastAccessed": 1776558261612,
+      "type": "file"
+    },
+    {
+      "path": ".claude/agents/debugger-agent.md",
+      "accessCount": 3,
+      "lastAccessed": 1776558194580,
+      "type": "file"
+    },
+    {
+      "path": ".claude/agents/reviewer-agent.md",
+      "accessCount": 3,
+      "lastAccessed": 1776558208501,
+      "type": "file"
+    },
+    {
+      "path": ".claude/agents/compiler-agent.md",
+      "accessCount": 2,
+      "lastAccessed": 1776558174323,
+      "type": "file"
+    },
+    {
+      "path": ".claude/agents/linker-agent.md",
+      "accessCount": 2,
+      "lastAccessed": 1776558181341,
+      "type": "file"
+    },
+    {
+      "path": ".claude/agents/doc-analyst.md",
+      "accessCount": 2,
+      "lastAccessed": 1776558198309,
+      "type": "file"
+    },
+    {
+      "path": ".claude/lib/session-state.json",
+      "accessCount": 2,
+      "lastAccessed": 1776558291407,
+      "type": "file"
+    },
+    {
+      "path": ".claude/lib/repair-strategies.json",
+      "accessCount": 2,
+      "lastAccessed": 1776558309832,
       "type": "file"
     },
     {
       "path": "docs/ir-specification.md",
-      "accessCount": 3,
-      "lastAccessed": 1776466241590,
-      "type": "file"
-    },
-    {
-      "path": "scripts/validate-ir.py",
-      "accessCount": 3,
-      "lastAccessed": 1776466294923,
-      "type": "file"
-    },
-    {
-      "path": "src/drivers/Spi/include/spi_api.h",
-      "accessCount": 3,
-      "lastAccessed": 1776487441580,
-      "type": "file"
-    },
-    {
-      "path": "src/drivers/Spi/include/spi_ll.h",
-      "accessCount": 3,
-      "lastAccessed": 1776487442196,
-      "type": "file"
-    },
-    {
-      "path": "src/drivers/Spi/include/spi_types.h",
-      "accessCount": 3,
-      "lastAccessed": 1776487442978,
-      "type": "file"
-    },
-    {
-      "path": "src/drivers/Spi/include/spi_cfg.h",
-      "accessCount": 3,
-      "lastAccessed": 1776487453424,
-      "type": "file"
-    },
-    {
-      "path": "src/drivers/Spi/include/spi_reg.h",
-      "accessCount": 3,
-      "lastAccessed": 1776487453659,
-      "type": "file"
-    },
-    {
-      "path": "src/drivers/Spi/src/spi_ll.c",
-      "accessCount": 3,
-      "lastAccessed": 1776487454071,
-      "type": "file"
-    },
-    {
-      "path": "CLAUDE.md",
-      "accessCount": 2,
-      "lastAccessed": 1776464636640,
-      "type": "file"
-    },
-    {
-      "path": "src/drivers/Spi/src/spi_isr.c",
-      "accessCount": 2,
-      "lastAccessed": 1776487458908,
-      "type": "file"
-    },
-    {
-      "path": ".claude/review-summary.txt",
-      "accessCount": 2,
-      "lastAccessed": 1776487635795,
-      "type": "file"
-    },
-    {
-      "path": "ir",
       "accessCount": 1,
-      "lastAccessed": 1776464550615,
-      "type": "directory"
-    },
-    {
-      "path": "docs",
-      "accessCount": 1,
-      "lastAccessed": 1776465426923,
-      "type": "directory"
-    },
-    {
-      "path": ".claude/agents/doc-analyst.md",
-      "accessCount": 1,
-      "lastAccessed": 1776465436431,
+      "lastAccessed": 1776556872705,
       "type": "file"
     },
     {
-      "path": "ir/spi_ir_summary.md",
+      "path": "ir/spi_ir_summary.json",
       "accessCount": 1,
-      "lastAccessed": 1776465719298,
-      "type": "file"
-    },
-    {
-      "path": ".claude/r8-review-report.md",
-      "accessCount": 1,
-      "lastAccessed": 1776465801782,
-      "type": "file"
-    },
-    {
-      "path": "docs/stm32f103_reference_manual.pdf",
-      "accessCount": 1,
-      "lastAccessed": 1776466241914,
-      "type": "file"
-    },
-    {
-      "path": "docs/embedded-c-coding-standard.md",
-      "accessCount": 1,
-      "lastAccessed": 1776487230134,
-      "type": "file"
-    },
-    {
-      "path": ".claude/r8-review-report-codegen.md",
-      "accessCount": 1,
-      "lastAccessed": 1776487589443,
+      "lastAccessed": 1776556872848,
       "type": "file"
     }
   ],

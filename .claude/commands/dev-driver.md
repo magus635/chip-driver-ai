@@ -94,8 +94,8 @@ output_json=ir/{module}_ir_summary.json
 
 使用 Task 工具启动 `reviewer-agent` agent 进行多维度质量审查：
 ```
-doc_summary=ir/{module}_ir_summary.md
-doc_summary_json=ir/{module}_ir_summary.json
+ir_markdown=ir/{module}_ir_summary.md
+ir_json=ir/{module}_ir_summary.json
 module=$ARGUMENTS
 review_level=${REVIEW_LEVEL:-strict}
 cmsis_header=${CMSIS_HEADER_PATH:-auto}
@@ -149,8 +149,7 @@ cmsis_header=${CMSIS_HEADER_PATH:-auto}
 使用 Agent 工具启动 `codegen-agent` agent：
 ```
 module=$ARGUMENTS
-doc_summary_json=ir/{module}_ir_summary.json
-doc_summary_md=ir/{module}_ir_summary.md
+ir_json=ir/{module}_ir_summary.json
 target_dir=src/drivers/{Module}/
 mode=full
 ```
@@ -207,8 +206,8 @@ log_file=.claude/repair-log.md
 ```
 flash_script=scripts/flash.sh
 debug_script=scripts/debug-snapshot.sh
-doc_summary=ir/{module}_ir_summary.md
-doc_summary_json=ir/{module}_ir_summary.json
+ir_json=ir/{module}_ir_summary.json
+ir_markdown=ir/{module}_ir_summary.md
 session_file=.claude/debug-session.md
 max_rounds=8
 ```

@@ -23,11 +23,14 @@
 | 参数 | 说明 | 默认值 |
 |------|------|--------|
 | `module` | 模块名称（can_bus, spi, uart, i2c, adc, tim） | 必填 |
-| `ir_json` | IR JSON 文件（唯一机器数据源） | `ir/<module>_ir_summary.json` |
-| `doc_summary_md` | Markdown 格式文档摘要（人类可读补充） | `ir/{module}_ir_summary.md` |
+| `ir_json` | IR JSON 文件（**唯一机器数据源，必须消费**） | `ir/<module>_ir_summary.json` |
 | `target_dir` | 目标代码目录 | `src/drivers/{Module}/` |
 | `mode` | 生成模式：`full` / `incremental` / `stub` | `full` |
 | `missing_symbols` | 需要补充实现的符号列表（incremental模式） | `[]` |
+
+**禁止消费：**
+- `ir/<module>_ir_summary.md` — Markdown 仅供人工审读，code-gen **禁止**消费
+- 任何手册文档 — 禁止直接读 `docs/`，必须通过 IR JSON 获取信息
 
 ---
 
@@ -382,7 +385,7 @@ void Spi_HandleInterrupt(SPI_TypeDef *SPIx)
 
 **ISR 生成规则**：
 - 一个实例一个 `*_IRQHandler` 入口（如 SPI1/SPI2/SPI3 → 三个入口），即使它们分派到同一个 `Spi_HandleInterrupt()`
-- 函数名必须从 `doc_summary.json` 的 `interrupts[].name` 字段读取，禁止硬编码
+- 函数名必须从 **IR JSON 的 `interrupts[].name` 字段**读取，禁止硬编码。示例：`$ir_json` 中 `interrupts[0].name` = "SPI1_IRQHandler"
 - ISR 函数体不得超过 10 行，所有业务逻辑必须下沉到 drv 层
 - 禁止在 ISR 中调用 `malloc` / OS 同步原语 / 阻塞等待
 

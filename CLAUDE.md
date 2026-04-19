@@ -10,10 +10,11 @@
 
 ## 核心规则 (MUST FOLLOW)
 
-### R1 · 文档优先
-- 所有寄存器地址、位域定义、初始化顺序，必须以 `docs/` 目录下的芯片手册为准
-- 不得凭记忆假设寄存器地址，必须 `Read` 文档后引用
-- 引用时在注释中标注来源，例如：`/* DS §12.3.1 - CAN_BTR reset value */`
+### R1 · IR JSON 为代码生成真值源
+- 芯片手册 (`docs/`) 是最初信息来源，doc-analyst 将其处理为结构化 IR JSON
+- **code-gen 禁止直接读芯片手册**，必须从 `ir/<module>_ir_summary.json` 读取寄存器属性
+- `ir/<module>_ir_summary.md` 仅供人工审读，code-gen 不消费 Markdown 文件
+- 所有手册来源都已标注在 IR JSON 的 `source` 字段中，保证可追溯性
 
 ### R2 · 框架约定优先
 - 驱动代码必须在用户提供的框架结构内实现，不得新增框架外的文件或改变目录结构
@@ -64,7 +65,7 @@
 | 7 | **`_api.h` 禁止 include `_ll.h` 或 `_reg.h`** | `#include "spi_ll.h"` in `spi_api.h` | 仅 include `*_types.h` 和 `*_cfg.h` | 防止实现细节泄漏到接口层 |
 | 8 | **`_ll.h` 禁止 include `_drv.h` 或 `_api.h`** | `#include "can_api.h"` in `can_ll.h` | 仅 include `*_reg.h` 和 `*_types.h` | 禁止向上依赖，保持单向依赖链 |
 | 9 | **每个模块必须实现 Init/DeInit 配对** | 只有 `Can_Init` 无 `Can_DeInit` | 补充 `Can_DeInit` 释放资源/恢复默认态 | 功能安全要求，保证模块可安全关闭和重启 |
-| 10 | **寄存器操作注释必须标注手册来源** | `CANx->BTR = btr;` | `CANx->BTR = btr; /* RM0090 §32.7.7 */` | R1 文档优先原则，保证可追溯性 |
+| 10 | **寄存器操作注释必须标注 IR 来源** | `CANx->BTR = btr;` | `CANx->BTR = btr; /* IR: configuration_strategies[0] - RM0090 §32.7.7 */` | R1 IR JSON 真值源原则，保证可追溯性 |
 | 11 | **配置锁字段写入必须前置守卫** | `SPIx->CR1 = cr1;`（SPE 未清零就改 BR/CPOL/CPHA） | 先 `SPIx->CR1 &= ~SPI_CR1_SPE_Msk;` 再写 CR1，并注释 `/* Guard: INV_SPI_002 */` | IR 中标记为 LOCK 的不变式（`<guard> implies !writable(REG.FIELD)`）必须被 code-gen 消费；LL 函数不得假设调用者已满足前置条件。违规由 `scripts/check-invariants.py` 检出，reviewer-agent 拒绝放行 |
 | 12 | **DeInit/Disable 必须遵循 IR `disable_procedures` 中的模式特定关闭序列** | `Spi_DeInit` 中 full_duplex 分支仅做 TXE→BSY→SPE，遗漏首步 RXNE 读取 | 从 IR `disable_procedures` 读取每种模式的完整步骤列表，逐步生成代码并标注手册来源 | 不同通信模式（full_duplex/receive_only/bidirectional_rx）的关闭序列步骤和顺序各不相同（RM0008 §25.3.8）；遗漏任何一步都可能导致数据丢失、时钟残留或总线挂死。code-gen 必须消费 `disable_procedures`，reviewer-agent 必须逐步核对 |
 
@@ -112,8 +113,10 @@ AI推荐: <推荐选项编号及理由>
 
 | 路径 | 用途 |
 |---|---|
-| `docs/` | 芯片手册、原理图、设计规格（只读） |
-| `src/` | 驱动源代码（AI 生成和修改的目标） |
+| `docs/` | 芯片手册、原理图、设计规格（信息来源，只读） |
+| `ir/<module>_ir_summary.json` | **code-gen 消费的真值源**（doc-analyst 生成的结构化外设描述） |
+| `ir/<module>_ir_summary.md` | 人工审读版本（IR JSON 的可读化展示，非代码消费对象） |
+| `src/` | 驱动源代码（code-gen 生成和修改的目标） |
 | `config/project.env` | 工具链路径、目标芯片、链接脚本等配置 |
 | `scripts/` | 封装的编译/链接/烧录/调试命令行脚本 |
 | `.claude/repair-log.md` | 自动追加的修复历史日志 |
@@ -125,7 +128,7 @@ AI推荐: <推荐选项编号及理由>
 
 | Agent | 职责 |
 |---|---|
-| `doc-analyst` | 读取并结构化芯片手册，按 `docs/ir-specification.md` 规范输出外设 IR JSON。**必须执行 §5.2~5.3 的完整性检查**：(1) 配置矩阵穷举（master/slave 对称性），(2) 配置策略提取（single-master/multimaster），(3) 跨字段约束识别（LOCK/交互），(4) 初始化前置条件标注，(5) Errata 可用性检查。运行 `python3 scripts/validate-ir.py` 验证 IR 完整性。存放于 `ir/<module>_ir_summary.json` |
+| `doc-analyst` | 读取并结构化芯片手册，按 `docs/ir-specification.md` 规范输出两份产物：(1) **`ir/<module>_ir_summary.json`** - code-gen 消费的真值源（必须执行 §5.2~5.3 的完整性检查）；(2) **`ir/<module>_ir_summary.md`** - 人工审读版本（供人类理解，code-gen 不消费）。完整性检查包含：配置矩阵穷举、配置策略提取、跨字段约束识别、初始化前置条件标注、Errata 可用性检查。运行 `python3 scripts/validate-ir.py` 验证 IR 完整性 |
 | `code-gen` | 读取 doc-analyst 产出的 IR JSON，按架构分层和编码规范生成驱动代码。**必须消费** `configuration_strategies[]` 和 `cross_field_constraints[]`，在初始化代码中插入 guard 检查（如 INV_SPI_002）。寄存器层从 IR 直接映射（确定性），驱动逻辑层由 AI 推理生成 |
 | `reviewer-agent` | **编译前合规审查**（质量关卡）：执行 `scripts/check-arch.sh` 自动检查 + R8 反模式逐条人工审查。不通过则打回 code-gen 修改，禁止带违规代码进入编译 |
 | `compiler-agent` | 执行编译→捕获错误→定位→修复，循环至成功 |
@@ -135,29 +138,51 @@ AI推荐: <推荐选项编号及理由>
 ### Agent 工作流（强制执行顺序）
 
 ```
-┌──────────────┐     ┌──────────────┐     ┌─────────────────┐
-│  doc-analyst │────▶│   code-gen   │────▶│ reviewer-agent  │
-│  输出 IR JSON │     │  生成驱动代码  │     │ 合规审查 (R8+脚本)│
-└──────────────┘     └──────────────┘     └────────┬────────┘
-                            ▲                      │
-                            │ 不通过：打回修改        │ 通过
-                            └──────────────────────│
-                                                   ▼
-                     ┌──────────────┐     ┌─────────────────┐
-                     │ linker-agent │◀────│ compiler-agent  │
-                     │  链接修复     │     │   编译修复       │
-                     └──────┬───────┘     └─────────────────┘
-                            │
-                            ▼
-                     ┌──────────────┐
-                     │debugger-agent│
-                     │ 烧录/调试验证 │
-                     └──────────────┘
+docs/ 芯片手册
+    │
+    ▼
+┌──────────────────────┐
+│   doc-analyst        │
+│  生成 IR JSON + Markdown
+└──────────┬───────────┘
+           │
+    ┌──────┴──────┐
+    │             │
+    ▼             ▼
+IR JSON      IR Markdown
+(code消费)   (人工审读)
+    │
+    ▼
+┌──────────────┐
+│  code-gen    │────▶ 驱动代码
+│ 从 IR 读取    │
+└──────────────┘
+    │
+    ▼
+┌─────────────────┐     ┌─────────────────┐
+│ reviewer-agent  │────▶│ compiler-agent  │
+│ 合规审查(R8+脚本)│     │   编译修复       │
+└────────┬────────┘     └─────────────────┘
+         │ 不通过：打回     │ 成功
+         │               │
+         └──────┬────────┘
+                ▼
+        ┌──────────────┐
+        │ linker-agent │
+        │  链接修复     │
+        └──────┬───────┘
+               │
+               ▼
+        ┌──────────────┐
+        │debugger-agent│
+        │ 烧录/调试验证 │
+        └──────────────┘
 ```
 
 **关键约束**：
+- **IR JSON 是唯一真值源**：code-gen 必须从 `ir/<module>_ir_summary.json` 读取，禁止直接读手册或 Markdown
+- **Markdown 仅供审读**：不作为代码生成的输入，仅用于人工理解和验证
 - reviewer-agent 是**质量关卡**（Quality Gate），不通过则代码不得进入编译阶段
-- code-gen **必须**从 IR JSON 读取寄存器属性，禁止自行假设 access type
 - 每次 reviewer-agent 发现的问题，追加记录到 `.claude/review-log.md`，防止同类问题反复出现
 
 ---
