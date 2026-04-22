@@ -1,6 +1,6 @@
 {
   "version": "1.0.0",
-  "lastScanned": 1776555733995,
+  "lastScanned": 1776810090895,
   "projectRoot": "/Users/qlwang/Downloads/chip-driver-ai",
   "techStack": {
     "languages": [],
@@ -40,7 +40,7 @@
       "path": "build",
       "purpose": "Build output",
       "fileCount": 10,
-      "lastAccessed": 1776555733980,
+      "lastAccessed": 1776810090880,
       "keyFiles": [
         "firmware.bin",
         "firmware.elf",
@@ -53,7 +53,7 @@
       "path": "config",
       "purpose": "Configuration files",
       "fileCount": 3,
-      "lastAccessed": 1776555733980,
+      "lastAccessed": 1776810090881,
       "keyFiles": [
         "STM32F103C8T6.ld",
         "openocd.cfg",
@@ -64,7 +64,7 @@
       "path": "docs",
       "purpose": "Documentation",
       "fileCount": 5,
-      "lastAccessed": 1776555733980,
+      "lastAccessed": 1776810090881,
       "keyFiles": [
         "STM32F103_CAN_Reference.md",
         "architecture-guidelines.md",
@@ -76,9 +76,11 @@
     "ir": {
       "path": "ir",
       "purpose": null,
-      "fileCount": 2,
-      "lastAccessed": 1776555733980,
+      "fileCount": 4,
+      "lastAccessed": 1776810090881,
       "keyFiles": [
+        "can_ir_summary.json",
+        "can_ir_summary.md",
         "spi_ir_summary.json",
         "spi_ir_summary.md"
       ]
@@ -87,7 +89,7 @@
       "path": "scripts",
       "purpose": "Build/utility scripts",
       "fileCount": 8,
-      "lastAccessed": 1776555733981,
+      "lastAccessed": 1776810090881,
       "keyFiles": [
         "check-arch.sh",
         "check-env.sh",
@@ -100,219 +102,87 @@
       "path": "src",
       "purpose": "Source code",
       "fileCount": 1,
-      "lastAccessed": 1776555733981,
+      "lastAccessed": 1776810090881,
       "keyFiles": []
     }
   },
   "hotPaths": [
     {
-      "path": "CLAUDE.md",
+      "path": "docs/parsed/stm32f103_reference_manual.md",
       "accessCount": 8,
-      "lastAccessed": 1776557163840,
-      "type": "file"
-    },
-    {
-      "path": ".claude/commands/dev-driver.md",
-      "accessCount": 7,
-      "lastAccessed": 1776558526386,
-      "type": "file"
-    },
-    {
-      "path": ".claude/agents/codegen-agent.md",
-      "accessCount": 7,
-      "lastAccessed": 1776637297409,
-      "type": "file"
-    },
-    {
-      "path": "ir/can_ir_summary.json",
-      "accessCount": 6,
-      "lastAccessed": 1776637280440,
+      "lastAccessed": 1776813838083,
       "type": "file"
     },
     {
       "path": ".claude/agents/doc-analyst.md",
+      "accessCount": 5,
+      "lastAccessed": 1776813788848,
+      "type": "file"
+    },
+    {
+      "path": "scripts/parse-pdf.sh",
       "accessCount": 4,
-      "lastAccessed": 1776558690693,
-      "type": "file"
-    },
-    {
-      "path": "src/drivers/Can/include/can_ll.h",
-      "accessCount": 4,
-      "lastAccessed": 1776638679187,
-      "type": "file"
-    },
-    {
-      "path": ".claude/agents/debugger-agent.md",
-      "accessCount": 3,
-      "lastAccessed": 1776558194580,
-      "type": "file"
-    },
-    {
-      "path": ".claude/agents/reviewer-agent.md",
-      "accessCount": 3,
-      "lastAccessed": 1776558208501,
-      "type": "file"
-    },
-    {
-      "path": ".claude/settings.local.json",
-      "accessCount": 3,
-      "lastAccessed": 1776558464384,
-      "type": "file"
-    },
-    {
-      "path": "docs/ir-specification.md",
-      "accessCount": 3,
-      "lastAccessed": 1776559138961,
-      "type": "file"
-    },
-    {
-      "path": ".claude/agents/compiler-agent.md",
-      "accessCount": 2,
-      "lastAccessed": 1776558174323,
-      "type": "file"
-    },
-    {
-      "path": ".claude/agents/linker-agent.md",
-      "accessCount": 2,
-      "lastAccessed": 1776558181341,
-      "type": "file"
-    },
-    {
-      "path": ".claude/lib/session-state.json",
-      "accessCount": 2,
-      "lastAccessed": 1776558291407,
-      "type": "file"
-    },
-    {
-      "path": ".claude/lib/repair-strategies.json",
-      "accessCount": 2,
-      "lastAccessed": 1776558309832,
-      "type": "file"
-    },
-    {
-      "path": "ir/can_ir_summary.md",
-      "accessCount": 2,
-      "lastAccessed": 1776558888019,
+      "lastAccessed": 1776813201001,
       "type": "file"
     },
     {
       "path": "ir/spi_ir_summary.json",
-      "accessCount": 2,
-      "lastAccessed": 1776559152476,
-      "type": "file"
-    },
-    {
-      "path": "docs/embedded-c-coding-standard.md",
-      "accessCount": 2,
-      "lastAccessed": 1776637298080,
-      "type": "file"
-    },
-    {
-      "path": "src/drivers/Spi/include/spi_reg.h",
-      "accessCount": 2,
-      "lastAccessed": 1776637304907,
-      "type": "file"
-    },
-    {
-      "path": "src/drivers/Spi/include/spi_types.h",
-      "accessCount": 2,
-      "lastAccessed": 1776637304971,
-      "type": "file"
-    },
-    {
-      "path": "src/drivers/Spi/include/spi_cfg.h",
-      "accessCount": 2,
-      "lastAccessed": 1776637305310,
-      "type": "file"
-    },
-    {
-      "path": "src/drivers/Spi/include/spi_ll.h",
-      "accessCount": 2,
-      "lastAccessed": 1776637305605,
-      "type": "file"
-    },
-    {
-      "path": "src/drivers/Spi/include/spi_api.h",
-      "accessCount": 2,
-      "lastAccessed": 1776637306027,
-      "type": "file"
-    },
-    {
-      "path": "src/drivers/Spi/src/spi_drv.c",
-      "accessCount": 2,
-      "lastAccessed": 1776637312750,
-      "type": "file"
-    },
-    {
-      "path": "src/drivers/Spi/src/spi_isr.c",
-      "accessCount": 2,
-      "lastAccessed": 1776637313292,
-      "type": "file"
-    },
-    {
-      "path": "src/drivers/Spi/src/spi_ll.c",
-      "accessCount": 2,
-      "lastAccessed": 1776638634765,
-      "type": "file"
-    },
-    {
-      "path": "src/drivers/Can/src/can_drv.c",
-      "accessCount": 2,
-      "lastAccessed": 1776638687223,
-      "type": "file"
-    },
-    {
-      "path": "docs/STM32F103_CAN_Reference.md",
-      "accessCount": 1,
-      "lastAccessed": 1776558698911,
-      "type": "file"
-    },
-    {
-      "path": "scripts/validate-ir.py",
-      "accessCount": 1,
-      "lastAccessed": 1776558966802,
+      "accessCount": 4,
+      "lastAccessed": 1776814070655,
       "type": "file"
     },
     {
       "path": "",
-      "accessCount": 1,
-      "lastAccessed": 1776559338914,
+      "accessCount": 2,
+      "lastAccessed": 1776813280566,
       "type": "directory"
     },
     {
-      "path": "src/drivers/Can/include/can_reg.h",
+      "path": "src/drivers/Spi/include/spi_api.h",
       "accessCount": 1,
-      "lastAccessed": 1776638074155,
+      "lastAccessed": 1776811973451,
       "type": "file"
     },
     {
-      "path": "src/drivers/Can/include/can_types.h",
+      "path": "src/drivers/Spi/include/spi_ll.h",
       "accessCount": 1,
-      "lastAccessed": 1776638135253,
+      "lastAccessed": 1776811973688,
       "type": "file"
     },
     {
-      "path": "src/drivers/Can/include/can_cfg.h",
+      "path": "src/drivers/Spi/include/spi_reg.h",
       "accessCount": 1,
-      "lastAccessed": 1776638159337,
+      "lastAccessed": 1776811974098,
       "type": "file"
     },
     {
-      "path": "src/drivers/Can/include/can_api.h",
+      "path": "src/drivers/Spi/include/spi_types.h",
       "accessCount": 1,
-      "lastAccessed": 1776638345550,
+      "lastAccessed": 1776811978578,
       "type": "file"
     },
     {
-      "path": "src/drivers/Can/src/can_isr.c",
+      "path": "src/drivers/Spi/include/spi_cfg.h",
       "accessCount": 1,
-      "lastAccessed": 1776638461984,
+      "lastAccessed": 1776811978899,
       "type": "file"
     },
     {
-      "path": "src/drivers/Can/src/can_ll.c",
+      "path": "src/drivers/Spi/src/spi_drv.c",
       "accessCount": 1,
-      "lastAccessed": 1776638722217,
+      "lastAccessed": 1776811979635,
+      "type": "file"
+    },
+    {
+      "path": "docs/spi-architecture-comparison.md",
+      "accessCount": 1,
+      "lastAccessed": 1776812118020,
+      "type": "file"
+    },
+    {
+      "path": "scripts/check-env.sh",
+      "accessCount": 1,
+      "lastAccessed": 1776812834267,
       "type": "file"
     }
   ],

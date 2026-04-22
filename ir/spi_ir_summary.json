@@ -9,6 +9,7 @@
     "source_sections": [
       "25.5 SPI registers",
       "25.3 SPI functional description",
+      "25.3.8 Disabling the SPI",
       "25.3.10 Error flags",
       "7.3.7 RCC_APB2ENR",
       "7.3.8 RCC_APB1ENR",
@@ -164,46 +165,14 @@
             "source": "RM0008 §25.5.1 p.715",
             "confidence": 0.99,
             "enumerated_values": [
-              {
-                "value": 0,
-                "name": "DIV2",
-                "description": "fPCLK/2"
-              },
-              {
-                "value": 1,
-                "name": "DIV4",
-                "description": "fPCLK/4"
-              },
-              {
-                "value": 2,
-                "name": "DIV8",
-                "description": "fPCLK/8"
-              },
-              {
-                "value": 3,
-                "name": "DIV16",
-                "description": "fPCLK/16"
-              },
-              {
-                "value": 4,
-                "name": "DIV32",
-                "description": "fPCLK/32"
-              },
-              {
-                "value": 5,
-                "name": "DIV64",
-                "description": "fPCLK/64"
-              },
-              {
-                "value": 6,
-                "name": "DIV128",
-                "description": "fPCLK/128"
-              },
-              {
-                "value": 7,
-                "name": "DIV256",
-                "description": "fPCLK/256"
-              }
+              { "value": 0, "name": "DIV2",   "description": "fPCLK/2"   },
+              { "value": 1, "name": "DIV4",   "description": "fPCLK/4"   },
+              { "value": 2, "name": "DIV8",   "description": "fPCLK/8"   },
+              { "value": 3, "name": "DIV16",  "description": "fPCLK/16"  },
+              { "value": 4, "name": "DIV32",  "description": "fPCLK/32"  },
+              { "value": 5, "name": "DIV64",  "description": "fPCLK/64"  },
+              { "value": 6, "name": "DIV128", "description": "fPCLK/128" },
+              { "value": 7, "name": "DIV256", "description": "fPCLK/256" }
             ]
           },
           {
@@ -525,21 +494,13 @@
         "name": "SPI1",
         "irq_number": 35,
         "description": "SPI1 global interrupt. Shared by TXE, RXNE, MODF, OVR, and CRCERR events.",
-        "trigger_registers": [
-          "SR"
-        ],
-        "trigger_flags": [
-          "TXE",
-          "RXNE",
-          "MODF",
-          "OVR",
-          "CRCERR"
-        ],
+        "trigger_registers": ["SR"],
+        "trigger_flags": ["TXE", "RXNE", "MODF", "OVR", "CRCERR"],
         "enable_bits": {
-          "TXE": "CR2.TXEIE",
-          "RXNE": "CR2.RXNEIE",
-          "MODF": "CR2.ERRIE",
-          "OVR": "CR2.ERRIE",
+          "TXE":    "CR2.TXEIE",
+          "RXNE":   "CR2.RXNEIE",
+          "MODF":   "CR2.ERRIE",
+          "OVR":    "CR2.ERRIE",
           "CRCERR": "CR2.ERRIE"
         },
         "source": "RM0008 §25.3.11 Table 182 p.695, Table 63 p.197"
@@ -548,21 +509,13 @@
         "name": "SPI2",
         "irq_number": 36,
         "description": "SPI2 global interrupt. Shared by TXE, RXNE, MODF, OVR, and CRCERR events.",
-        "trigger_registers": [
-          "SR"
-        ],
-        "trigger_flags": [
-          "TXE",
-          "RXNE",
-          "MODF",
-          "OVR",
-          "CRCERR"
-        ],
+        "trigger_registers": ["SR"],
+        "trigger_flags": ["TXE", "RXNE", "MODF", "OVR", "CRCERR"],
         "enable_bits": {
-          "TXE": "CR2.TXEIE",
-          "RXNE": "CR2.RXNEIE",
-          "MODF": "CR2.ERRIE",
-          "OVR": "CR2.ERRIE",
+          "TXE":    "CR2.TXEIE",
+          "RXNE":   "CR2.RXNEIE",
+          "MODF":   "CR2.ERRIE",
+          "OVR":    "CR2.ERRIE",
           "CRCERR": "CR2.ERRIE"
         },
         "source": "RM0008 §25.3.11 Table 182 p.695, Table 63 p.197"
@@ -793,7 +746,7 @@
         ],
         "constraints": [
           "Read SR must occur while MODF=1",
-          "After clearing, reconfigure SPI as needed since MSTR was cleared by hardware"
+          "After clearing, reconfigure SPI as needed since MSTR and SPE were both cleared by hardware"
         ],
         "barrier_required": false
       }
@@ -812,7 +765,7 @@
         "type": "Mode Fault",
         "flag": "SR.MODF",
         "flag_access": "RC_SEQ",
-        "effect": "MSTR bit is cleared by hardware, SPI forced to slave mode. SPE is not cleared. NSS pin released.",
+        "effect": "Both MSTR and SPE bits are cleared by hardware (SPI forced to slave mode and disabled). NSS pin released.",
         "recovery_sequence": "SEQ_MODF_CLEAR",
         "prevention": "In software NSS mode (SSM=1), set SSI=1 for master (INV_SPI_001). In hardware NSS multimaster mode, implement arbitration protocol.",
         "source": "RM0008 §25.3.10 p.693"
@@ -847,9 +800,7 @@
           "field": "IOPxEN, AFIOEN",
           "value": "1",
           "layer": "drv",
-          "requires": [
-            1
-          ],
+          "requires": [1],
           "source": "RM0008 §7.3.7 p.110"
         },
         {
@@ -860,9 +811,7 @@
           "value": "0 or 1",
           "layer": "drv",
           "condition": "SPI1 remap needed",
-          "requires": [
-            2
-          ],
+          "requires": [2],
           "source": "RM0008 §9.3.10 p.181"
         },
         {
@@ -870,10 +819,7 @@
           "description": "Configure GPIO pins for SPI function (SCK, MISO, MOSI, NSS per Table 25)",
           "register": "GPIOx_CRL/CRH",
           "layer": "drv",
-          "requires": [
-            2,
-            3
-          ],
+          "requires": [2, 3],
           "source": "RM0008 Table 25 p.161-162"
         },
         {
@@ -883,9 +829,7 @@
           "field": "SPE",
           "value": "0",
           "layer": "ll",
-          "requires": [
-            1
-          ],
+          "requires": [1],
           "source": "RM0008 §25.5.1 p.714-715 Notes"
         },
         {
@@ -894,9 +838,7 @@
           "register": "CR1",
           "field": "CPOL, CPHA",
           "layer": "ll",
-          "requires": [
-            5
-          ],
+          "requires": [5],
           "source": "RM0008 §25.5.1 p.715"
         },
         {
@@ -905,9 +847,7 @@
           "register": "CR1",
           "field": "BR",
           "layer": "ll",
-          "requires": [
-            5
-          ],
+          "requires": [5],
           "source": "RM0008 §25.5.1 p.715"
         },
         {
@@ -916,9 +856,7 @@
           "register": "CR1",
           "field": "MSTR, DFF, LSBFIRST, BIDIMODE, BIDIOE, RXONLY",
           "layer": "ll",
-          "requires": [
-            5
-          ],
+          "requires": [5],
           "source": "RM0008 §25.5.1 p.714-715"
         },
         {
@@ -927,9 +865,7 @@
           "register": "CR1, CRCPR",
           "field": "SSM, SSI, CRCEN",
           "layer": "ll",
-          "requires": [
-            5
-          ],
+          "requires": [5],
           "source": "RM0008 §25.5.1 p.715, §25.5.5 p.718"
         },
         {
@@ -938,9 +874,7 @@
           "register": "CR2",
           "field": "TXEIE, RXNEIE, ERRIE, SSOE, TXDMAEN, RXDMAEN",
           "layer": "ll",
-          "requires": [
-            9
-          ],
+          "requires": [9],
           "source": "RM0008 §25.5.2 p.716"
         },
         {
@@ -950,48 +884,23 @@
           "field": "SPE",
           "value": "1",
           "layer": "ll",
-          "requires": [
-            6,
-            7,
-            8,
-            9,
-            10
-          ],
+          "requires": [6, 7, 8, 9, 10],
           "source": "RM0008 §25.5.1 p.715"
         }
       ],
       "deinit_sequence": [
         {
           "order": 1,
-          "description": "Wait for TXE=1 (Tx buffer empty)",
-          "register": "SR",
-          "field": "TXE",
-          "condition": "== 1",
+          "description": "Execute mode-specific disable procedure from disable_procedures (select by BIDIMODE/RXONLY/MSTR)",
+          "register": "SR, CR1",
+          "field": "TXE, RXNE, BSY, SPE",
+          "condition": "see disable_procedures",
           "timeout_required": true,
           "layer": "ll",
           "source": "RM0008 §25.3.8 p.691"
         },
         {
           "order": 2,
-          "description": "Wait for BSY=0 (SPI not busy)",
-          "register": "SR",
-          "field": "BSY",
-          "condition": "== 0",
-          "timeout_required": true,
-          "layer": "ll",
-          "source": "RM0008 §25.3.8 p.691"
-        },
-        {
-          "order": 3,
-          "description": "Disable SPI (clear SPE)",
-          "register": "CR1",
-          "field": "SPE",
-          "value": "0",
-          "layer": "ll",
-          "source": "RM0008 §25.3.8 p.691"
-        },
-        {
-          "order": 4,
           "description": "Disable SPI clock via RCC (optional, for power saving)",
           "register": "RCC_APBxENR",
           "field": "SPIxEN",
@@ -1001,174 +910,270 @@
         }
       ],
       "disable_procedures": {
-        "full_duplex_master_tx_rx": {
-          "description": "Disable procedure for master in full-duplex or transmit-only mode",
+        "full_duplex": {
+          "description": "Disable procedure for master or slave in full-duplex mode (BIDIMODE=0, RXONLY=0)",
+          "conditions": {
+            "BIDIMODE": 0,
+            "RXONLY": 0
+          },
           "steps": [
-            "1. Wait until RXNE=1 (last received frame available in Rx buffer), then read one byte from DR to drain it. Ensures no data loss before transmission completes.",
-            "2. Wait until TXE=1 (last data loaded into Tx buffer)",
-            "3. Wait until BSY=0 (transmission complete)",
-            "4. Clear SPE bit"
+            {
+              "order": 1,
+              "action": "POLL_FLAG",
+              "register": "SR",
+              "flag": "RXNE",
+              "condition": "== 1",
+              "comment": "Wait until RXNE=1 to receive the last data"
+            },
+            {
+              "order": 2,
+              "action": "POLL_FLAG",
+              "register": "SR",
+              "flag": "TXE",
+              "condition": "== 1",
+              "comment": "Wait until TXE=1 (Tx buffer empty)"
+            },
+            {
+              "order": 3,
+              "action": "POLL_FLAG",
+              "register": "SR",
+              "flag": "BSY",
+              "condition": "== 0",
+              "comment": "Wait until BSY=0 (transmission complete)"
+            },
+            {
+              "order": 4,
+              "action": "WRITE_BIT",
+              "register": "CR1",
+              "field": "SPE",
+              "value": 0,
+              "comment": "Disable the SPI (SPE=0)"
+            }
           ],
-          "source": "RM0008 §25.3.8 p.691",
-          "applies_to": [
-            "master_full_duplex",
-            "master_tx_only",
-            "slave_full_duplex",
-            "slave_tx_only"
-          ],
-          "note": "Applies to both master and slave in full-duplex or transmit-only modes. Same procedure regardless of MSTR setting."
+          "applies_to": ["master_full_duplex", "slave_full_duplex"],
+          "source": "RM0008 §25.3.8 p.691 — 'In master or slave full-duplex mode (BIDIMODE=0, RXONLY=0)'"
         },
-        "master_receive_only": {
-          "description": "Disable procedure for master in receive-only mode (RXONLY=1)",
+        "tx_only": {
+          "description": "Disable procedure for master or slave in transmit-only mode (BIDIMODE=0, RXONLY=0, TX-only usage). After the last data is written into SPI_DR.",
+          "conditions": {
+            "BIDIMODE": 0,
+            "RXONLY": 0,
+            "usage": "tx_only"
+          },
           "steps": [
-            "1. Clear SPE bit (stops clock generation after current reception completes)",
-            "2. Wait until BSY=0",
-            "3. Read remaining data from DR"
+            {
+              "order": 1,
+              "action": "POLL_FLAG",
+              "register": "SR",
+              "flag": "TXE",
+              "condition": "== 1",
+              "comment": "Wait until TXE=1 (last data moved from Tx buffer to shift register)"
+            },
+            {
+              "order": 2,
+              "action": "POLL_FLAG",
+              "register": "SR",
+              "flag": "BSY",
+              "condition": "== 0",
+              "comment": "Wait until BSY=0 (shift register drained, transmission complete)"
+            },
+            {
+              "order": 3,
+              "action": "WRITE_BIT",
+              "register": "CR1",
+              "field": "SPE",
+              "value": 0,
+              "comment": "Disable the SPI (SPE=0)"
+            }
           ],
-          "note": "Applies to both master and slave in receive-only mode. SPE must be cleared first to stop clock generation.",
-          "source": "RM0008 §25.3.8 p.691",
-          "applies_to": [
-            "master_rx_only",
-            "slave_rx_only"
-          ]
+          "applies_to": ["master_tx_only", "slave_tx_only"],
+          "note": "No RXNE wait step. In transmit-only usage the OVR flag may be set since received data is never read — this is expected and not an error.",
+          "source": "RM0008 §25.3.8 p.691 — 'In master or slave unidirectional transmit-only mode (BIDIMODE=0, RXONLY=0)'"
         },
-        "bidirectional_rx": {
-          "description": "Disable procedure for bidirectional receive mode (BIDIMODE=1, BIDIOE=0)",
+        "master_rx_only_and_bidi_rx": {
+          "description": "Disable procedure for master in unidirectional receive-only mode (MSTR=1, BIDIMODE=0, RXONLY=1) or master in bidirectional receive mode (MSTR=1, BIDIMODE=1, BIDIOE=0). Special handling required to avoid spurious new transfer.",
+          "conditions": {
+            "MSTR": 1,
+            "modes": [
+              { "BIDIMODE": 0, "RXONLY": 1 },
+              { "BIDIMODE": 1, "BIDIOE": 0 }
+            ]
+          },
           "steps": [
-            "1. Clear BIDIOE bit to stop clock in master mode / stop driving data in slave mode",
-            "2. Wait until BSY=0",
-            "3. Clear SPE bit",
-            "4. Read remaining data from DR"
+            {
+              "order": 1,
+              "action": "POLL_FLAG",
+              "register": "SR",
+              "flag": "RXNE",
+              "condition": "== 1",
+              "count": "n-1",
+              "comment": "Wait for the second-to-last occurrence of RXNE=1 (n-1 frames). There is n data to receive; wait for n-1 of them."
+            },
+            {
+              "order": 2,
+              "action": "SOFTWARE_DELAY",
+              "duration": "one SPI clock cycle",
+              "comment": "Wait one SPI clock cycle using a software loop before disabling SPE. This is mandatory to prevent a new transfer from being initiated."
+            },
+            {
+              "order": 3,
+              "action": "WRITE_BIT",
+              "register": "CR1",
+              "field": "SPE",
+              "value": 0,
+              "comment": "Disable the SPI (SPE=0) — stops clock generation"
+            },
+            {
+              "order": 4,
+              "action": "POLL_FLAG",
+              "register": "SR",
+              "flag": "RXNE",
+              "condition": "== 1",
+              "comment": "Wait for the last RXNE=1 and read the final received byte"
+            }
           ],
-          "source": "RM0008 §25.3.8 p.691",
-          "applies_to": [
-            "master_bidi_rx",
-            "slave_bidi_rx"
+          "applies_to": ["master_rx_only", "master_bidi_rx"],
+          "note": "BSY flag is kept LOW during master bidirectional receive mode (MSTR=1, BDM=1, BDOE=0) — do NOT use BSY polling in this mode. Use the n-1 RXNE + clock cycle delay + SPE=0 + last RXNE sequence instead.",
+          "source": "RM0008 §25.3.8 p.691 — 'In master unidirectional receive-only mode (MSTR=1, BIDIMODE=0, RXONLY=1) or bidirectional receive mode (MSTR=1, BIDIMODE=1, BIDIOE=0)'"
+        },
+        "slave_rx_only_and_bidi_rx": {
+          "description": "Disable procedure for slave in unidirectional receive-only mode (MSTR=0, BIDIMODE=0, RXONLY=1) or slave in bidirectional receive mode (MSTR=0, BIDIMODE=1, BIDIOE=0).",
+          "conditions": {
+            "MSTR": 0,
+            "modes": [
+              { "BIDIMODE": 0, "RXONLY": 1 },
+              { "BIDIMODE": 1, "BIDIOE": 0 }
+            ]
+          },
+          "steps": [
+            {
+              "order": 1,
+              "action": "WRITE_BIT",
+              "register": "CR1",
+              "field": "SPE",
+              "value": 0,
+              "comment": "Disable the SPI (write SPE=0) at any time. The current transfer will complete before the SPI is effectively disabled."
+            },
+            {
+              "order": 2,
+              "action": "POLL_FLAG",
+              "register": "SR",
+              "flag": "BSY",
+              "condition": "== 0",
+              "comment": "If entering Halt mode or disabling peripheral clock: wait until BSY=0 before proceeding."
+            }
           ],
-          "note": "Applies to both master and slave in bidirectional receive mode."
+          "applies_to": ["slave_rx_only", "slave_bidi_rx"],
+          "note": "For slave in receive-only or bidirectional-RX mode, SPE can be cleared at any time. The ongoing transfer completes before SPI is disabled. BSY=0 check is only required before entering Halt mode or disabling the peripheral clock.",
+          "source": "RM0008 §25.3.8 p.691 — 'In slave receive-only mode (MSTR=0, BIDIMODE=0, RXONLY=1) or bidirectional receive mode (MSTR=0, BIDIMODE=1, BIDOE=0)'"
+        },
+        "bidirectional_tx": {
+          "description": "Disable procedure for master or slave in bidirectional transmit mode (BIDIMODE=1, BIDIOE=1). Same sequence as tx_only.",
+          "conditions": {
+            "BIDIMODE": 1,
+            "BIDIOE": 1
+          },
+          "steps": [
+            {
+              "order": 1,
+              "action": "POLL_FLAG",
+              "register": "SR",
+              "flag": "TXE",
+              "condition": "== 1",
+              "comment": "Wait until TXE=1 (last data moved from Tx buffer to shift register)"
+            },
+            {
+              "order": 2,
+              "action": "POLL_FLAG",
+              "register": "SR",
+              "flag": "BSY",
+              "condition": "== 0",
+              "comment": "Wait until BSY=0 (shift register drained, transmission complete)"
+            },
+            {
+              "order": 3,
+              "action": "WRITE_BIT",
+              "register": "CR1",
+              "field": "SPE",
+              "value": 0,
+              "comment": "Disable the SPI (SPE=0)"
+            }
+          ],
+          "applies_to": ["master_bidi_tx", "slave_bidi_tx"],
+          "source": "RM0008 §25.3.8 p.691 — 'bidirectional transmit mode (BIDIMODE=1, BIDIOE=1)'"
         }
       },
       "operation_modes": [
         {
           "name": "full_duplex_master",
           "description": "Full-duplex master mode. 2-line unidirectional, simultaneous TX and RX.",
-          "cr1_config": {
-            "BIDIMODE": 0,
-            "RXONLY": 0,
-            "MSTR": 1
-          },
-          "data_lines": {
-            "MOSI": "TX",
-            "MISO": "RX",
-            "SCK": "output"
-          },
+          "cr1_config": { "BIDIMODE": 0, "RXONLY": 0, "MSTR": 1 },
+          "data_lines": { "MOSI": "TX", "MISO": "RX", "SCK": "output" },
+          "disable_procedure": "full_duplex",
           "source": "RM0008 §25.3.3 p.680, Figure 240"
         },
         {
           "name": "full_duplex_slave",
           "description": "Full-duplex slave mode. 2-line unidirectional, simultaneous TX and RX.",
-          "cr1_config": {
-            "BIDIMODE": 0,
-            "RXONLY": 0,
-            "MSTR": 0
-          },
-          "data_lines": {
-            "MOSI": "RX",
-            "MISO": "TX",
-            "SCK": "input"
-          },
+          "cr1_config": { "BIDIMODE": 0, "RXONLY": 0, "MSTR": 0 },
+          "data_lines": { "MOSI": "RX", "MISO": "TX", "SCK": "input" },
+          "disable_procedure": "full_duplex",
           "source": "RM0008 §25.3.2 p.678, Figure 240"
         },
         {
           "name": "receive_only_master",
           "description": "Receive-only master mode. Master generates clock, only receives data on MISO. MOSI not used.",
-          "cr1_config": {
-            "BIDIMODE": 0,
-            "RXONLY": 1,
-            "MSTR": 1
-          },
-          "data_lines": {
-            "MISO": "RX",
-            "SCK": "output"
-          },
-          "note": "Clock runs continuously until SPE is cleared. Use specific disable procedure.",
-          "source": "RM0008 §25.3.5 p.682, Table 177"
+          "cr1_config": { "BIDIMODE": 0, "RXONLY": 1, "MSTR": 1 },
+          "data_lines": { "MISO": "RX", "SCK": "output" },
+          "disable_procedure": "master_rx_only_and_bidi_rx",
+          "note": "Clock runs continuously until SPE is cleared. Use master_rx_only_and_bidi_rx disable procedure.",
+          "source": "RM0008 §25.3.5 p.682"
         },
         {
           "name": "receive_only_slave",
           "description": "Receive-only slave mode. Slave only receives data on MOSI. Does not drive MISO.",
-          "cr1_config": {
-            "BIDIMODE": 0,
-            "RXONLY": 1,
-            "MSTR": 0
-          },
-          "data_lines": {
-            "MOSI": "RX",
-            "SCK": "input"
-          },
-          "source": "RM0008 §25.3.5 p.682, Table 177"
+          "cr1_config": { "BIDIMODE": 0, "RXONLY": 1, "MSTR": 0 },
+          "data_lines": { "MOSI": "RX", "SCK": "input" },
+          "disable_procedure": "slave_rx_only_and_bidi_rx",
+          "source": "RM0008 §25.3.5 p.682"
         },
         {
           "name": "bidirectional_tx_master",
           "description": "Bidirectional master, transmit mode. Single data line (MOSI) used for TX.",
-          "cr1_config": {
-            "BIDIMODE": 1,
-            "BIDIOE": 1,
-            "MSTR": 1
-          },
-          "data_lines": {
-            "MOSI": "TX",
-            "SCK": "output"
-          },
-          "source": "RM0008 §25.3.5 p.682, Table 177"
+          "cr1_config": { "BIDIMODE": 1, "BIDIOE": 1, "MSTR": 1 },
+          "data_lines": { "MOSI": "TX", "SCK": "output" },
+          "disable_procedure": "bidirectional_tx",
+          "source": "RM0008 §25.3.5 p.682"
         },
         {
           "name": "bidirectional_rx_master",
-          "description": "Bidirectional master, receive mode. Single data line (MISO) used for RX.",
-          "cr1_config": {
-            "BIDIMODE": 1,
-            "BIDIOE": 0,
-            "MSTR": 1
-          },
-          "data_lines": {
-            "MISO": "RX",
-            "SCK": "output"
-          },
-          "note": "Clock runs continuously in receive mode. Use BIDIOE disable procedure.",
-          "source": "RM0008 §25.3.5 p.682, Table 177"
+          "description": "Bidirectional master, receive mode. Single data line (MOSI) used for RX.",
+          "cr1_config": { "BIDIMODE": 1, "BIDIOE": 0, "MSTR": 1 },
+          "data_lines": { "MOSI": "RX", "SCK": "output" },
+          "disable_procedure": "master_rx_only_and_bidi_rx",
+          "note": "BSY flag is kept low during master bidi RX transfers. Do not rely on BSY. Use master_rx_only_and_bidi_rx procedure.",
+          "source": "RM0008 §25.3.5 p.682, §25.3.7 p.691 note"
         },
         {
           "name": "bidirectional_tx_slave",
           "description": "Bidirectional slave, transmit mode. Single data line (MISO) used for TX.",
-          "cr1_config": {
-            "BIDIMODE": 1,
-            "BIDIOE": 1,
-            "MSTR": 0
-          },
-          "data_lines": {
-            "MISO": "TX",
-            "SCK": "input"
-          },
-          "source": "RM0008 §25.3.5 p.682, Table 177"
+          "cr1_config": { "BIDIMODE": 1, "BIDIOE": 1, "MSTR": 0 },
+          "data_lines": { "MISO": "TX", "SCK": "input" },
+          "disable_procedure": "bidirectional_tx",
+          "source": "RM0008 §25.3.5 p.682"
         },
         {
           "name": "bidirectional_rx_slave",
           "description": "Bidirectional slave, receive mode. Single data line (MOSI) used for RX.",
-          "cr1_config": {
-            "BIDIMODE": 1,
-            "BIDIOE": 0,
-            "MSTR": 0
-          },
-          "data_lines": {
-            "MOSI": "RX",
-            "SCK": "input"
-          },
-          "source": "RM0008 §25.3.5 p.682, Table 177"
+          "cr1_config": { "BIDIMODE": 1, "BIDIOE": 0, "MSTR": 0 },
+          "data_lines": { "MOSI": "RX", "SCK": "input" },
+          "disable_procedure": "slave_rx_only_and_bidi_rx",
+          "source": "RM0008 §25.3.5 p.682"
         }
       ],
       "error_handling": [
         "OVR (Overrun): Set when DR not read before next data received. Clear with SEQ_OVR_CLEAR (read DR, read SR).",
-        "MODF (Mode Fault): Set when NSS pulled low in master mode. MSTR auto-cleared. Clear with SEQ_MODF_CLEAR (read SR, write CR1). Reconfigure as master if needed.",
+        "MODF (Mode Fault): Set when NSS pulled low in master mode. Both MSTR and SPE auto-cleared by hardware. Clear with SEQ_MODF_CLEAR (read SR, write CR1). Reconfigure as master and re-enable SPE if needed.",
         "CRCERR (CRC Error): Set when CRC mismatch detected. Clear by writing 0 to CRCERR bit (W0C). Retransmit data.",
         "UDR (Underrun, I2S only): Not applicable in SPI mode."
       ],
@@ -1178,11 +1183,8 @@
           "expr": "CR1.MSTR==1 && CR1.SSM==1 implies CR1.SSI==1",
           "description": "In master mode with software slave management (SSM=1), SSI must be set to 1. If SSI=0, hardware detects NSS low (because SSI replaces the NSS pin value), triggers MODF, and clears MSTR — SPI degrades to slave mode.",
           "scope": "always",
-          "violation_effect": "MSTR cleared by hardware, SR.MODF set, SPI forced to slave mode",
-          "enforced_by": [
-            "code-gen:precondition",
-            "reviewer-agent:static"
-          ],
+          "violation_effect": "MSTR and SPE cleared by hardware, SR.MODF set, SPI forced to slave mode and disabled",
+          "enforced_by": ["code-gen:precondition", "reviewer-agent:static"],
           "source": "RM0008 §25.3.1 p.676, §25.5.1 p.715",
           "confidence": 0.98
         },
@@ -1192,22 +1194,17 @@
           "description": "BR, CPOL, CPHA, DFF, CRCEN, LSBFIRST are LOCK fields — must be configured when SPE=0. Writing these while SPE=1 is undefined behavior.",
           "scope": "always",
           "violation_effect": "Undefined behavior (writes may be silently ignored or cause incorrect operation)",
-          "enforced_by": [
-            "code-gen:precondition",
-            "reviewer-agent:static"
-          ],
+          "enforced_by": ["code-gen:precondition", "reviewer-agent:static"],
           "source": "RM0008 §25.5.1 p.714-715 Notes",
           "confidence": 0.99
         },
         {
           "id": "INV_SPI_003",
           "expr": "SR.BSY==1 implies !writable(CR1.SPE)",
-          "description": "SPI must not be disabled while BSY=1. Wait for TXE=1 and BSY=0 before clearing SPE, otherwise the last frame may be corrupted.",
+          "description": "SPI must not be disabled while BSY=1 (except in master_rx_only_and_bidi_rx where BSY stays low). Wait for TXE=1 and BSY=0 before clearing SPE in full_duplex and tx_only modes, otherwise the last frame may be corrupted.",
           "scope": "before_disable",
           "violation_effect": "Last data frame may be corrupted or lost",
-          "enforced_by": [
-            "code-gen:precondition"
-          ],
+          "enforced_by": ["code-gen:precondition"],
           "source": "RM0008 §25.3.8 p.691",
           "confidence": 0.99
         },
@@ -1217,10 +1214,7 @@
           "description": "CRCERR is W0C (rc_w0) — cleared by writing 0. Must use '&= ~CRCERR_Msk' pattern. Never use '|=' on SR register.",
           "scope": "always",
           "violation_effect": "W0C bit not cleared if wrong write pattern used",
-          "enforced_by": [
-            "code-gen:precondition",
-            "reviewer-agent:static"
-          ],
+          "enforced_by": ["code-gen:precondition", "reviewer-agent:static"],
           "source": "RM0008 §25.5.3 p.717",
           "confidence": 0.99
         }
@@ -1233,18 +1227,10 @@
         "id": "single_master_software_nss",
         "name": "Single-Master Mode with Software NSS",
         "description": "Standard single-master configuration. Master uses software NSS management (SSM=1, SSI=1). NSS pin free for GPIO use or directly controlled as chip-select via GPIO output.",
-        "applies_to": [
-          "master"
-        ],
+        "applies_to": ["master"],
         "register_config": {
-          "CR1": {
-            "MSTR": 1,
-            "SSM": 1,
-            "SSI": 1
-          },
-          "CR2": {
-            "SSOE": 0
-          }
+          "CR1": { "MSTR": 1, "SSM": 1, "SSI": 1 },
+          "CR2": { "SSOE": 0 }
         },
         "prerequisites": [
           "NSS pin configured as GPIO output for chip-select (or unused)",
@@ -1261,17 +1247,10 @@
         "id": "single_master_hardware_nss",
         "name": "Single-Master Mode with Hardware NSS Output",
         "description": "Master uses hardware-managed NSS output (SSOE=1). NSS driven low automatically when SPE=1, high when SPE=0. Simplest master config but ties NSS to SPI enable state.",
-        "applies_to": [
-          "master"
-        ],
+        "applies_to": ["master"],
         "register_config": {
-          "CR1": {
-            "MSTR": 1,
-            "SSM": 0
-          },
-          "CR2": {
-            "SSOE": 1
-          }
+          "CR1": { "MSTR": 1, "SSM": 0 },
+          "CR2": { "SSOE": 1 }
         },
         "prerequisites": [
           "NSS pin configured as Alternate Function Push-Pull output",
@@ -1288,18 +1267,10 @@
         "id": "multimaster_arbitration",
         "name": "Multimaster Mode with Collision Arbitration",
         "description": "Multiple masters share the SPI bus. Each master monitors NSS input for collision detection via MODF flag. When MODF fires, the losing master releases the bus.",
-        "applies_to": [
-          "master"
-        ],
+        "applies_to": ["master"],
         "register_config": {
-          "CR1": {
-            "MSTR": 1,
-            "SSM": 0
-          },
-          "CR2": {
-            "SSOE": 0,
-            "ERRIE": 1
-          }
+          "CR1": { "MSTR": 1, "SSM": 0 },
+          "CR2": { "SSOE": 0, "ERRIE": 1 }
         },
         "prerequisites": [
           "NSS pin configured as Input Floating (hardware NSS input for collision detection)",
@@ -1308,7 +1279,7 @@
         ],
         "constraints": [
           "SSOE must be 0 (SSOE=1 would disable multimaster capability)",
-          "When MODF detected: MSTR is auto-cleared by hardware, must reconfigure",
+          "When MODF detected: MSTR and SPE are auto-cleared by hardware, must reconfigure",
           "Each master must drive NSS of other masters low only during its own transmission"
         ],
         "source": "RM0008 §25.3.1 p.676",
@@ -1318,17 +1289,10 @@
         "id": "slave_hardware_nss",
         "name": "Slave Mode with Hardware NSS",
         "description": "Slave uses hardware NSS management. Slave is selected when external master pulls NSS pin low. Deselected when NSS goes high.",
-        "applies_to": [
-          "slave"
-        ],
+        "applies_to": ["slave"],
         "register_config": {
-          "CR1": {
-            "MSTR": 0,
-            "SSM": 0
-          },
-          "CR2": {
-            "SSOE": 0
-          }
+          "CR1": { "MSTR": 0, "SSM": 0 },
+          "CR2": { "SSOE": 0 }
         },
         "prerequisites": [
           "NSS pin configured as Input Floating",
@@ -1345,18 +1309,10 @@
         "id": "slave_software_nss",
         "name": "Slave Mode with Software NSS",
         "description": "Slave uses software NSS management (SSM=1). The SSI bit value replaces the NSS pin level. SSI=0 selects the slave, SSI=1 deselects it. NSS pin freed for other use.",
-        "applies_to": [
-          "slave"
-        ],
+        "applies_to": ["slave"],
         "register_config": {
-          "CR1": {
-            "MSTR": 0,
-            "SSM": 1,
-            "SSI": 0
-          },
-          "CR2": {
-            "SSOE": 0
-          }
+          "CR1": { "MSTR": 0, "SSM": 1, "SSI": 0 },
+          "CR2": { "SSOE": 0 }
         },
         "prerequisites": [
           "Application manages slave selection via SSI bit",
@@ -1375,18 +1331,11 @@
         "id": "CONSTRAINT_MASTER_SSI_INTERACTION",
         "type": "invariant_violation",
         "title": "Master + Software NSS requires SSI=1 (INV_SPI_001)",
-        "fields": [
-          "CR1.MSTR",
-          "CR1.SSM",
-          "CR1.SSI"
-        ],
-        "description": "When MSTR=1 and SSM=1, SSI must be 1. If SSI=0, hardware interprets NSS as low (via software override), triggers MODF fault, and auto-clears MSTR — SPI degrades to slave mode.",
+        "fields": ["CR1.MSTR", "CR1.SSM", "CR1.SSI"],
+        "description": "When MSTR=1 and SSM=1, SSI must be 1. If SSI=0, hardware interprets NSS as low (via software override), triggers MODF fault, and auto-clears both MSTR and SPE — SPI disabled and forced to slave mode.",
         "precondition": "MSTR == 1 && SSM == 1 implies SSI == 1",
-        "violation_effect": "MODF flag set by hardware; MSTR automatically cleared; SPI forced to slave mode",
-        "enforced_by": [
-          "code-gen:precondition",
-          "reviewer-agent:static"
-        ],
+        "violation_effect": "MODF flag set by hardware; both MSTR and SPE automatically cleared; SPI forced to slave mode and disabled",
+        "enforced_by": ["code-gen:precondition", "reviewer-agent:static"],
         "source": "RM0008 §25.3.1 p.676, §25.5.1 p.715",
         "confidence": 0.99
       },
@@ -1394,23 +1343,17 @@
         "id": "CONSTRAINT_BR_SPE_LOCK",
         "type": "precondition",
         "title": "BR[2:0] must not be modified when SPE=1",
-        "fields": [
-          "CR1.BR",
-          "CR1.SPE"
-        ],
+        "fields": ["CR1.BR", "CR1.SPE"],
         "description": "BR (baud rate) is a LOCK field. Must be written only when SPE=0. Writing BR while SPE=1 results in undefined behavior.",
         "precondition": "write_to(CR1.BR) requires CR1.SPE == 0",
         "procedure": [
           "1. Check if SPE == 1",
-          "2. If true, disable SPI following proper disable procedure (wait TXE=1, BSY=0, then clear SPE)",
+          "2. If true, disable SPI following proper disable procedure (per disable_procedures)",
           "3. Modify BR[2:0]",
           "4. Re-enable SPE if needed"
         ],
         "violation_effect": "Undefined behavior — baud rate change may not take effect or cause incorrect clocking",
-        "enforced_by": [
-          "code-gen:guard",
-          "reviewer-agent:static"
-        ],
+        "enforced_by": ["code-gen:guard", "reviewer-agent:static"],
         "source": "RM0008 §25.5.1 p.715 Notes",
         "confidence": 0.99
       },
@@ -1418,18 +1361,11 @@
         "id": "CONSTRAINT_CPOL_CPHA_LOCK",
         "type": "precondition",
         "title": "CPOL/CPHA must not be modified when SPE=1",
-        "fields": [
-          "CR1.CPOL",
-          "CR1.CPHA",
-          "CR1.SPE"
-        ],
+        "fields": ["CR1.CPOL", "CR1.CPHA", "CR1.SPE"],
         "description": "CPOL and CPHA are LOCK fields. Must be written only when SPE=0. Changing clock polarity/phase during active communication causes data corruption.",
         "precondition": "write_to(CR1.CPOL) || write_to(CR1.CPHA) requires CR1.SPE == 0",
         "violation_effect": "Undefined behavior — clock phase/polarity change during communication corrupts data",
-        "enforced_by": [
-          "code-gen:guard",
-          "reviewer-agent:static"
-        ],
+        "enforced_by": ["code-gen:guard", "reviewer-agent:static"],
         "source": "RM0008 §25.5.1 p.715 Notes",
         "confidence": 0.99
       },
@@ -1437,18 +1373,11 @@
         "id": "CONSTRAINT_DFF_CRCEN_LOCK",
         "type": "precondition",
         "title": "DFF and CRCEN must not be modified when SPE=1",
-        "fields": [
-          "CR1.DFF",
-          "CR1.CRCEN",
-          "CR1.SPE"
-        ],
+        "fields": ["CR1.DFF", "CR1.CRCEN", "CR1.SPE"],
         "description": "DFF (data frame format) and CRCEN must be written only when SPI is disabled (SPE=0). DFF change also requires CRC re-initialization if CRCEN is used.",
         "precondition": "write_to(CR1.DFF) || write_to(CR1.CRCEN) requires CR1.SPE == 0",
         "violation_effect": "Undefined behavior — frame format or CRC configuration corrupted",
-        "enforced_by": [
-          "code-gen:guard",
-          "reviewer-agent:static"
-        ],
+        "enforced_by": ["code-gen:guard", "reviewer-agent:static"],
         "source": "RM0008 §25.5.1 p.714 Notes",
         "confidence": 0.99
       },
@@ -1456,12 +1385,7 @@
         "id": "CONSTRAINT_DFF_CRC_INTERACTION",
         "type": "interaction",
         "title": "DFF change requires CRC re-initialization",
-        "fields": [
-          "CR1.DFF",
-          "CR1.CRCEN",
-          "RXCRCR",
-          "TXCRCR"
-        ],
+        "fields": ["CR1.DFF", "CR1.CRCEN", "RXCRCR", "TXCRCR"],
         "description": "When changing DFF (8-bit to 16-bit or vice versa), CRC registers (RXCRCR/TXCRCR) retain stale values. Must toggle CRCEN off then on to reset CRC calculation.",
         "precondition": "SPE == 0 && DFF change detected",
         "procedure": [
@@ -1471,33 +1395,19 @@
           "4. Set CRCEN = 1 (if CRC calculation is needed)"
         ],
         "violation_effect": "CRC mismatch detection fails; stale CRC values cause spurious CRCERR flags",
-        "enforced_by": [
-          "code-gen:guard",
-          "reviewer-agent:static"
-        ],
+        "enforced_by": ["code-gen:guard", "reviewer-agent:static"],
         "source": "RM0008 §25.5.1 p.714 Notes",
         "confidence": 0.9
       },
       {
         "id": "CONSTRAINT_DISABLE_BSY_CHECK",
         "type": "precondition",
-        "title": "SPI disable requires BSY=0 and TXE=1 (INV_SPI_003)",
-        "fields": [
-          "CR1.SPE",
-          "SR.BSY",
-          "SR.TXE"
-        ],
-        "description": "Before clearing SPE to disable SPI, must wait for TXE=1 (Tx buffer empty) and BSY=0 (no ongoing transfer). Premature disable corrupts the last frame.",
-        "precondition": "write_to(CR1.SPE, 0) requires SR.TXE == 1 && SR.BSY == 0",
-        "procedure": [
-          "1. Wait until SR.TXE == 1",
-          "2. Wait until SR.BSY == 0",
-          "3. Clear CR1.SPE"
-        ],
+        "title": "SPI disable requires mode-specific sequence from disable_procedures (INV_SPI_003)",
+        "fields": ["CR1.SPE", "SR.BSY", "SR.TXE", "SR.RXNE"],
+        "description": "Before clearing SPE to disable SPI, the correct mode-specific procedure from disable_procedures must be followed. Full-duplex requires RXNE=1, TXE=1, BSY=0. Tx-only requires TXE=1, BSY=0. Master RX-only requires n-1 RXNE + clock delay. Slave RX-only can clear SPE at any time.",
+        "precondition": "write_to(CR1.SPE, 0) requires execution of mode-specific disable_procedures entry",
         "violation_effect": "Last data frame may be corrupted or lost; SPI left in inconsistent state",
-        "enforced_by": [
-          "code-gen:guard"
-        ],
+        "enforced_by": ["code-gen:guard"],
         "source": "RM0008 §25.3.8 p.691",
         "confidence": 0.99
       },
@@ -1505,18 +1415,11 @@
         "id": "CONSTRAINT_SR_CRCERR_W0C",
         "type": "invariant_violation",
         "title": "CRCERR must be cleared with &= ~Msk (W0C safety, INV_SPI_004)",
-        "fields": [
-          "SR.CRCERR",
-          "SR.OVR",
-          "SR.MODF"
-        ],
+        "fields": ["SR.CRCERR", "SR.OVR", "SR.MODF"],
         "description": "SR is a mixed-access register. CRCERR is W0C (rc_w0). OVR and MODF are RC_SEQ. Never use '|=' on SR register. For CRCERR, use 'SR &= ~CRCERR_Msk'. For OVR/MODF, use their respective atomic clear sequences.",
         "precondition": "write_to(SR) must respect per-bitfield access types",
         "violation_effect": "Using |= on SR may inadvertently affect W0C or RC_SEQ flags; CRCERR not properly cleared",
-        "enforced_by": [
-          "code-gen:precondition",
-          "reviewer-agent:static"
-        ],
+        "enforced_by": ["code-gen:precondition", "reviewer-agent:static"],
         "source": "RM0008 §25.5.3 p.717",
         "confidence": 0.99
       },
@@ -1524,12 +1427,7 @@
         "id": "CONSTRAINT_GPIO_SPI_ORDER",
         "type": "initialization_order",
         "title": "RCC -> AFIO -> GPIO -> SPI configuration order",
-        "fields": [
-          "RCC_APBxENR",
-          "AFIO_MAPR",
-          "GPIOx_CRL",
-          "CR1"
-        ],
+        "fields": ["RCC_APBxENR", "AFIO_MAPR", "GPIOx_CRL", "CR1"],
         "description": "Initialization must follow strict order: (1) Enable RCC clocks for SPI, GPIO, AFIO. (2) Configure AFIO remap if needed (SPI1 only). (3) Configure GPIO pins per Table 25. (4) Configure SPI registers.",
         "procedure": [
           "1. Enable RCC clocks (SPI peripheral + GPIO port + AFIO if remap)",
@@ -1537,14 +1435,9 @@
           "3. Configure GPIO pins (CNF + MODE per Table 25)",
           "4. Configure SPI CR1/CR2 registers"
         ],
-        "applies_to": [
-          "SPI1",
-          "SPI2"
-        ],
+        "applies_to": ["SPI1", "SPI2"],
         "violation_effect": "GPIO configured on wrong physical pins; SPI peripheral not clocked; communication fails silently",
-        "enforced_by": [
-          "code-gen:order"
-        ],
+        "enforced_by": ["code-gen:order"],
         "source": "RM0008 §9.3.10 p.181, §7.3.7 p.110",
         "confidence": 0.97
       }
@@ -1554,10 +1447,7 @@
         "id": "PENDING_ERRATA_CHECK",
         "title": "STM32F103 SPI Errata — pending ES0306 review",
         "description": "The STM32F103 errata sheet (ES0306) should be checked for known SPI issues. Common issues on STM32F1 SPI include BSY flag behavior and CRC calculation edge cases.",
-        "affected_registers": [
-          "SR",
-          "CR1"
-        ],
+        "affected_registers": ["SR", "CR1"],
         "source": "ES0306 (not yet reviewed)",
         "confidence": 0.5
       }
@@ -1594,12 +1484,13 @@
     ],
     "generation_metadata": {
       "generated_by": "doc-analyst",
-      "generation_date": "2026-04-17",
+      "generation_date": "2026-04-22",
       "source_documents": [
         {
           "name": "RM0008",
           "version": "Rev 14",
-          "path": "docs/stm32f103_reference_manual.pdf"
+          "path": "docs/parsed/stm32f103_reference_manual.md",
+          "format": "OpenDataLoader PDF pre-parsed Markdown"
         }
       ],
       "total_registers": 7,
@@ -1607,8 +1498,8 @@
       "average_confidence": 0.97,
       "fields_below_threshold": 0,
       "validation_passed": true,
-      "notes": "STM32F103C8T6 is medium-density (64KB Flash, 20KB SRAM, LQFP48). Has SPI1 (APB2) and SPI2 (APB1). No SPI3 (only on high/XL-density and connectivity line). Errata ES0306 pending review.",
-      "validation_timestamp": "2026-04-18T12:34:13.103548"
+      "notes": "STM32F103C8T6 is medium-density (64KB Flash, 20KB SRAM, LQFP48). Has SPI1 (APB2) and SPI2 (APB1). No SPI3 (only on high/XL-density and connectivity line). Errata ES0306 pending review. Rebuilt from docs/parsed/stm32f103_reference_manual.md on 2026-04-22. Key fixes vs previous version: (1) disable_procedures completely rewritten from §25.3.8 — now 5 independent entries; (2) MODF side-effect corrected: clears both MSTR and SPE; (3) master_rx_only_and_bidi_rx uses n-1 RXNE + clock cycle delay + SPE=0 + last RXNE (not BSY poll, as BSY stays low in master bidi RX); (4) slave_rx_only_and_bidi_rx: SPE=0 anytime then BSY=0 for Halt; (5) bidirectional_tx separated from tx_only as independent entry.",
+      "validation_timestamp": "2026-04-22T00:00:00.000000"
     }
   }
 }

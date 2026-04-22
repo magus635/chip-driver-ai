@@ -36,38 +36,70 @@ find $docs_dir -type f \( -name "*.pdf" -o -name "*.md" -o -name "*.txt" \) -exe
 
 ```bash
 ls -la $docs_dir
+ls -la $docs_dir/parsed 2>/dev/null || echo "[INFO] docs/parsed/ 目录不存在，将直接读取 PDF"
 ```
 
 识别文档类型并分类：
-- `*.pdf`：芯片参考手册、数据手册 → **需要 PDF 智能提取**
+- `*.pdf`：芯片参考手册、数据手册 → **优先使用 `docs/parsed/` 预解析版本（见 1.1）**
 - `*.md` / `*.txt`：设计说明、API 规格 → 直接读取
 - `*errata*.pdf` / `*ES*.pdf`：勘误表 → **Errata 专项处理**
 - `*.sch` / `*.png`：原理图（记录名称，提示用户提取关键信息）
 
-### 1.1 PDF 智能提取策略（新增）
+### 1.1 PDF 提取策略（强制使用预解析 Markdown，禁止直读 PDF）
 
-对于 PDF 文档，执行分阶段提取：
+> **强制规定（无例外）**：doc-analyst **严禁**直接读取原始 PDF 文件。
+> 所有手册内容必须通过 `docs/parsed/<filename>.md` 读取。
+> 原因：直读 PDF 的表格结构保真度（~0.4）和阅读顺序（~0.5）远低于
+> OpenDataLoader PDF 生成的预解析 Markdown（表格 0.928，阅读顺序 0.934），
+> 直读 PDF 会导致寄存器位域错序、步骤编号丢失、disable_procedures 步骤错误。
 
-**阶段 A：目录定位**
-1. 读取 PDF 前 10 页，提取目录（Table of Contents）
+#### 强制执行流程（无回退）
+
+```
+对于 docs/<filename>.pdf：
+  1. 检查 docs/parsed/<filename>.md 是否存在
+  2. 若存在 → 读取 Markdown（唯一合法输入源）
+  3. 若不存在 → 运行 scripts/parse-pdf.sh docs/<filename>.pdf，等待完成，再读取 Markdown
+  4. 若 parse-pdf.sh 失败 → 输出 DOC_EXTRACTION_FAILURE，停止执行，通知用户修复 parse-pdf.sh
+     【严禁回退到直读 PDF】
+```
+
+#### 读取方式
+
+**使用预解析 Markdown（唯一合法路径）：**
+```
+Read: docs/parsed/<filename>.md
+# 按章节搜索目标外设，使用 Grep 定位行号
+Grep: pattern="25 Serial peripheral interface|bxCAN|Chapter 32", path="docs/parsed/<filename>.md"
+# 定位到具体行后，使用 offset + limit 读取目标章节
+Read: docs/parsed/<filename>.md, offset: <line>, limit: 1000
+```
+
+**禁止的操作：**
+```
+# ❌ 以下操作被明确禁止
+Read PDF: docs/<filename>.pdf          # 禁止
+Read PDF: docs/<filename>.pdf, pages:  # 禁止，无论是否指定页码
+```
+
+#### 阶段 A：目录定位
+
+1. 读取 `docs/parsed/<filename>.md` 前 200 行，提取目录（Table of Contents）
 2. 搜索目标外设章节（如 "Chapter 32 - bxCAN"、"Section 25 - SPI"）
-3. 记录章节页码范围（如 pp.680-750）
+3. 记录章节标题，用于后续 Grep 定位
 
-**阶段 B：关键表格优先提取**
+#### 阶段 B：关键表格优先提取
+
 按优先级读取以下内容（通常在章节末尾）：
 1. **Register map / Register summary** — 寄存器总表（最重要）
 2. **Bit field description tables** — 位域详细定义
 3. **Initialization sequence / Flowchart** — 初始化流程图
 4. **Timing characteristics** — 时序参数表
 
-**阶段 C：补充上下文**
+#### 阶段 C：补充上下文
+
 - 若位域表不完整，回溯读取 "Functional description" 章节
 - 提取代码示例（如有）
-
-**PDF 读取命令示例：**
-```
-Read PDF: docs/RM0090.pdf, pages: "680-750"
-```
 
 ### 1.2 Errata 勘误表融合（新增）
 
