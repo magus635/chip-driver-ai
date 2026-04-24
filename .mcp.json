@@ -1,0 +1,25 @@
+{
+  "mcpServers": {
+    "opendataloader-pdf": {
+      "command": "/Users/qlwang/miniconda3/bin/python3",
+      "args": [
+        "/Users/qlwang/.claude/mcp-servers/opendataloader-pdf-mcp/server.py"
+      ]
+    },
+    "aliyun-mail": {
+      "command": "/Users/qlwang/miniconda3/bin/python3",
+      "args": [
+        "/Users/qlwang/.claude/aliyun-mail-mcp/server.py"
+      ],
+      "env": {
+        "ALIYUN_EMAIL_USER": "wangql@tsinghuaic.com",
+        "ALIYUN_EMAIL_PASS": "CSaAj2r72MF3FFFY",
+        "ALIYUN_EMAIL_TYPE": "enterprise",
+        "ALIYUN_IMAP_HOST": "imap.qiye.aliyun.com",
+        "ALIYUN_SMTP_HOST": "smtp.qiye.aliyun.com",
+        "ALIYUN_IMAP_PORT": "993",
+        "ALIYUN_SMTP_PORT": "465"
+      }
+    }
+  }
+}

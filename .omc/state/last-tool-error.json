@@ -1,7 +1,0 @@
-{
-  "tool_name": "Bash",
-  "tool_input_preview": "{\"command\":\"python3 scripts/validate-ir.py 2>&1\",\"description\":\"Run IR validation script\"}",
-  "error": "Exit code 1\n使用方法: python3 scripts/validate-ir.py <ir_file>\n          python3 scripts/validate-ir.py --all-ir",
-  "timestamp": "2026-04-21T23:27:54.338Z",
-  "retry_count": 1
-}

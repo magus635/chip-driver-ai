@@ -1,6 +1,6 @@
 {
   "version": "1.0.0",
-  "lastScanned": 1776810090895,
+  "lastScanned": 1776950618553,
   "projectRoot": "/Users/qlwang/Downloads/chip-driver-ai",
   "techStack": {
     "languages": [],
@@ -40,7 +40,7 @@
       "path": "build",
       "purpose": "Build output",
       "fileCount": 10,
-      "lastAccessed": 1776810090880,
+      "lastAccessed": 1776950618540,
       "keyFiles": [
         "firmware.bin",
         "firmware.elf",
@@ -53,7 +53,7 @@
       "path": "config",
       "purpose": "Configuration files",
       "fileCount": 3,
-      "lastAccessed": 1776810090881,
+      "lastAccessed": 1776950618540,
       "keyFiles": [
         "STM32F103C8T6.ld",
         "openocd.cfg",
@@ -63,21 +63,21 @@
     "docs": {
       "path": "docs",
       "purpose": "Documentation",
-      "fileCount": 5,
-      "lastAccessed": 1776810090881,
+      "fileCount": 6,
+      "lastAccessed": 1776950618541,
       "keyFiles": [
         "STM32F103_CAN_Reference.md",
         "architecture-guidelines.md",
         "embedded-c-coding-standard.md",
         "ir-specification.md",
-        "stm32f103_reference_manual.pdf"
+        "spi-architecture-comparison.md"
       ]
     },
     "ir": {
       "path": "ir",
       "purpose": null,
       "fileCount": 4,
-      "lastAccessed": 1776810090881,
+      "lastAccessed": 1776950618541,
       "keyFiles": [
         "can_ir_summary.json",
         "can_ir_summary.md",
@@ -88,8 +88,8 @@
     "scripts": {
       "path": "scripts",
       "purpose": "Build/utility scripts",
-      "fileCount": 8,
-      "lastAccessed": 1776810090881,
+      "fileCount": 9,
+      "lastAccessed": 1776950618541,
       "keyFiles": [
         "check-arch.sh",
         "check-env.sh",
@@ -102,87 +102,87 @@
       "path": "src",
       "purpose": "Source code",
       "fileCount": 1,
-      "lastAccessed": 1776810090881,
+      "lastAccessed": 1776950618542,
       "keyFiles": []
     }
   },
   "hotPaths": [
     {
-      "path": "docs/parsed/stm32f103_reference_manual.md",
-      "accessCount": 8,
-      "lastAccessed": 1776813838083,
-      "type": "file"
-    },
-    {
-      "path": ".claude/agents/doc-analyst.md",
-      "accessCount": 5,
-      "lastAccessed": 1776813788848,
-      "type": "file"
-    },
-    {
       "path": "scripts/parse-pdf.sh",
-      "accessCount": 4,
-      "lastAccessed": 1776813201001,
-      "type": "file"
-    },
-    {
-      "path": "ir/spi_ir_summary.json",
-      "accessCount": 4,
-      "lastAccessed": 1776814070655,
+      "accessCount": 3,
+      "lastAccessed": 1777009448044,
       "type": "file"
     },
     {
       "path": "",
-      "accessCount": 2,
-      "lastAccessed": 1776813280566,
+      "accessCount": 3,
+      "lastAccessed": 1777015328666,
       "type": "directory"
     },
     {
-      "path": "src/drivers/Spi/include/spi_api.h",
+      "path": "README.md",
       "accessCount": 1,
-      "lastAccessed": 1776811973451,
+      "lastAccessed": 1777015332882,
       "type": "file"
     },
     {
-      "path": "src/drivers/Spi/include/spi_ll.h",
+      "path": "install.sh",
       "accessCount": 1,
-      "lastAccessed": 1776811973688,
+      "lastAccessed": 1777015333338,
       "type": "file"
     },
     {
-      "path": "src/drivers/Spi/include/spi_reg.h",
+      "path": "config/project.env",
       "accessCount": 1,
-      "lastAccessed": 1776811974098,
+      "lastAccessed": 1777015333906,
       "type": "file"
     },
     {
-      "path": "src/drivers/Spi/include/spi_types.h",
+      "path": "scripts/compile.sh",
       "accessCount": 1,
-      "lastAccessed": 1776811978578,
-      "type": "file"
-    },
-    {
-      "path": "src/drivers/Spi/include/spi_cfg.h",
-      "accessCount": 1,
-      "lastAccessed": 1776811978899,
-      "type": "file"
-    },
-    {
-      "path": "src/drivers/Spi/src/spi_drv.c",
-      "accessCount": 1,
-      "lastAccessed": 1776811979635,
-      "type": "file"
-    },
-    {
-      "path": "docs/spi-architecture-comparison.md",
-      "accessCount": 1,
-      "lastAccessed": 1776812118020,
+      "lastAccessed": 1777015340300,
       "type": "file"
     },
     {
       "path": "scripts/check-env.sh",
       "accessCount": 1,
-      "lastAccessed": 1776812834267,
+      "lastAccessed": 1777015340764,
+      "type": "file"
+    },
+    {
+      "path": "scripts/check-arch.sh",
+      "accessCount": 1,
+      "lastAccessed": 1777015341284,
+      "type": "file"
+    },
+    {
+      "path": "scripts/link.sh",
+      "accessCount": 1,
+      "lastAccessed": 1777015341577,
+      "type": "file"
+    },
+    {
+      "path": "scripts/flash.sh",
+      "accessCount": 1,
+      "lastAccessed": 1777015342173,
+      "type": "file"
+    },
+    {
+      "path": "scripts/debug-snapshot.sh",
+      "accessCount": 1,
+      "lastAccessed": 1777015342512,
+      "type": "file"
+    },
+    {
+      "path": "scripts/validate-ir.py",
+      "accessCount": 1,
+      "lastAccessed": 1777015344003,
+      "type": "file"
+    },
+    {
+      "path": "scripts/check-invariants.py",
+      "accessCount": 1,
+      "lastAccessed": 1777015344844,
       "type": "file"
     }
   ],
