@@ -6,15 +6,54 @@ IR 完整性验证脚本
 使用方法：
   python3 scripts/validate-ir.py ir/spi_ir_summary.json
   python3 scripts/validate-ir.py --all-ir        # 验证所有 IR 文件
+  python3 scripts/validate-ir.py --check-md-sync # 验证 MD 与 JSON 视图同步
 """
 
 import json
 import sys
 import os
+import re
+import hashlib
 from pathlib import Path
 from typing import Dict, List, Tuple, Any
 
+
+def compute_ir_json_sha256(ir_obj) -> str:
+    """计算 IR JSON 的 canonical SHA-256（sort_keys + 紧凑分隔符）。
+
+    用于 MD/JSON 同步校验：MD 第 2 行的 ir_json_sha256 锚点必须等于此值。
+    """
+    canonical = json.dumps(ir_obj, sort_keys=True, separators=(',', ':'), ensure_ascii=False)
+    return hashlib.sha256(canonical.encode('utf-8')).hexdigest()
+
+
+_MD_HASH_RE = re.compile(r'<!--\s*ir_json_sha256:\s*([0-9a-fA-F]{64})\s*-->')
+
 class IRValidator:
+    @staticmethod
+    def _get_bitfields(reg):
+        """兼容 fields / bitfields 两种键名"""
+        return reg.get('bitfields', reg.get('fields', []))
+
+    @staticmethod
+    def _get_width(reg):
+        """兼容 width / size_bits 两种键名"""
+        return reg.get('width', reg.get('size_bits', 32))
+
+    @staticmethod
+    def _get_bf_offset_width(bf):
+        """从 bitfield 提取 bit_offset 和 bit_width，兼容 bits 字符串格式"""
+        if 'bit_offset' in bf and 'bit_width' in bf:
+            return bf['bit_offset'], bf['bit_width']
+        # 从 "bits": "15" 或 "bits": "5:3" 解析
+        bits_str = bf.get('bits', '0')
+        if ':' in bits_str:
+            hi, lo = bits_str.split(':')
+            lo, hi = int(lo), int(hi)
+            return lo, hi - lo + 1
+        else:
+            return int(bits_str), 1
+
     def __init__(self, ir_path: str):
         self.ir_path = ir_path
         self.ir = None
@@ -40,6 +79,7 @@ class IRValidator:
 
         # 基础检查（§7 验证清单）
         self._check_json_syntax()
+        self._check_chip_model()
         self._check_register_offsets()
         self._check_bitfields()
         self._check_sources()
@@ -67,13 +107,37 @@ class IRValidator:
         """检查 #1: JSON 语法合法"""
         self.info.append("[✓ 1] JSON 语法合法")
 
+    def _check_chip_model(self):
+        """检查 #1.5: IR chip_model 与环境变量 $CHIP_MODEL 一致"""
+        ir_chip = self.ir.get('peripheral', {}).get('chip_model', '')
+        env_chip = os.environ.get('CHIP_MODEL', '')
+
+        if not env_chip:
+            self.warnings.append(
+                "[⚠ 1.5] 环境变量 $CHIP_MODEL 未设置，跳过芯片型号校验"
+            )
+            return
+
+        if not ir_chip:
+            self.errors.append(
+                "[✗ 1.5] IR 中缺少 peripheral.chip_model 字段"
+            )
+            return
+
+        if ir_chip != env_chip:
+            self.errors.append(
+                f"[✗ 1.5] 芯片型号不匹配: IR({ir_chip}) vs $CHIP_MODEL({env_chip})"
+            )
+        else:
+            self.info.append(f"[✓ 1.5] 芯片型号匹配: {ir_chip}")
+
     def _check_register_offsets(self):
         """检查 #2: 寄存器偏移无重叠"""
         registers = self.ir['peripheral'].get('registers', [])
         offsets = []
         for reg in registers:
             offset = int(reg['offset'], 0)
-            width = reg['width'] // 8
+            width = self._get_width(reg) // 8
             offsets.append((offset, offset + width, reg['name']))
 
         offsets.sort()
@@ -93,11 +157,11 @@ class IRValidator:
         """检查 #3: 位域无重叠"""
         registers = self.ir['peripheral'].get('registers', [])
         for reg in registers:
-            bitfields = reg.get('bitfields', [])
+            bitfields = self._get_bitfields(reg)
+            reg_width = self._get_width(reg)
             bits = []
             for bf in bitfields:
-                bit_offset = bf['bit_offset']
-                bit_width = bf['bit_width']
+                bit_offset, bit_width = self._get_bf_offset_width(bf)
                 bits.append((bit_offset, bit_offset + bit_width, bf['name']))
 
             bits.sort()
@@ -112,10 +176,10 @@ class IRValidator:
 
             # 检查不超出寄存器宽度
             for bit_offset, bit_end, bf_name in bits:
-                if bit_end > reg['width']:
+                if bit_end > reg_width:
                     self.errors.append(
                         f"[✗ 4] 位域 {reg['name']}.{bf_name} 超出寄存器宽度 "
-                        f"({bit_end} > {reg['width']})"
+                        f"({bit_end} > {reg_width})"
                     )
 
         if not any(e.startswith("[✗ 3]") or e.startswith("[✗ 4]") for e in self.errors):
@@ -130,7 +194,7 @@ class IRValidator:
             if not reg.get('source'):
                 missing_source.append(f"register {reg['name']}")
 
-            for bf in reg.get('bitfields', []):
+            for bf in self._get_bitfields(reg):
                 if not bf.get('source'):
                     missing_source.append(f"{reg['name']}.{bf['name']}")
 
@@ -146,7 +210,7 @@ class IRValidator:
         found_special = {}
 
         for reg in registers:
-            for bf in reg.get('bitfields', []):
+            for bf in self._get_bitfields(reg):
                 access = bf.get('access')
                 if access in special_types:
                     found_special[access] = found_special.get(access, 0) + 1
@@ -166,7 +230,7 @@ class IRValidator:
 
         missing_refs = []
         for reg in registers:
-            for bf in reg.get('bitfields', []):
+            for bf in self._get_bitfields(reg):
                 if bf.get('access') == 'RC_SEQ':
                     clear_seq = bf.get('clear_sequence')
                     if not clear_seq:
@@ -232,7 +296,10 @@ class IRValidator:
     def _check_confidence(self):
         """检查 #11: 平均置信度"""
         metadata = self.ir['peripheral'].get('generation_metadata', {})
+        # 支持 confidence.overall 或旧版 average_confidence
         avg_conf = metadata.get('average_confidence', 1.0)
+        if 'confidence' in metadata and isinstance(metadata['confidence'], dict):
+            avg_conf = metadata['confidence'].get('overall', avg_conf)
 
         if avg_conf < 0.85:
             self.errors.append(
@@ -367,10 +434,53 @@ class IRValidator:
 
         return len(self.errors) == 0
 
+    def check_md_sync(self) -> bool:
+        """检查 MD 视图与 JSON 是否内容级同步 (R1 规范)。
+
+        校验 MD 文件中的 `<!-- ir_json_sha256: <hash> -->` 锚点等于
+        当前 JSON 的 canonical SHA-256。手工编辑 MD（含 mtime 改动）
+        会导致 hash 不匹配，从而被拦截。
+        """
+        md_path = self.ir_path.replace('.json', '.md')
+        if not os.path.exists(md_path):
+            self.errors.append(f"[R1] 缺失 MD 视图文件: {md_path}")
+            return False
+
+        try:
+            with open(md_path, 'r', encoding='utf-8') as f:
+                # 锚点应在前若干行，读取前 4KB 足够
+                head = f.read(4096)
+        except Exception as e:
+            self.errors.append(f"[R1] MD 读取失败: {md_path}: {e}")
+            return False
+
+        m = _MD_HASH_RE.search(head)
+        if not m:
+            self.errors.append(
+                f"[R1] MD 缺少 `<!-- ir_json_sha256: <hash> -->` 同步锚点: {md_path}"
+            )
+            return False
+
+        md_hash = m.group(1).lower()
+        json_hash = compute_ir_json_sha256(self.ir)
+
+        if md_hash != json_hash:
+            self.errors.append(
+                f"[R1] MD/JSON 哈希不一致: MD={md_hash[:12]}... vs JSON={json_hash[:12]}...\n"
+                f"      路径: {md_path}\n"
+                f"      可能原因: MD 被手工编辑，或 doc-analyst 未重新渲染。\n"
+                f"      修复: 重新运行 doc-analyst 由 JSON 单向渲染 MD。"
+            )
+            return False
+
+        self.info.append(f"[R1] MD/JSON 内容级同步 (sha256={json_hash[:12]}...)")
+        return True
+
 def main():
     if len(sys.argv) < 2:
         print("使用方法: python3 scripts/validate-ir.py <ir_file>")
         print("          python3 scripts/validate-ir.py --all-ir")
+        print("          python3 scripts/validate-ir.py --check-md-sync")
         sys.exit(1)
 
     if sys.argv[1] == '--all-ir':
@@ -387,6 +497,20 @@ def main():
                 all_passed = False
             print()
 
+        sys.exit(0 if all_passed else 1)
+    
+    elif sys.argv[1] == '--check-md-sync':
+        ir_dir = Path('ir')
+        ir_files = sorted(ir_dir.glob('*_ir_summary.json'))
+        if not ir_files:
+            print("❌ 未找到 IR 文件")
+            sys.exit(1)
+        all_passed = True
+        for ir_file in ir_files:
+            validator = IRValidator(str(ir_file))
+            if not validator.check_md_sync():
+                all_passed = False
+            validator._print_results()
         sys.exit(0 if all_passed else 1)
     else:
         validator = IRValidator(sys.argv[1])

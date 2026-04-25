@@ -1,0 +1,11 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(python3 scripts/validate-ir.py --check-md-sync)",
+      "Bash(./scripts/parse-pdf.sh --dry-run)",
+      "Bash(./scripts/parse-pdf.sh *)",
+      "Bash(cp ir/spi_ir_summary.json /tmp/spi_ir_summary.OLD.json)",
+      "Bash(cp ir/spi_ir_summary.md /tmp/spi_ir_summary.OLD.md)"
+    ]
+  }
+}

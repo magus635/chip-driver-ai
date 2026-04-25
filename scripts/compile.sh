@@ -41,27 +41,35 @@ LAST_COMPILE_LOG="${BUILD_DIR:-build}/last-compile.log"
 mkdir -p "$BUILD_DIR"
 
 # ═══════════════════════════════════════════════════════════════════════════
-# 编译前架构合规性检查（Quality Gate）
+# Reviewer Pass Token Gate (V3.0 强制关卡)
 # ═══════════════════════════════════════════════════════════════════════════
 
-ARCH_CHECK_SCRIPT="$SCRIPT_DIR/check-arch.sh"
-SKIP_ARCH_CHECK="${SKIP_ARCH_CHECK:-false}"
+VERIFY_TOKEN_SCRIPT="$SCRIPT_DIR/verify-token.py"
 
-if [[ "$SKIP_ARCH_CHECK" != "true" && -x "$ARCH_CHECK_SCRIPT" ]]; then
+# 选择可用的 Python3（优先系统 Python，避免 conda 环境问题）
+PYTHON3=""
+if /usr/bin/python3 -c "pass" &>/dev/null; then
+    PYTHON3="/usr/bin/python3"
+elif python3 -c "pass" &>/dev/null; then
+    PYTHON3="python3"
+else
+    echo "  ⚠ python3 不可用，跳过 Token 校验"
+fi
+
+if [[ -f "$VERIFY_TOKEN_SCRIPT" ]] && [[ -n "$PYTHON3" ]]; then
     echo "═══════════════════════════════════════"
-    echo " [预检] 架构合规性检查"
+    echo " [校验] Reviewer Pass Token"
     echo "═══════════════════════════════════════"
 
-    if ! bash "$ARCH_CHECK_SCRIPT"; then
+    # 执行校验并消耗 token
+    if ! $PYTHON3 "$VERIFY_TOKEN_SCRIPT" --consume; then
         echo ""
         echo "═══════════════════════════════════════"
-        echo " [编译中止] 架构合规性检查未通过"
-        echo " 请先修复所有 FAIL 项，再重新编译"
-        echo " 如需跳过检查: SKIP_ARCH_CHECK=true bash scripts/compile.sh"
+        echo " [编译中止] Token 校验失败 (Exit 3)"
+        echo " 请确保已运行 reviewer-agent 且代码无改动"
         echo "═══════════════════════════════════════"
-        exit 1
+        exit 3
     fi
-
     echo ""
 fi
 
@@ -150,14 +158,21 @@ else
         error_type="type_mismatch"
     fi
 
-    # 计算错误哈希用于去重
-    error_hash=$(echo "${error_msg}:${error_file}:${error_line}" | _md5)
+    # 计算错误指纹 (V3.0 规范)
+    fingerprint="unknown"
+    if [[ -x "$SCRIPT_DIR/fingerprint.py" ]]; then
+        fingerprint=$(python3 "$SCRIPT_DIR/fingerprint.py" \
+            "$(echo "$error_msg" | grep -oE "E[0-9]{4}" || echo "error")" \
+            "$(echo "$error_msg" | grep -oE "'[^']+'" | head -1 | tr -d "'" || echo "none")" \
+            "compile" \
+            "$error_type")
+    fi
 
     # 输出错误详情（供 AI 分析）
     echo ""
     echo "[ERROR_ANALYSIS]"
     echo "Type:    $error_type"
-    echo "Hash:    $error_hash"
+    echo "Fingerprint: $fingerprint"
     echo "File:    $error_file:$error_line"
     echo "Message: $error_msg"
     echo "[/ERROR_ANALYSIS]"

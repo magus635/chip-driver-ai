@@ -29,7 +29,8 @@ from typing import Iterable
 
 # ---------------------------------------------------------------- parsing ---
 
-IMPLIES_RE = re.compile(r"^\s*(.+?)\s+implies\s+(.+?)\s*$")
+# Support both `implies` and `=>` as implication operators
+IMPLIES_RE = re.compile(r"^\s*(.+?)\s+(?:implies|=>)\s+(.+?)\s*$")
 LOCK_RE = re.compile(r"!\s*writable\(\s*(\w+)\.(\w+)\s*\)")
 CMP_RE = re.compile(r"(\w+)\.(\w+)\s*(==|!=|<=|>=|<|>)\s*(\w+)")
 
@@ -64,7 +65,10 @@ class Violation:
 
 
 def classify_invariant(inv: dict):
-    expr = inv.get("expr", "")
+    # Support both "expr" and "expression" key names
+    expr = inv.get("expr", inv.get("expression", ""))
+    # Normalize `=>` to `implies` for regex matching
+    expr = re.sub(r'\s*=>\s*', ' implies ', expr)
     m = IMPLIES_RE.match(expr)
     if not m:
         return ("ADVISORY", None)
@@ -246,10 +250,18 @@ def check_consistency(
 
 def load_invariants(ir_path: Path) -> list[dict]:
     data = json.loads(ir_path.read_text())
-    fm = data.get("peripheral", {}).get("functional_model", {})
+    peripheral = data.get("peripheral", {})
+    # Support invariants at both peripheral.invariants[] and
+    # peripheral.functional_model.invariants[] for compatibility
+    invs = peripheral.get("invariants", [])
+    if not invs:
+        fm = peripheral.get("functional_model", {})
+        invs = fm.get("invariants", [])
+    # If IR has enforced_by, filter for static; otherwise include all
     out = []
-    for inv in fm.get("invariants", []):
-        if "reviewer-agent:static" in inv.get("enforced_by", []):
+    for inv in invs:
+        enforced_by = inv.get("enforced_by")
+        if enforced_by is None or "reviewer-agent:static" in enforced_by:
             out.append(inv)
     return out
 

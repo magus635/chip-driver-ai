@@ -1,7 +1,7 @@
 # 外设中间表示规范 (Peripheral IR Specification)
 
-**版本**: 2.0
-**用途**: 定义 `doc-analyst` Agent 输出的结构化外设描述格式。**ir/<module>_ir_summary.json** 是唯一机器可消费真值源。**
+**版本**: 3.0
+**用途**: 定义 `doc-analyst` Agent 输出的结构化外设描述格式。**ir/<module>_ir_summary.json** 是唯一机器可消费真值源。
 **消费者**: `code-gen` Agent（从 IR 生成驱动代码）、`reviewer-agent`（验证代码与 IR 的一致性）、`check-invariants.py`（静态检查）
 
 ---
@@ -54,7 +54,7 @@
 
 ```json
 {
-  "ir_version": "2.0",
+  "ir_version": "3.0",
   "peripheral": {
     "name": "CAN",
     "full_name": "Controller Area Network",

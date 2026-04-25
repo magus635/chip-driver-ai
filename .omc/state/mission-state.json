@@ -1,4 +1,71 @@
 {
-  "updatedAt": "2026-04-22T00:04:06.494Z",
-  "missions": []
+  "updatedAt": "2026-04-25T11:39:38.972Z",
+  "missions": [
+    {
+      "id": "session:a546fa02-7834-4a31-b89d-a833909c6545:none",
+      "source": "session",
+      "name": "none",
+      "objective": "Session mission",
+      "createdAt": "2026-04-25T11:38:35.377Z",
+      "updatedAt": "2026-04-25T11:39:38.972Z",
+      "status": "running",
+      "workerCount": 2,
+      "taskCounts": {
+        "total": 2,
+        "pending": 0,
+        "blocked": 0,
+        "inProgress": 1,
+        "completed": 1,
+        "failed": 0
+      },
+      "agents": [
+        {
+          "name": "general-purpose:a1b2cf6",
+          "role": "general-purpose",
+          "ownership": "a1b2cf6e5b349ed5e",
+          "status": "done",
+          "currentStep": null,
+          "latestUpdate": "completed",
+          "completedSummary": null,
+          "updatedAt": "2026-04-25T11:38:52.824Z"
+        },
+        {
+          "name": "general-purpose:a92c657",
+          "role": "general-purpose",
+          "ownership": "a92c6575bb260b1c0",
+          "status": "running",
+          "currentStep": null,
+          "latestUpdate": null,
+          "completedSummary": null,
+          "updatedAt": "2026-04-25T11:39:38.972Z"
+        }
+      ],
+      "timeline": [
+        {
+          "id": "session-start:a1b2cf6e5b349ed5e:2026-04-25T11:38:35.377Z",
+          "at": "2026-04-25T11:38:35.377Z",
+          "kind": "update",
+          "agent": "general-purpose:a1b2cf6",
+          "detail": "started general-purpose:a1b2cf6",
+          "sourceKey": "session-start:a1b2cf6e5b349ed5e"
+        },
+        {
+          "id": "session-stop:a1b2cf6e5b349ed5e:2026-04-25T11:38:52.824Z",
+          "at": "2026-04-25T11:38:52.824Z",
+          "kind": "completion",
+          "agent": "general-purpose:a1b2cf6",
+          "detail": "completed",
+          "sourceKey": "session-stop:a1b2cf6e5b349ed5e"
+        },
+        {
+          "id": "session-start:a92c6575bb260b1c0:2026-04-25T11:39:38.972Z",
+          "at": "2026-04-25T11:39:38.972Z",
+          "kind": "update",
+          "agent": "general-purpose:a92c657",
+          "detail": "started general-purpose:a92c657",
+          "sourceKey": "session-start:a92c6575bb260b1c0"
+        }
+      ]
+    }
+  ]
 }
