@@ -1,18 +1,14 @@
 /**
  * @file    dma_isr.c
- * @brief   STM32F103C8T6 DMA 中断服务函数入口 (Layer 3)
+ * @brief   STM32F103C8T6 DMA 中断服务函数实现
  */
 
-#include "dma_reg.h"
-#include "dma_ll.h"
+#include "dma_api.h"
 
-/**
- * @brief  Shared DMA1 Channel 1 ISR
- */
-void DMA1_Channel1_IRQHandler(void)
-{
-    /* Clear global interrupt flag for Channel 1 */
-    DMA_LL_ClearFlags(DMA1, DMA_IFCR_CGIF1_Msk);
-}
-
-/* ... Additional IRQHandlers for Channels 2-7 ... */
+void DMA1_Channel1_IRQHandler(void) { Dma_IRQHandler(DMA_CH1); }
+void DMA1_Channel2_IRQHandler(void) { Dma_IRQHandler(DMA_CH2); }
+void DMA1_Channel3_IRQHandler(void) { Dma_IRQHandler(DMA_CH3); }
+void DMA1_Channel4_IRQHandler(void) { Dma_IRQHandler(DMA_CH4); }
+void DMA1_Channel5_IRQHandler(void) { Dma_IRQHandler(DMA_CH5); }
+void DMA1_Channel6_IRQHandler(void) { Dma_IRQHandler(DMA_CH6); }
+void DMA1_Channel7_IRQHandler(void) { Dma_IRQHandler(DMA_CH7); }

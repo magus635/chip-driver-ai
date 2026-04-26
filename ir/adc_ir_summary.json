@@ -1,0 +1,43 @@
+{
+  "module": "ADC",
+  "base_address": "0x40012400",
+  "registers": [
+    {
+      "name": "CR1",
+      "offset": "0x04",
+      "fields": [
+        {"name": "EOCIE", "bit_offset": 5, "width": 1},
+        {"name": "AWDIE", "bit_offset": 6, "width": 1},
+        {"name": "JEOCIE", "bit_offset": 7, "width": 1},
+        {"name": "SCAN", "bit_offset": 8, "width": 1}
+      ]
+    },
+    {
+      "name": "CR2",
+      "offset": "0x08",
+      "fields": [
+        {"name": "ADON", "bit_offset": 0, "width": 1},
+        {"name": "CONT", "bit_offset": 1, "width": 1},
+        {"name": "CAL", "bit_offset": 2, "width": 1},
+        {"name": "RSTCAL", "bit_offset": 3, "width": 1},
+        {"name": "DMA", "bit_offset": 8, "width": 1},
+        {"name": "ALIGN", "bit_offset": 11, "width": 1},
+        {"name": "EXTTRIG", "bit_offset": 20, "width": 1},
+        {"name": "SWSTART", "bit_offset": 22, "width": 1}
+      ]
+    },
+    {
+      "name": "SR",
+      "offset": "0x00",
+      "fields": [
+        {"name": "EOC", "bit_offset": 1, "width": 1},
+        {"name": "STRT", "bit_offset": 4, "width": 1}
+      ]
+    }
+  ],
+  "features": [
+    "Polling Conversion",
+    "Interrupt Driven Conversion",
+    "DMA Transfer (DMA1 Channel 1)"
+  ]
+}

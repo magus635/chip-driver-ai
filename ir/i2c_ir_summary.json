@@ -1,0 +1,63 @@
+{
+  "module": "I2C",
+  "version": "4.0",
+  "description": "STM32F103C8T6 I2C Peripheral IR with DMA & Interrupt support",
+  "instances": [
+    { "name": "I2C1", "base_addr": "0x40005400", "bus": "APB1" },
+    { "name": "I2C2", "base_addr": "0x40005800", "bus": "APB1" }
+  ],
+  "registers": [
+    {
+      "name": "CR1", "offset": "0x00", "description": "Control Register 1",
+      "bitfields": [
+        { "name": "PE", "pos": 0, "mask": "0x0001", "access": "RW", "description": "Peripheral Enable" },
+        { "name": "SMBUS", "pos": 1, "mask": "0x0002", "access": "RW", "description": "SMBus Mode" },
+        { "name": "START", "pos": 8, "mask": "0x0100", "access": "RW", "description": "Start Generation" },
+        { "name": "STOP", "pos": 9, "mask": "0x0200", "access": "RW", "description": "Stop Generation" },
+        { "name": "ACK", "pos": 10, "mask": "0x0400", "access": "RW", "description": "Acknowledge Enable" },
+        { "name": "SWRST", "pos": 15, "mask": "0x8000", "access": "RW", "description": "Software Reset" }
+      ],
+      "invariants": [
+        { "id": "INV_I2C_001", "description": "CCR/TRISE must be modified only when PE=0", "scope": "during_init" }
+      ]
+    },
+    {
+      "name": "CR2", "offset": "0x04", "description": "Control Register 2",
+      "bitfields": [
+        { "name": "FREQ", "pos": 0, "mask": "0x003F", "access": "RW", "description": "Peripheral Clock Frequency" },
+        { "name": "ITERREN", "pos": 8, "mask": "0x0100", "access": "RW", "description": "Error Interrupt Enable" },
+        { "name": "ITEVTEN", "pos": 9, "mask": "0x0200", "access": "RW", "description": "Event Interrupt Enable" },
+        { "name": "ITBUFEN", "pos": 10, "mask": "0x0400", "access": "RW", "description": "Buffer Interrupt Enable" },
+        { "name": "DMAEN", "pos": 11, "mask": "0x0800", "access": "RW", "description": "DMA Requests Enable", "feature_group": "DMA" },
+        { "name": "LAST", "pos": 12, "mask": "0x1000", "access": "RW", "description": "DMA Last Transfer" }
+      ]
+    },
+    {
+      "name": "SR1", "offset": "0x14", "description": "Status Register 1",
+      "bitfields": [
+        { "name": "SB", "pos": 0, "mask": "0x0001", "access": "R", "description": "Start Bit (Master)" },
+        { "name": "ADDR", "pos": 1, "mask": "0x0002", "access": "R", "description": "Address Sent/Matched" },
+        { "name": "BTF", "pos": 2, "mask": "0x0004", "access": "R", "description": "Byte Transfer Finished" },
+        { "name": "STOPF", "pos": 4, "mask": "0x0010", "access": "R", "description": "Stop Detection (Slave)" },
+        { "name": "RxNE", "pos": 6, "mask": "0x0040", "access": "R", "description": "Data Register Not Empty" },
+        { "name": "TxE", "pos": 7, "mask": "0x0080", "access": "R", "description": "Data Register Empty" },
+        { "name": "BERR", "pos": 8, "mask": "0x0100", "access": "W1C", "description": "Bus Error" },
+        { "name": "ARLO", "pos": 9, "mask": "0x0200", "access": "W1C", "description": "Arbitration Lost" },
+        { "name": "AF", "pos": 10, "mask": "0x0400", "access": "W1C", "description": "Acknowledge Failure" }
+      ]
+    },
+    {
+      "name": "CCR", "offset": "0x1C", "description": "Clock Control Register",
+      "bitfields": [
+        { "name": "CCR", "pos": 0, "mask": "0x0FFF", "access": "RW", "description": "Clock Control Value" },
+        { "name": "DUTY", "pos": 14, "mask": "0x4000", "access": "RW", "description": "Fast Mode Duty Cycle" },
+        { "name": "FS", "pos": 15, "mask": "0x8000", "access": "RW", "description": "I2C Master Mode Selection" }
+      ]
+    }
+  ],
+  "functionality_matrix": {
+    "polling": ["Master Transmit", "Master Receive"],
+    "interrupt": ["Event Handling", "Error Handling"],
+    "dma": ["Asynchronous Transmit", "Asynchronous Receive"]
+  }
+}

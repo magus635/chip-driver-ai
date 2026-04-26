@@ -38,4 +38,9 @@ bool Dma_IsTransferComplete(Dma_Channel_e ch);
  */
 void Dma_StopTransfer(Dma_Channel_e ch);
 
+/**
+ * @brief  Internal ISR handler for DMA channels.
+ */
+void Dma_IRQHandler(Dma_Channel_e ch);
+
 #endif /* DMA_API_H */

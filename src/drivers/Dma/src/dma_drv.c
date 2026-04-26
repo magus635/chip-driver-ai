@@ -13,6 +13,13 @@
 #define DMA_REG         DMA1
 
 /*===========================================================================*/
+/* Static Storage                                                            */
+/*===========================================================================*/
+
+static Dma_CallbackType g_dma_callbacks[DMA_CH_COUNT] = { NULL };
+static void *g_dma_contexts[DMA_CH_COUNT] = { NULL };
+
+/*===========================================================================*/
 /* Public API Implementation                                                 */
 /*===========================================================================*/
 
@@ -25,14 +32,19 @@ Dma_ReturnType Dma_InitChannel(const Dma_ConfigType *pConfig)
 
     Dma_Channel_e ch = pConfig->channel;
 
-    /* 1. Enable DMA Clock (In real project, via RCC_API_EnableDMA1) */
-    /* RCC_API_EnableDMA1(); */
+    /* 1. Register Callback */
+    g_dma_callbacks[ch] = pConfig->pCallback;
+    g_dma_contexts[ch] = pConfig->pContext;
 
     /* 2. Ensure channel is disabled (INV_DMA_001 Guard) */
     DMA_LL_DisableChannel(DMA_REG, ch);
 
-    /* 3. Compose and write CCR */
+    /* 3. Compose and write CCR (Implicitly enables TCIE if callback is provided) */
     uint32_t ccr = DMA_LL_ComposeCCR(pConfig);
+    if (pConfig->pCallback != NULL)
+    {
+        ccr |= DMA_CCR_TCIE_Msk; /* Enable Transfer Complete Interrupt */
+    }
     DMA_REG->Channel[ch].CCR = ccr;
 
     return DMA_OK;
@@ -81,5 +93,26 @@ void Dma_StopTransfer(Dma_Channel_e ch)
     if (ch < DMA_CH_COUNT)
     {
         DMA_LL_DisableChannel(DMA_REG, ch);
+    }
+}
+
+void Dma_IRQHandler(Dma_Channel_e ch)
+{
+    if (ch >= DMA_CH_COUNT) { return; }
+
+    uint32_t status = DMA_LL_GetStatus(DMA_REG);
+    uint32_t tc_mask = (DMA_ISR_TCIF1_Msk << (ch * 4U));
+    uint32_t clear_mask = (DMA_IFCR_CTCIF1_Msk << (ch * 4U));
+
+    if (status & tc_mask)
+    {
+        /* Clear Flag (W1C) */
+        DMA_LL_ClearFlags(DMA_REG, clear_mask);
+
+        /* Invoke Callback */
+        if (g_dma_callbacks[ch] != NULL)
+        {
+            g_dma_callbacks[ch](g_dma_contexts[ch]);
+        }
     }
 }

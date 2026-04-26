@@ -100,7 +100,10 @@
 | 11 | **配置锁字段写入必须前置守卫**（示例：UART BRR） | 修改 `USARTx->BRR` 未先清 `USART_CR1.UE` | `USARTx->CR1 &= ~USART_CR1_UE_Msk;` → 写 BRR → 恢复 UE；注释 `/* Guard: INV_UART_001 */` | IR 中 LOCK 不变式必须被 code-gen 消费。违规由 `scripts/check-invariants.py` 检出。**注**：时序敏感的 disable 序列（如 SPI full-duplex 关闭顺序）归 R8#12 |
 | 12 | **DeInit/Disable 必须遵循 IR `disable_procedures`** | `Spi_DeInit` 中 full_duplex 分支遗漏 wait_RXNE | 从 IR 读取模式专属步骤列表，逐步生成并标注手册来源 | 不同模式关闭序列步骤不同（RM0008 §25.3.8），遗漏会导致数据丢失或总线挂死 |
 | 13 | **详细设计文档须与代码同步生成** | 先写代码后补文档，导致图文不符 | 在代码生成的同时产生 `<module>_detailed_design.md`，确保流程图与代码逻辑原子同步 | 保证文档与实现的高度一致性，作为专家审查的首要依据 |
-| 14 | **建立功能特性实现矩阵** | 用户不知道哪些功能做了，哪些没做 | 在设计文档中列出所有 IR 特性，并用 `[DONE]` / `[TODO]` 标记状态 | 提供清晰的驱动功能覆盖图，明确开发边界 |
+| 14 | **功能特性全量对账与状态公示** | 详细设计文档中未明确列出所有 IR 提取特性的实现状态，导致遗漏 | **必须**在 `<module>_detailed_design.md` 中建立一个独立的 Markdown 表格，1:1 列出 IR 中所有的功能特性，并使用【🟢 已完成 / 🟡 部分完成 / 🔴 未完成】标记状态和对应 API | 确保驱动能力的完全透明，任何人接手文档都能立即看到能力边界与技术债 |
+| 15 | **传输模式强制覆盖 (Totality)** | 硬件支持 DMA 或中断，但驱动仅实现轮询（Polling） | 若 IR 定义了 DMA 请求或中断标志，驱动**必须**提供异步非阻塞 API（如 `xxx_TransferDMA`） | 轮询仅为基础模式，高性能驱动必须支持硬件提供的所有传输路径 |
+| 16 | **服务能力联动审计 (Linkage)** | 底层服务（如 DMA Callback）升级后，上层驱动未及时集成 | 当 DMA, NVIC, RCC 等通用层能力增强时，调用方驱动必须同步更新逻辑（如改为回调通知） | 保持系统演进的一致性，防止底层新特性成为“死代码” |
+| 17 | **寄存器合成严禁泄露 (AR-01)** | 在 `_drv.c` 中直接计算时钟分频、波特率或进行配置位拼接 | 所有依赖 `ConfigType` 参数进行算术运算（除法、乘法）和位拼接的逻辑，**强制**封装到 `_ll.c` 的函数中 | Driver 层只负责状态机和时序流程，数学计算与位场组合属于底层硬件实现细节 |
 
 ### R9 · 置信度与人工审核
 
@@ -175,6 +178,7 @@ reviewer-agent 在 ASIL-C/D 代码上必须执行 **IR 完整性审查**：
 - 若 IR 中存在未解决的 ambiguity（手册解读类）、未标注的 Errata 影响、safety_class 未经人工决策 → **直接拒绝 IR 并回退 doc-analyst 阶段**。
 - reviewer 自身**不得触发 R9a 类审核**（ownership 归属 doc-analyst）。
 - reviewer 仅触发 R9b 类审核（架构决策类）。
+- 拒绝 IR 时写入 `.claude/ir-rejection.md`（append-only），字段：`timestamp | module | rejection_reason | missing_ir_fields | next_action: re-run doc-analyst`。
 - 拒绝 IR 时写入 `.claude/ir-rejection.md`（append-only），字段：`timestamp | module | rejection_reason | missing_ir_fields | next_action: re-run doc-analyst`。
 
 ---

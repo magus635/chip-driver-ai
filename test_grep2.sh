@@ -1,0 +1,5 @@
+echo "I2C_LL_Set(pConfig->freq);" | grep -qE 'Config->.*( / | \* | << | >> | \& 0x| \| 0x)' && echo "FAIL 1" || echo "PASS 1"
+echo "uint32_t x = pConfig->pclk / 1000;" | grep -qE 'Config->.*( / | \* | << | >> | \& 0x| \| 0x)' && echo "FAIL 2" || echo "PASS 2"
+echo "val = (pConfig->speed << 2);" | grep -qE 'Config->.*( / | \* | << | >> | \& 0x| \| 0x)' && echo "FAIL 3" || echo "PASS 3"
+echo "SPI_TypeDef *SPIx = Spi_GetInstance(pConfig->instance);" | grep -qE 'Config->.*( / | \* | << | >> | \& 0x| \| 0x)' && echo "FAIL 4" || echo "PASS 4"
+echo "if (pConfig == NULL || pConfig->channel >= DMA_CH_COUNT)" | grep -qE 'Config->.*( / | \* | << | >> | \& 0x| \| 0x)' && echo "FAIL 5" || echo "PASS 5"

@@ -36,6 +36,8 @@ typedef enum { DMA_DIR_P2M = 0U, DMA_DIR_M2P = 1U } Dma_Direction_e;
 typedef enum { DMA_SIZE_8BIT = 0U, DMA_SIZE_16BIT = 1U, DMA_SIZE_32BIT = 2U } Dma_DataSize_e;
 typedef enum { DMA_PRIO_LOW = 0U, DMA_PRIO_MEDIUM = 1U, DMA_PRIO_HIGH = 2U, DMA_PRIO_VERYHIGH = 3U } Dma_Priority_e;
 
+typedef void (*Dma_CallbackType)(void *pContext);
+
 typedef struct
 {
     Dma_Channel_e    channel;
@@ -47,6 +49,8 @@ typedef struct
     bool             circular;
     Dma_Priority_e   priority;
     bool             mem2mem;
+    Dma_CallbackType pCallback;    /* Transfer Complete Callback */
+    void            *pContext;     /* Callback context */
 } Dma_ConfigType;
 
 #endif /* DMA_TYPES_H */
