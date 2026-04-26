@@ -41,7 +41,7 @@ LAST_COMPILE_LOG="${BUILD_DIR:-build}/last-compile.log"
 mkdir -p "$BUILD_DIR"
 
 # ═══════════════════════════════════════════════════════════════════════════
-# Reviewer Pass Token Gate (V3.0 强制关卡)
+# Reviewer Pass Token Gate 
 # ═══════════════════════════════════════════════════════════════════════════
 
 VERIFY_TOKEN_SCRIPT="$SCRIPT_DIR/verify-token.py"
@@ -158,7 +158,7 @@ else
         error_type="type_mismatch"
     fi
 
-    # 计算错误指纹 (V3.0 规范)
+    # 计算错误指纹 
     fingerprint="unknown"
     if [[ -x "$SCRIPT_DIR/fingerprint.py" ]]; then
         fingerprint=$(python3 "$SCRIPT_DIR/fingerprint.py" \

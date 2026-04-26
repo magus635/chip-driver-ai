@@ -1,5 +1,5 @@
 # Agent: compiler-agent
-# 编译自修复 Agent (V2.0 - 智能决策引擎增强版)
+# 编译自修复 Agent
 
 ## 角色
 
@@ -11,7 +11,7 @@
 
 ---
 
-## 知识库依赖（V2.0 新增）
+## 知识库依赖
 
 在开始修复前，**必须**读取以下知识库：
 - `.claude/lib/error-patterns.json` — 编译错误模式分类库
@@ -46,7 +46,7 @@ INIT → LOAD_KNOWLEDGE → LOOP [ COMPILE → CLASSIFY → DECIDE → FIX → C
 
 你应该自己负责整个修复循环（不要等用户确认，除非卡住）。
 
-### 0. LOAD_KNOWLEDGE（V2.0 新增）
+### 0. LOAD_KNOWLEDGE
 
 ```
 读取 .claude/lib/error-patterns.json
@@ -65,7 +65,7 @@ bash scripts/compile.sh
 - 如果命令返回 0，并且打印了成功字样，则输出 `COMPILE_SUCCESS` 并结束。
 - 否则，读取 `.claude/last-compile.log`（或者命令自身输出的文件）获取错误信息。
 
-### 2. CLASSIFY（V2.0 新增）
+### 2. CLASSIFY
 
 对每个错误进行分类：
 
@@ -84,7 +84,7 @@ bash scripts/compile.sh
 
 参照 `error-patterns.json` 中的 `compile_errors` 进行匹配。
 
-### 3. DECIDE（V2.0 新增）
+### 3. DECIDE
 
 根据分类结果，查询 `repair-strategies.json` 确定修复动作：
 
@@ -130,7 +130,7 @@ bash scripts/compile.sh
 
 ### 5. CHECK_PROGRESS
 
-**死循环检测（V2.0 增强）**：
+**死循环检测**：
 - 记录每轮的 `{error_type, symbol, file}` 三元组
 - 如果连续 3 次出现相同三元组且修复无效 → 触发 escalation
 - 如果错误数量不减反增 → 回滚上一次修复，尝试 fallback 策略
@@ -141,7 +141,7 @@ bash scripts/compile.sh
 
 ---
 
-## 符号查找流程（V2.0 新增）
+## 符号查找流程
 
 当遇到 `undeclared identifier` 或 `implicit declaration` 错误时：
 
@@ -160,10 +160,10 @@ bash scripts/compile.sh
 
 ---
 
-## CLAUDE.md R4 迭代上限与计数规范（V2.1 新增）
+## CLAUDE.md R4 迭代上限与计数规范
 
-> **硬性约束**：编译自修复循环**全局累计最多 15 次**（跨越整个编译→链接→调试工作流）。
-> 参见 CLAUDE.md R4 "计数范围" 小节。
+> **硬性约束**：编译自修复循环遵循 R4@v3.1（默认 per-round，每个调试轮重置；通过 `COUNT_MODE=global` 切换为跨轮累计）。
+> 数值与计数语义以 CLAUDE.md R4 为准，本文件不复述。
 
 ### 计数机制
 
@@ -234,7 +234,7 @@ bash scripts/compile.sh
 
 ---
 
-## CLAUDE.md R5 修复逻辑：假设驱动流程（V2.1 新增）
+## CLAUDE.md R5 修复逻辑：假设驱动流程
 
 > **关键原则**：编译错误修复必须遵循 `investigate → analyze → hypothesize → implement` 流程。
 > **禁止盲目修复**：不能凭直觉注释代码或添加强制转换。
@@ -360,7 +360,7 @@ bash scripts/compile.sh
 
 ---
 
-## 修复日志规范与追踪（V2.1 新增）
+## 修复日志规范与追踪
 
 ### 日志文件：`.claude/repair-log.md`
 
@@ -406,7 +406,7 @@ bash scripts/compile.sh
 - `COMPILE_FAILED_MAX_ITER`：达到 `$max_iterations`，但仍未修好
 - `COMPILE_STUCK`：陷入死循环或需要人工协助
 
-**V2.0 新增**：退出时输出修复统计：
+退出时输出修复统计：
 ```
 [COMPILE SUMMARY]
 - 总轮次：N

@@ -1,6 +1,6 @@
 {
   "version": "1.0.0",
-  "lastScanned": 1777112951412,
+  "lastScanned": 1777207980069,
   "projectRoot": "/Users/qlwang/Documents/GitHub/chip-driver-ai",
   "techStack": {
     "languages": [],
@@ -40,7 +40,7 @@
       "path": "build",
       "purpose": "Build output",
       "fileCount": 1,
-      "lastAccessed": 1777112951396,
+      "lastAccessed": 1777207980045,
       "keyFiles": [
         "last-compile.log"
       ]
@@ -49,7 +49,7 @@
       "path": "config",
       "purpose": "Configuration files",
       "fileCount": 3,
-      "lastAccessed": 1777112951396,
+      "lastAccessed": 1777207980046,
       "keyFiles": [
         "STM32F103C8T6.ld",
         "openocd.cfg",
@@ -59,8 +59,8 @@
     "docs": {
       "path": "docs",
       "purpose": "Documentation",
-      "fileCount": 6,
-      "lastAccessed": 1777112951397,
+      "fileCount": 8,
+      "lastAccessed": 1777207980047,
       "keyFiles": [
         "STM32F103_CAN_Reference.md",
         "architecture-guidelines.md",
@@ -72,9 +72,11 @@
     "ir": {
       "path": "ir",
       "purpose": null,
-      "fileCount": 2,
-      "lastAccessed": 1777112951397,
+      "fileCount": 4,
+      "lastAccessed": 1777207980048,
       "keyFiles": [
+        "can_ir_summary.json",
+        "can_ir_summary.md",
         "spi_ir_summary.json",
         "spi_ir_summary.md"
       ]
@@ -83,7 +85,7 @@
       "path": "scripts",
       "purpose": "Build/utility scripts",
       "fileCount": 14,
-      "lastAccessed": 1777112951397,
+      "lastAccessed": 1777207980049,
       "keyFiles": [
         "check-arch.sh",
         "check-env.sh",
@@ -96,45 +98,81 @@
       "path": "src",
       "purpose": "Source code",
       "fileCount": 1,
-      "lastAccessed": 1777112951398,
+      "lastAccessed": 1777207980049,
       "keyFiles": []
     }
   },
   "hotPaths": [
     {
-      "path": "docs/parsed/stm32f103_reference_manual.md",
-      "accessCount": 11,
-      "lastAccessed": 1777117208233,
+      "path": "CLAUDE.md",
+      "accessCount": 19,
+      "lastAccessed": 1777209569913,
+      "type": "file"
+    },
+    {
+      "path": ".claude/commands/dev-driver.md",
+      "accessCount": 8,
+      "lastAccessed": 1777209563986,
       "type": "file"
     },
     {
       "path": ".claude/agents/doc-analyst.md",
-      "accessCount": 4,
-      "lastAccessed": 1777116385917,
-      "type": "file"
-    },
-    {
-      "path": "scripts/validate-ir.py",
       "accessCount": 3,
-      "lastAccessed": 1777116411123,
+      "lastAccessed": 1777209499741,
       "type": "file"
     },
     {
-      "path": "docs/ir-specification.md",
+      "path": "docs/token-spec.md",
       "accessCount": 2,
-      "lastAccessed": 1777117184825,
+      "lastAccessed": 1777209505950,
       "type": "file"
     },
     {
-      "path": "scripts/parse-pdf.sh",
-      "accessCount": 1,
-      "lastAccessed": 1777116204283,
+      "path": ".claude/agents/linker-agent.md",
+      "accessCount": 2,
+      "lastAccessed": 1777209677151,
       "type": "file"
     },
     {
-      "path": "ir/spi_ir_summary.md",
+      "path": ".claude/agents/compiler-agent.md",
+      "accessCount": 2,
+      "lastAccessed": 1777209686973,
+      "type": "file"
+    },
+    {
+      "path": ".claude/agents/debugger-agent.md",
+      "accessCount": 2,
+      "lastAccessed": 1777209695282,
+      "type": "file"
+    },
+    {
+      "path": "docs/roadmap.md",
       "accessCount": 1,
-      "lastAccessed": 1777116344638,
+      "lastAccessed": 1777208557056,
+      "type": "file"
+    },
+    {
+      "path": "docs/state-schema.md",
+      "accessCount": 1,
+      "lastAccessed": 1777208603185,
+      "type": "file"
+    },
+    {
+      "path": "docs/recovery-runbook.md",
+      "accessCount": 1,
+      "lastAccessed": 1777208628776,
+      "type": "file"
+    },
+    {
+      "path": "docs/changelog.md",
+      "accessCount": 1,
+      "lastAccessed": 1777208922928,
+      "type": "file"
+    },
+    {
+      "path": "docs/agent-workflow.md",
+      "accessCount": 1,
+      "lastAccessed": 1777209245923,
       "type": "file"
     }
   ],

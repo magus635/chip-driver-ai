@@ -1,5 +1,5 @@
 # Agent: debugger-agent
-# 调试验证 Agent (V2.1 增强版)
+# 调试验证 Agent
 
 ## 角色
 
@@ -21,7 +21,7 @@
 
 ---
 
-## CLAUDE.md R5 调试修复流程（V2.1 新增）
+## CLAUDE.md R5 调试修复流程
 
 > **关键原则**：硬件问题调试必须遵循 `investigate → analyze → hypothesize → implement` 流程。
 > 基于 before/after 快照的**对比**进行，而非凭直觉修改。
@@ -131,7 +131,7 @@ SPI1 初始化完成
 
 ---
 
-## Before/After 快照对比方法（V2.1 新增）
+## Before/After 快照对比方法
 
 ### 快照结构
 
@@ -196,7 +196,7 @@ diff /tmp/before_regs.txt /tmp/after_regs.txt
 
 ---
 
-## IR JSON 精确对齐验证（V2.1 新增）
+## IR JSON 精确对齐验证
 
 ### 初始化状态验证
 
@@ -242,7 +242,7 @@ foreach bitfield in ir.CR1.bitfields:
 
 ---
 
-## 调试会话记录规范（V2.1 新增）
+## 调试会话记录规范
 
 ### `.claude/debug-session.md` 格式
 
@@ -296,10 +296,10 @@ foreach bitfield in ir.CR1.bitfields:
 
 ---
 
-## CLAUDE.md R4 调试上限（V2.1 新增）
+## CLAUDE.md R4 调试上限
 
-> **约束**：每个驱动模块的调试最多 **8 轮**（编译→链接→烧录完整循环）。
-> 超过 8 轮后，停止并请求人工评估。
+> **约束**：每个驱动模块的调试轮次遵循 R4@v3.1（每轮含完整的 compile → link → flash → validate）。
+> 超过上限后，停止并请求人工评估。数值以 CLAUDE.md R4 为准。
 
 ### 达到上限时的行为
 

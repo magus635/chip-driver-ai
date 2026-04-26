@@ -1,5 +1,5 @@
 # Agent: reviewer-agent
-# 审查与质量控制 Agent (V2.0 增强版)
+# 审查与质量控制 Agent
 
 ## 角色
 你是一名苛刻的资深嵌入式架构师与代码审查专家。你的任务是交叉验证提取出的寄存器建模、内存映射结构体和基础位域宏定义，确保底层根基没有常识性错误。在进行全量代码生成前，你是"地基"的质检员。
@@ -104,7 +104,7 @@ grep "CMSIS_HEADER_PATH" config/project.env 2>/dev/null || echo "NO_CMSIS_CONFIG
 - 外设时钟是否在规格允许范围内
 - APB 分频是否正确考虑
 
-### 6.5 硬件不变式静态校验（V2.1 新增 · 强制）
+### 6.5 硬件不变式静态校验
 
 **触发条件**：存在 `ir/<module>_ir_summary.json` 且其 `invariants[]` 非空。
 

@@ -1,5 +1,5 @@
-# /dev-driver — 驱动开发全流程命令 (V3.0)
-# 遵循 CLAUDE.md v3.0 规约
+# /dev-driver — 驱动开发全流程命令 (V3.1)
+# 遵循 CLAUDE.md v3.1 规约
 
 **调用方式：** `/dev-driver <模块名> [--from-step <step>] [--review-level <strict|normal|relaxed>] [--resume] [--reset]`
 
@@ -16,13 +16,13 @@
 - `.claude/lib/session-state.json` — 会话状态与 Token 状态
 - `.claude/lib/error-patterns.json` — 错误模式库
 - `.claude/memory/repair-patterns.json` — 指纹修复经验
-- `.claude/memory/chip-knowledge.json` — 芯片特性库（Errata, Quirks）
+- `.claude/lib/chip-knowledge.json` — 芯片特性库（Errata, Quirks）
 
 ---
 
 ## 执行步骤
 
-### PRE-STEP · 会话与 Token 检查 (V3.0)
+### PRE-STEP · 会话与 Token 检查 (V3.1)
 1. 检查 `.claude/lib/session-state.json` 是否存在。
 2. **Token 状态检查**：
    - 如果 `--resume` 且当前已进入 `compile` 阶段，检查 `.claude/reviewer-pass.token`。
@@ -32,7 +32,7 @@
 ```bash
 source config/project.env && bash scripts/check-env.sh
 ```
-- 检查 `scripts/rules-version.sh` 输出是否为 `v3.0`。
+- 检查 `scripts/rules-version.sh` 输出是否为 `v3.1`。
 - 确认 `src/safety/safe_image.bin` 已预就绪（用于灾难恢复）。
 
 ### STEP 1 · 文档分析与 IR 生成 (doc-analyst)
@@ -45,7 +45,7 @@ source config/project.env && bash scripts/check-env.sh
    - **Exit 2（依赖缺失）**：降级为 AI 直接读取 `docs/*.pdf`，流程不中断。
    - **Exit 1（转换失败）**：同样降级，但记录警告到 `.claude/parse-pdf.log`。
 2. 调用 doc-analyst，优先从 `docs/parsed/` 读取预处理后的 Markdown，根据 $CHIP_MODEL 和 $CHIP_FAMILY 定位手册章节，生成 `ir/{module}_ir_summary.json`。
-3. **IR Gate (V3.0 强制)**：
+3. **IR Gate (V3.1 强制)**：
    运行 `python3 scripts/validate-ir.py --check-md-sync`。
    - **失败**：MD 与 JSON 不一致，强制返工 `doc-analyst`。
    - **成功**：进入下一步。
@@ -84,7 +84,7 @@ source config/project.env && bash scripts/check-env.sh
    ```
    等待用户回复确认指令后，方可进入 STEP 1.6。
 
-### STEP 1.6 · 签发 Token (V3.0 核心)
+### STEP 1.6 · 签发 Token (V3.1 核心)
 审查全部通过后，必须调用：
 ```bash
 python3 scripts/issue-token.py
@@ -101,7 +101,7 @@ python3 scripts/issue-token.py
 1. **Token 校验**：调用 `scripts/compile.sh`。
    - 内部会自动运行 `verify-token.py --consume`。
    - **Exit 3**：Token 校验失败（代码被篡改或过期），必须退回 STEP 1.5。
-2. **迭代上限**：单调试轮内最多 **15** 次（R4）。
+2. **迭代上限**：遵循 R4@v3.1（编译循环单轮上限）。
 3. **指纹去重**：
    - 编译报错后，调用 `scripts/fingerprint.py` 计算错误指纹。
    - 记录到 `.claude/repair-log.md`。
@@ -109,17 +109,17 @@ python3 scripts/issue-token.py
 
 ### STEP 4 · 链接修复循环 (linker-agent)
 - 调用 `scripts/link.sh`。
-- **迭代上限**：单调试轮内最多 **10** 次（R4）。
+- **迭代上限**：遵循 R4@v3.1（链接循环单轮上限）。
 
 ### STEP 5 · 烧录与验证 (debugger-agent)
-- **调试轮次上限**：最多 **8** 轮（R4，每轮含完整的 compile → link → flash → validate）。
+- **调试轮次上限**：遵循 R4@v3.1（每轮含完整的 compile → link → flash → validate）。
 - 运行前自动执行 `flash.sh`。
 - **Exit 4 (灾难恢复)**：如果烧录返回 Exit 4 或检测到硬件半成功，跳转至 **RECOVERY-FLOW**。
 - 采集运行快照，与 IR 的期望行为比对。
 
 ---
 
-## 异常与灾难处理流程 (V3.0)
+## 异常与灾难处理流程 (V3.1)
 
 ### RECOVERY-FLOW (灾难恢复)
 当任何脚本返回 **Exit 4** 时，AI 必须执行：

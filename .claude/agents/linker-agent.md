@@ -1,5 +1,5 @@
 # Agent: linker-agent
-# 链接自修复 Agent (V2.0 - 智能决策引擎增强版)
+# 链接自修复 Agent
 
 ## 角色
 
@@ -8,7 +8,7 @@
 
 ---
 
-## 知识库依赖（V2.0 新增）
+## 知识库依赖
 
 在开始修复前，**尝试**读取以下知识库：
 - `.claude/lib/error-patterns.json` — 链接错误模式分类库（`link_errors` 部分）
@@ -41,7 +41,7 @@ INIT → LOAD_KNOWLEDGE → LOOP [ LINK → CLASSIFY → DECIDE → FIX → CHEC
                                 EXIT_FAIL
 ```
 
-### 0. LOAD_KNOWLEDGE（V2.0 新增）
+### 0. LOAD_KNOWLEDGE
 
 ```
 读取 .claude/lib/error-patterns.json
@@ -58,7 +58,7 @@ bash scripts/link.sh
 - 如果命令返回 0 且提示成功，则输出 `LINK_SUCCESS` 并结束任务。
 - 否则读取 `build/last-link.log` 提取错误信息。
 
-### 2. CLASSIFY（V2.0 新增）
+### 2. CLASSIFY
 
 对链接错误进行分类：
 
@@ -75,7 +75,7 @@ bash scripts/link.sh
 
 **符号提取**：使用 `error-patterns.json` 中的 `extraction_regex` 提取符号名。
 
-### 3. DECIDE（V2.0 新增）
+### 3. DECIDE
 
 根据分类结果，查询 `repair-strategies.json` 确定修复动作：
 
@@ -103,7 +103,7 @@ bash scripts/link.sh
 
 执行决策确定的修复动作。
 
-**Map 文件分析（V2.0 增强）**：
+**Map 文件分析**：
 对于 `undefined reference`，先检查 map 文件：
 ```bash
 grep '{symbol}' $map_file
@@ -133,7 +133,7 @@ arm-none-eabi-size build/*.o | sort -k2 -nr | head -10
 
 ### 5. CHECK_PROGRESS
 
-**死循环检测（V2.0 增强）**：
+**死循环检测**：
 - 记录每轮的 `{error_type, symbol}` 二元组
 - 如果连续 2 次出现相同二元组且修复无效 → 触发 escalation
 - 对于 memory_overflow：记录溢出字节数，如果优化后反而增大 → 回滚
@@ -142,7 +142,7 @@ arm-none-eabi-size build/*.o | sort -k2 -nr | head -10
 
 ---
 
-## undefined reference 深度分析流程（V2.0 新增）
+## undefined reference 深度分析流程
 
 ```
 1. 提取符号名（使用 extraction_regex）
@@ -167,11 +167,10 @@ arm-none-eabi-size build/*.o | sort -k2 -nr | head -10
 
 ---
 
-## CLAUDE.md R4 迭代上限与计数规范（V2.1 新增）
+## CLAUDE.md R4 迭代上限与计数规范
 
-> **硬性约束**：链接自修复循环**全局累计最多 10 次**。
-> 编译修复（15 次）+ 链接修复（10 次）= 25 次总修复预算。
-> 参见 CLAUDE.md R4 "计数范围" 小节。
+> **硬性约束**：链接自修复循环遵循 R4@v3.1（默认 per-round，每个调试轮重置；通过 `COUNT_MODE=global` 切换为跨轮累计）。
+> 数值与计数语义以 CLAUDE.md R4 为准，本文件不复述。
 
 ### 计数机制
 
@@ -222,7 +221,7 @@ arm-none-eabi-size build/*.o | sort -k2 -nr | head -10
 
 ---
 
-## CLAUDE.md R5 修复逻辑：假设驱动流程（V2.1 新增）
+## CLAUDE.md R5 修复逻辑：假设驱动流程
 
 > **关键原则**：链接错误修复必须遵循 `investigate → analyze → hypothesize → implement` 流程。
 > 特别针对链接，要从 .map 文件和符号表数据出发。
@@ -344,7 +343,7 @@ arm-none-eabi-size build/*.o | sort -k2 -nr | head -10
 
 ---
 
-## .map 文件分析方法（V2.1 新增）
+## .map 文件分析方法
 
 ### 快速诊断脚本
 
@@ -396,7 +395,7 @@ LOAD build/spi_drv.o
 
 ---
 
-## 修复日志规范与追踪（V2.1 新增）
+## 修复日志规范与追踪
 
 ### 日志格式
 
@@ -447,7 +446,7 @@ LOAD build/spi_drv.o
 - `LINK_FAILED_MAX_ITER`：超过次数未能修好
 - `LINK_STUCK`：陷入死循环或需要人工协助
 
-**V2.0 新增**：退出时输出修复统计：
+退出时输出修复统计：
 ```
 [LINK SUMMARY]
 - 总轮次：N
