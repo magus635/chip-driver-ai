@@ -99,6 +99,8 @@
 | 10 | **寄存器操作注释必须标注 IR 来源** | `CANx->BTR = btr;` | `CANx->BTR = btr; /* IR: configuration_strategies[0] - RM0090 §32.7.7 */` | R1 权威来源原则 |
 | 11 | **配置锁字段写入必须前置守卫**（示例：UART BRR） | 修改 `USARTx->BRR` 未先清 `USART_CR1.UE` | `USARTx->CR1 &= ~USART_CR1_UE_Msk;` → 写 BRR → 恢复 UE；注释 `/* Guard: INV_UART_001 */` | IR 中 LOCK 不变式必须被 code-gen 消费。违规由 `scripts/check-invariants.py` 检出。**注**：时序敏感的 disable 序列（如 SPI full-duplex 关闭顺序）归 R8#12 |
 | 12 | **DeInit/Disable 必须遵循 IR `disable_procedures`** | `Spi_DeInit` 中 full_duplex 分支遗漏 wait_RXNE | 从 IR 读取模式专属步骤列表，逐步生成并标注手册来源 | 不同模式关闭序列步骤不同（RM0008 §25.3.8），遗漏会导致数据丢失或总线挂死 |
+| 13 | **详细设计文档须与代码同步生成** | 先写代码后补文档，导致图文不符 | 在代码生成的同时产生 `<module>_detailed_design.md`，确保流程图与代码逻辑原子同步 | 保证文档与实现的高度一致性，作为专家审查的首要依据 |
+| 14 | **建立功能特性实现矩阵** | 用户不知道哪些功能做了，哪些没做 | 在设计文档中列出所有 IR 特性，并用 `[DONE]` / `[TODO]` 标记状态 | 提供清晰的驱动功能覆盖图，明确开发边界 |
 
 ### R9 · 置信度与人工审核
 

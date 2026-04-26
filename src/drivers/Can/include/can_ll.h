@@ -299,7 +299,7 @@ static inline bool CAN_LL_IsRequestComplete(const CAN_TypeDef *CANx, uint8_t mai
 static inline void CAN_LL_AbortMailbox(CAN_TypeDef *CANx, uint8_t mailbox)
 {
     /* ABRQ0=bit7, ABRQ1=bit15, ABRQ2=bit23 — offset by 8 bits */
-    /* TSR contains W1C bits (RQCP0/1/2) — must NOT use |= (R8-1) */
+    /* TSR contains W1C bits (RQCP0/1/2) — must NOT use RMW (R8-1) */
     /* Direct write: only ABRQ bit set, RQCP bits written as 0 (safe for W1C) */
     uint32_t abrqMsk = (CAN_TSR_ABRQ0_Msk << ((uint32_t)mailbox * 8U));
     CANx->TSR = abrqMsk; /* W1C-safe direct write — RM0008 §24.4.2 */

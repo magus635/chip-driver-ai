@@ -31,4 +31,14 @@ static inline void Rcc_Api_EnableSpi1(void) {
     *RCC_APB2ENR |= (1U << 12);  /* SPI1EN — SPI1 时钟使能 */
 }
 
+/* 使能 SPI2 时钟（含 GPIOB 时钟） */
+/* Source: ir/spi_ir_summary.json clock[1] — RM0008 §7.3.8 p.114 */
+static inline void Rcc_Api_EnableSpi2(void) {
+    volatile uint32_t *RCC_APB2ENR = (volatile uint32_t *)0x40021018U; /* RM0008 §7.3.7 */
+    volatile uint32_t *RCC_APB1ENR = (volatile uint32_t *)0x4002101CU; /* RM0008 §7.3.8 */
+
+    *RCC_APB2ENR |= (1U << 3);   /* IOPBEN — GPIOB 时钟使能 */
+    *RCC_APB1ENR |= (1U << 14);  /* SPI2EN — SPI2 时钟使能 */
+}
+
 #endif /* RCC_API_H */
