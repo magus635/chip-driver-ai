@@ -26,3 +26,8 @@ build/
 /tmp/
 *.tmp
 *.bak
+
+# Dev / scratch artifacts
+test_grep*.sh
+copied_log.md
+/tmp/dma_backup_*

@@ -105,14 +105,14 @@
   "hotPaths": [
     {
       "path": "CLAUDE.md",
-      "accessCount": 24,
-      "lastAccessed": 1777248940598,
+      "accessCount": 30,
+      "lastAccessed": 1777329090866,
       "type": "file"
     },
     {
       "path": ".claude/commands/dev-driver.md",
-      "accessCount": 11,
-      "lastAccessed": 1777248932281,
+      "accessCount": 16,
+      "lastAccessed": 1777297097503,
       "type": "file"
     },
     {
@@ -161,6 +161,12 @@
       "path": "src/drivers/Dma/src/dma_drv.c",
       "accessCount": 3,
       "lastAccessed": 1777296186365,
+      "type": "file"
+    },
+    {
+      "path": ".claude/agents/reviewer-agent.md",
+      "accessCount": 3,
+      "lastAccessed": 1777329414792,
       "type": "file"
     },
     {
@@ -236,12 +242,6 @@
       "type": "file"
     },
     {
-      "path": ".claude/agents/reviewer-agent.md",
-      "accessCount": 1,
-      "lastAccessed": 1777246047977,
-      "type": "file"
-    },
-    {
       "path": "scripts/validate-ir.py",
       "accessCount": 1,
       "lastAccessed": 1777246668919,
@@ -281,6 +281,12 @@
       "path": "src/drivers/Dma/src/dma_isr.c",
       "accessCount": 1,
       "lastAccessed": 1777296061847,
+      "type": "file"
+    },
+    {
+      "path": "docs/safety-codegen-rules.md",
+      "accessCount": 1,
+      "lastAccessed": 1777296957817,
       "type": "file"
     }
   ],

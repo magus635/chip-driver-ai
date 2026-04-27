@@ -38,7 +38,8 @@
       "Bash(echo \"gate-exit=$? \\(期望=0\\)\")",
       "Bash(echo \"issue-exit=$?\")",
       "Bash(bash scripts/compile.sh)",
-      "Bash(echo \"compile-exit=$?\")"
+      "Bash(echo \"compile-exit=$?\")",
+      "Bash(grep -n '^---$\\\\|^### R\\\\|^## ' CLAUDE.md)"
     ]
   }
 }

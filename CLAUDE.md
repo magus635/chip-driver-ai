@@ -74,7 +74,7 @@
 - 捕获所有命令的 `stdout` + `stderr`，不得丢弃输出。
 - 烧录和调试命令会访问硬件，执行前输出确认提示。
 - **合规检查点唯一性 + Token Gate**：reviewer-agent 是**唯一强制合规检查点**，并通过 **Reviewer Pass Token** 实现不可绕过（schema 与流程见 `docs/token-spec.md`）。`compile.sh` 启动时必须校验 token 存在、未消费、与当前 `src/` + `ir/` hash 匹配；校验失败以退出码 **3** 拒绝执行。`--skip-arch-check` 仅关闭 compile.sh 内部的 fail-safe 兜底检查，**不可跳过 token 校验**。
-- 脚本接口规范：每个 `scripts/` 下脚本必须实现 `--help`、`--dry-run`、`--log <file>`；统一退出码：0 成功 / 1 一般失败 / 2 CI 待人工审核 / 3 token gate 拒绝 / 4 灾难恢复触发。
+- 脚本接口规范：**新增** `scripts/` 下脚本必须实现 `--help`、`--dry-run`、`--log <file>`；存量脚本（compile.sh / link.sh / flash.sh / check-arch.sh / validate-ir.py / fingerprint.py / issue-token.py / verify-token.py / recover.sh / check-env.sh / check-invariants.py / debug-snapshot.sh）渐进改造，未实现接口时不阻断流程。统一退出码：0 成功 / 1 一般失败 / 2 CI 待人工审核 / 3 token gate 拒绝 / 4 灾难恢复触发。
 
 ### R7 · 上下文延续
 - 每次进入新修复轮次前，读取 `.claude/repair-log.md` 了解历史。
@@ -104,21 +104,6 @@
 | 15 | **传输模式强制覆盖 (Totality)** | 硬件支持 DMA 或中断，但驱动仅实现轮询（Polling） | 若 IR 定义了 DMA 请求或中断标志，驱动**必须**提供异步非阻塞 API（如 `xxx_TransferDMA`） | 轮询仅为基础模式，高性能驱动必须支持硬件提供的所有传输路径 |
 | 16 | **服务能力联动审计 (Linkage)** | 底层服务（如 DMA Callback）升级后，上层驱动未及时集成 | 当 DMA, NVIC, RCC 等通用层能力增强时，调用方驱动必须同步更新逻辑（如改为回调通知） | 保持系统演进的一致性，防止底层新特性成为“死代码” |
 | 17 | **寄存器合成严禁泄露 (AR-01)** | 在 `_drv.c` 中直接计算时钟分频、波特率或进行配置位拼接 | 所有依赖 `ConfigType` 参数进行算术运算（除法、乘法）和位拼接的逻辑，**强制**封装到 `_ll.c` 的函数中 | Driver 层只负责状态机和时序流程，数学计算与位场组合属于底层硬件实现细节 |
-
-### R10 · 功能矩阵增量补齐循环
-- **动机**：首次 code-gen 在大模块上常因上下文爆炸 / 长输出截断导致功能矩阵中部分项停留在 `todo`/`partial`。R10 强制以"每轮一/两项"的增量方式补齐，避免重生成全模块带来的幻觉与回归。
-- **权威源**：`ir/<module>_feature_matrix.json`（schema_version: 1.0）。`<module>_detailed_design.md` 中的功能矩阵改由 `<!-- FEATURE_MATRIX:BEGIN/END -->` 包裹，**单向从 JSON 渲染**，禁止手工编辑（与 R1 的 IR MD 同模式）。
-- **状态枚举**：JSON 真值用 `todo / partial / done`；MD 渲染为 🔴 / 🟡 / 🟢。
-- **流程**（`scripts/feature-loop.sh`）：
-  1. `feature-next.py` 按 `depends_on` 拓扑序输出下一个未完成 feature（partial 优先于 todo）。
-  2. codegen-agent **仅消费目标 feature 的 `ir_refs` 切片**，禁止读其他寄存器；**仅生成 `target_apis` 中的接口**。
-  3. 复用现有 Gate 2：reviewer-agent → 签发 token → `compile.sh` 校验。
-  4. `feature-update.py --id <ID> --status done` 回写 JSON 并自动重渲染 MD。
-- **上限**：`MAX_FEATURE_ROUNDS`（默认 = 未完成项 × 2，可在 `config/project.env` 覆盖）。达到上限退出码 **2**，请求人工介入；与 R4 的 compile/link/debug 计数相互独立。
-- **依赖死锁**：`feature-next.py` 检测到仍有未完成项但全部 `depends_on` 不可满足时退出码 **3**，禁止自动绕过。
-- **CI 模式**（`INTERACTIVE_MODE=0`）：feature-loop 仍跑 dry-run/校验，但不调用 codegen-agent，将待实现清单写入 `.claude/pending-reviews.md`。
-- **STEP 3 入口门禁（强制）**：`scripts/check-feature-matrix-clean.py` 必须返回 0，否则**禁止进入 STEP 3 编译阶段**。这是 R10 与 R6 token gate 并列的第二道不可绕过的关卡。
-- **配套脚本**：`scripts/{validate-feature-matrix,feature-next,feature-update}.py`、`scripts/feature-loop.sh`，全部遵守 R6 接口规范（`--help/--dry-run/--log`）。
 
 ### R9 · 置信度与人工审核
 
@@ -167,6 +152,21 @@ AI推荐: <推荐选项编号及理由>
 ```
 | 日期 | 发起Agent | 类别 | 问题摘要 | 人工决策 | 置信度(决策时) | safety_level | 相关文件 | 规则版本 |
 ```
+
+### R10 · 功能矩阵增量补齐循环
+- **动机**：首次 code-gen 在大模块上常因上下文爆炸 / 长输出截断导致功能矩阵中部分项停留在 `todo`/`partial`。R10 强制以"每轮一/两项"的增量方式补齐，避免重生成全模块带来的幻觉与回归。
+- **权威源**：`ir/<module>_feature_matrix.json`（schema_version: 1.0）。`<module>_detailed_design.md` 中的功能矩阵改由 `<!-- FEATURE_MATRIX:BEGIN/END -->` 包裹，**单向从 JSON 渲染**，禁止手工编辑（与 R1 的 IR MD 同模式）。
+- **状态枚举**：JSON 真值用 `todo / partial / done`；MD 渲染为 🔴 / 🟡 / 🟢。
+- **流程**（`scripts/feature-loop.sh`）：
+  1. `feature-next.py` 按 `depends_on` 拓扑序输出下一个未完成 feature（partial 优先于 todo）。
+  2. codegen-agent **仅消费目标 feature 的 `ir_refs` 切片**，禁止读其他寄存器；**仅生成 `target_apis` 中的接口**。
+  3. 复用现有 Gate 2：reviewer-agent → 签发 token → `compile.sh` 校验。
+  4. `feature-update.py --id <ID> --status done` 回写 JSON 并自动重渲染 MD。
+- **上限**：`MAX_FEATURE_ROUNDS`（默认 = 未完成项 × 2，可在 `config/project.env` 覆盖）。达到上限退出码 **2**，请求人工介入；与 R4 的 compile/link/debug 计数相互独立。
+- **依赖死锁**：`feature-next.py` 检测到仍有未完成项但全部 `depends_on` 不可满足时退出码 **3**，禁止自动绕过。
+- **CI 模式**（`INTERACTIVE_MODE=0`）：feature-loop 仍跑 dry-run/校验，但不调用 codegen-agent，将待实现清单写入 `.claude/pending-reviews.md`。
+- **STEP 3 入口门禁（强制）**：`scripts/check-feature-matrix-clean.py` 必须返回 0，否则**禁止进入 STEP 3 编译阶段**。这是 R10 与 R6 token gate 并列的第二道不可绕过的关卡。
+- **配套脚本**：`scripts/{validate-feature-matrix,feature-next,feature-update}.py`、`scripts/feature-loop.sh`，全部遵守 R6 接口规范（`--help/--dry-run/--log`）。
 
 ---
 
@@ -241,16 +241,16 @@ reviewer-agent 在 ASIL-C/D 代码上必须执行 **IR 完整性审查**：
 | `scripts/feature-update.py` | 翻转 feature 状态并回写 detailed_design.md |
 | `scripts/feature-loop.sh` | R10 增量补齐主循环（feature-next → codegen → reviewer → compile → update） |
 | `src/` | 驱动源代码与初始框架 |
-| `src/safety/safe_image.bin` | 灾难恢复用最小镜像（bootloader + UART echo） |
+| `src/safety/safe_image.bin` | 灾难恢复用最小镜像（按需生成，未就绪时 STEP 0 仅警告，非阻断） |
 | `config/project.env` | 工具链路径、模式开关、超时配置 |
-| `scripts/doc-analyze.sh` | 调用 doc-analyst 生成 IR |
+| `scripts/parse-pdf.sh` | docs/*.pdf → docs/parsed/*.md 预处理（doc-analyst 上游可降级） |
 | `scripts/validate-ir.py` | IR 完整性 + MD/JSON 同步校验 |
 | `scripts/check-arch.sh` | 架构合规检查 |
 | `scripts/check-invariants.py` | 不变式 / 锁字段守卫检查 |
 | `scripts/compile.sh` | 编译封装（含 token 校验） |
 | `scripts/link.sh` | 链接封装 |
 | `scripts/flash.sh` | 烧录封装（含 flash-backup） |
-| `scripts/debug.sh` | 调试封装（采集快照） |
+| `scripts/debug-snapshot.sh` | 调试封装（采集运行快照与寄存器对账） |
 | `scripts/recover.sh` | 灾难恢复入口 |
 | `scripts/fingerprint.py` | 错误指纹计算 |
 | `scripts/rules-version.sh` | 输出当前 CLAUDE.md git tag |

@@ -226,6 +226,96 @@ jq . ir/{module}_ir_summary.json > /dev/null 2>&1 && echo "JSON_VALID" || echo "
 
 ---
 
+## 代码层审查（post-codegen，dev-driver STEP 2.D 起调用）
+
+> 上面 §1~§7 是 IR/寄存器层审查（pre-codegen，STEP 1.5）。本节是 codegen 输出代码后的审查契约，对齐 CLAUDE.md 的 R8 / R10 / safety_level 约束。
+
+### 8. R8 硬件操作反模式扫描（机器化 + 人工复核）
+
+**触发条件**：`src/drivers/<Module>/` 下存在 `_ll.h` / `_ll.c` / `_drv.c` / `_isr.c`。
+
+**机器化检查**：
+```bash
+bash scripts/check-arch.sh                     # R8 #3 / #7 / #8 分层禁令
+python3 scripts/check-invariants.py \
+    ir/<module>_ir_summary.json \
+    src/drivers/<Module>/include/*_ll.h \
+    src/drivers/<Module>/src/*.c                # R8 #11 LOCK 守卫 + #12 disable 序列
+```
+
+**人工复核（机器化无法覆盖）**：
+- R8 #1 W1C 寄存器 RMW（grep `\\|=.*_W1C` / `&=.*_W1C` 启发式扫描）
+- R8 #2 `_Pos` 误用（grep `<<.*_Pos.*\\|=` 反向扫）
+- R8 #4 裸 `int`/`short`/`long` 类型
+- R8 #5 空循环延时
+- R8 #9 Init/DeInit 配对完整性
+- R8 #10 寄存器写注释是否标注 IR 来源
+- R8 #13~#14 详细设计文档与代码同步、功能矩阵全量对账
+- R8 #15~#17 传输模式覆盖、服务联动、AR-01 寄存器合成下沉
+
+**判定**：任一机器化检查 FAIL → `REVIEW_FAILED`，打回 codegen-agent。人工复核发现 ≥ 1 处 R8 违规且严重度 critical → `REVIEW_FAILED`；warn 级聚合后写入审查报告但不阻断（strict 级别除外）。
+
+### 9. R10 IR 完整性审查（ASIL-C/D 强制）
+
+**触发条件**：IR JSON `safety_level ∈ {ASIL-C, ASIL-D}`。
+
+**检查清单**：
+- 是否存在未解决的 ambiguity（手册解读类） → 拒绝并写 `.claude/ir-rejection.md`
+- 是否标注所有相关 Errata 影响 → 缺失则拒绝
+- `safety_class` 类决策是否经过人工（review-decisions.md 中有记录） → 否则拒绝
+- IR `invariants[]` 中 `enforced_by` 是否包含 `reviewer-agent:static` → 缺失则警告
+
+**ownership 边界**：
+- reviewer 发现上述任一缺陷 → **直接退回 doc-analyst**，不自行触发 R9a（R9a 归 doc-analyst）
+- reviewer 仅触发 R9b（架构决策类，归本 agent）
+
+**输出**（拒绝时）：
+```
+[IR-REJECTION]
+timestamp: <ISO-8601>
+module: <module>
+rejection_reason: <missing_ambiguity_resolution | unmarked_errata | safety_class_undecided>
+missing_ir_fields: [<field paths>]
+next_action: re-run doc-analyst
+```
+追加到 `.claude/ir-rejection.md`（append-only），并以退出码 1 终止流水线。
+
+### 10. R10 功能矩阵审查（dev-driver STEP 2.5 每轮调用）
+
+**触发条件**：feature-update.py 翻转某 feature 状态后。
+
+**检查项**：
+1. `target_apis` 列表中的接口在 `src/drivers/<Module>/include/*_api.h` 中已声明
+2. 接口实现在 `src/drivers/<Module>/src/*.c` 中存在且非纯 TODO
+3. `acceptance` 描述的行为有对应实现路径（人工复核 + 关键字扫描）
+4. 翻 done 时不应同时引入新 todo（防止"假性收敛"）
+
+**判定**：任一项不满足 → 拒绝翻转，恢复 status 为 `partial`。
+
+**矩阵清空门禁**：每轮 STEP 2.5 update 后，reviewer 必须调用：
+```bash
+python3 scripts/check-feature-matrix-clean.py ir/<module>_feature_matrix.json
+```
+- 退出码 0 → 全部 done，可进入 §11 签发 token
+- 退出码 1 → 仍有未 done，回到 STEP 2.5 下一轮，**禁止签发 token**
+- 退出码 2 → 矩阵文件缺失，回退到 STEP 2 重跑 bootstrap
+
+### 11. Token 签发责任（reviewer = 唯一签发方）
+
+**触发条件**：§8 / §9 / §10 全部通过 + STEP 2.D 后 / STEP 2.5 收敛后。
+
+**调用**：
+```bash
+python3 scripts/issue-token.py
+```
+
+**约束**：
+- token 覆盖当前 `src/` + `ir/` 哈希；任何后续修改使 token 失效
+- 同一审查轮次只签发一次；重新审查必须先消费或撤销旧 token
+- CI 模式（`INTERACTIVE_MODE=0`）下若任何审查项落入 `pending-reviews`，**禁止签发** token，以退出码 2 终止
+
+---
+
 ## 审查严格度配置
 
 可通过参数调整审查严格度：

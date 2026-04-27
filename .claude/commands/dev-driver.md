@@ -33,7 +33,7 @@
 source config/project.env && bash scripts/check-env.sh
 ```
 - 检查 `scripts/rules-version.sh` 输出是否为 `v3.1`。
-- 确认 `src/safety/safe_image.bin` 已预就绪（用于灾难恢复）。
+- 检查 `src/safety/safe_image.bin`：**存在则就绪，不存在则警告**"灾难恢复路径不可用"，不阻断主流程。
 
 ### STEP 1 · 文档分析与 IR 生成 (doc-analyst)
 1. **PDF 预处理（可选降级）**：
@@ -53,17 +53,15 @@ source config/project.env && bash scripts/check-env.sh
    如果 doc-analyst 发现手册模糊（ambiguous_register 等），按 R9a 格式发起请求。
 
 
-### STEP 1.5 · 质量审查 (reviewer-agent)
-1. 自动化检查：
-   ```bash
-   bash scripts/check-arch.sh
-   python3 scripts/check-invariants.py ir/${module}_ir_summary.json src/drivers/${module^}/include/*_ll.h src/drivers/${module^}/src/*.c
-   ```
-2. **IR 完整性审查 (ASIL-C/D)**：
+### STEP 1.5 · IR 质量审查 (reviewer-agent · pre-codegen)
+
+> 本阶段**只审 IR**，不审代码。代码层审查（`check-arch.sh` / `check-invariants.py`）已迁至 STEP 2.D，因为 STEP 1.5 时 `src/drivers/<Module>/` 还没有代码，跑代码层检查没有意义。
+
+1. **IR 完整性审查 (ASIL-C/D)**：
    如果 `safety_level` ≥ ASIL-C，检查 IR 是否存在未经人工决策的模糊点。
    - **发现模糊**：直接退回 STEP 1，不自行发起 R9a。
-3. **R9b 审核发起**：发现架构设计多方案选择，按 R9b 格式请求人工。
-4. **HITL 人工确认（必须暂停）**：
+2. **R9b 审核发起**：发现架构设计多方案选择，按 R9b 格式请求人工。
+3. **HITL 人工确认（必须暂停）**：
    审查通过后，输出以下信息并等待用户确认：
    ```
    ╔══════════════════════════════════════════════════════════════╗
@@ -85,12 +83,7 @@ source config/project.env && bash scripts/check-env.sh
    等待用户回复确认指令后，方可进入 STEP 1.6。
 
 ### STEP 1.6 · 签发 Token (V3.1 核心)
-审查全部通过后，必须调用：
-```bash
-python3 scripts/issue-token.py
-```
-- 获取并记录 `reviewer_run_id`。
-- 此时状态标记为 `REVIEWED_PASSED`，Token 已就绪。
+> **注意**：Token 签发**必须延迟到 STEP 2.D 代码层审查通过之后**。STEP 1.5 只完成 IR 审查，无法签发覆盖代码哈希的 token。本节保留作为流程标记位，实际 `issue-token.py` 调用在 STEP 2.D 末尾。
 
 ### STEP 2 · 代码生成 (codegen-agent)
 1. 读取 `ir/{module}_ir_summary.json`。
@@ -103,6 +96,17 @@ python3 scripts/issue-token.py
    ```
    - 若文件已存在则跳过；codegen-agent 在首轮代码落盘后，**应** 把已实现的 feature 通过 `feature-update.py --status done` 翻转。
    - 状态值：`todo`（默认） / `partial`（部分 API 实现） / `done`。
+
+### STEP 2.D · 代码层审查 (reviewer-agent · post-codegen)
+> 从 STEP 1.5 迁来的代码检查。每轮 STEP 2.5 的 update 之前也会跑这两条，本节是首轮 STEP 2 输出后的初查。
+
+```bash
+bash scripts/check-arch.sh
+python3 scripts/check-invariants.py ir/${module}_ir_summary.json \
+    src/drivers/${module^}/include/*_ll.h \
+    src/drivers/${module^}/src/*.c
+```
+失败则退回 STEP 2 让 codegen-agent 修；通过后进入 STEP 2.5。
 
 ### STEP 2.5 · Feature Completion Loop (R10) — **MUST**
 
@@ -139,8 +143,18 @@ python3 scripts/check-feature-matrix-clean.py ir/{module}_feature_matrix.json
 
 **上限**：单个 feature_id 重复进入 loop ≥ 3 次仍未 done，或循环轮数 > `MAX_FEATURE_ROUNDS` → 退出码 2，请求人工介入；与 R4 的 compile/link/debug 计数互不影响。
 
+### STEP 2.6 · 签发 Token （从原 STEP 1.6 迁来）
+STEP 2.5 全部 feature done + STEP 2.D 代码层审查通过后：
+```bash
+python3 scripts/issue-token.py
+```
+此 token 覆盖当前 `src/` + `ir/` 哈希，仅本次 compile 可消费。
+
 ### STEP 3 · 编译修复循环 (compiler-agent)
-**入口门禁**：必须先通过 `scripts/check-feature-matrix-clean.py`（见 STEP 2.5 末尾），未通过禁止进入。
+**入口双门禁**：
+1. `scripts/check-feature-matrix-clean.py` 退出码 0（R10）
+2. 持有 STEP 2.6 签发的有效 reviewer-pass.token（R6）
+任一不满足，禁止进入。
 
 1. **Token 校验**：调用 `scripts/compile.sh`。
    - 内部会自动运行 `verify-token.py --consume`。
