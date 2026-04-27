@@ -105,6 +105,21 @@
 | 16 | **服务能力联动审计 (Linkage)** | 底层服务（如 DMA Callback）升级后，上层驱动未及时集成 | 当 DMA, NVIC, RCC 等通用层能力增强时，调用方驱动必须同步更新逻辑（如改为回调通知） | 保持系统演进的一致性，防止底层新特性成为“死代码” |
 | 17 | **寄存器合成严禁泄露 (AR-01)** | 在 `_drv.c` 中直接计算时钟分频、波特率或进行配置位拼接 | 所有依赖 `ConfigType` 参数进行算术运算（除法、乘法）和位拼接的逻辑，**强制**封装到 `_ll.c` 的函数中 | Driver 层只负责状态机和时序流程，数学计算与位场组合属于底层硬件实现细节 |
 
+### R10 · 功能矩阵增量补齐循环
+- **动机**：首次 code-gen 在大模块上常因上下文爆炸 / 长输出截断导致功能矩阵中部分项停留在 `todo`/`partial`。R10 强制以"每轮一/两项"的增量方式补齐，避免重生成全模块带来的幻觉与回归。
+- **权威源**：`ir/<module>_feature_matrix.json`（schema_version: 1.0）。`<module>_detailed_design.md` 中的功能矩阵改由 `<!-- FEATURE_MATRIX:BEGIN/END -->` 包裹，**单向从 JSON 渲染**，禁止手工编辑（与 R1 的 IR MD 同模式）。
+- **状态枚举**：JSON 真值用 `todo / partial / done`；MD 渲染为 🔴 / 🟡 / 🟢。
+- **流程**（`scripts/feature-loop.sh`）：
+  1. `feature-next.py` 按 `depends_on` 拓扑序输出下一个未完成 feature（partial 优先于 todo）。
+  2. codegen-agent **仅消费目标 feature 的 `ir_refs` 切片**，禁止读其他寄存器；**仅生成 `target_apis` 中的接口**。
+  3. 复用现有 Gate 2：reviewer-agent → 签发 token → `compile.sh` 校验。
+  4. `feature-update.py --id <ID> --status done` 回写 JSON 并自动重渲染 MD。
+- **上限**：`MAX_FEATURE_ROUNDS`（默认 = 未完成项 × 2，可在 `config/project.env` 覆盖）。达到上限退出码 **2**，请求人工介入；与 R4 的 compile/link/debug 计数相互独立。
+- **依赖死锁**：`feature-next.py` 检测到仍有未完成项但全部 `depends_on` 不可满足时退出码 **3**，禁止自动绕过。
+- **CI 模式**（`INTERACTIVE_MODE=0`）：feature-loop 仍跑 dry-run/校验，但不调用 codegen-agent，将待实现清单写入 `.claude/pending-reviews.md`。
+- **STEP 3 入口门禁（强制）**：`scripts/check-feature-matrix-clean.py` 必须返回 0，否则**禁止进入 STEP 3 编译阶段**。这是 R10 与 R6 token gate 并列的第二道不可绕过的关卡。
+- **配套脚本**：`scripts/{validate-feature-matrix,feature-next,feature-update}.py`、`scripts/feature-loop.sh`，全部遵守 R6 接口规范（`--help/--dry-run/--log`）。
+
 ### R9 · 置信度与人工审核
 
 **人工审核按发起阶段拆分为两类，由不同 Agent 承担。**
@@ -218,6 +233,13 @@ reviewer-agent 在 ASIL-C/D 代码上必须执行 **IR 完整性审查**：
 | `docs/agent-workflow.md` | Agent 工作流 mermaid 图 |
 | `ir/<module>_ir_summary.json` | **code-gen 消费的权威来源** |
 | `ir/<module>_ir_summary.md` | IR JSON 的只读视图（由 JSON 单向渲染） |
+| `ir/<module>_feature_matrix.json` | **功能矩阵权威源（R10）**，driver 增量补齐的目标清单 |
+| `scripts/feature-bootstrap.py` | 从 IR JSON 反推 feature_matrix.json 初版（冷启动 / `/dev-driver` STEP 2 自动调用） |
+| `scripts/validate-feature-matrix.py` | feature_matrix.json schema + 依赖图 + IR 引用 + MD 同步校验 |
+| `scripts/check-feature-matrix-clean.py` | **R10 STEP 3 入口门禁**：所有 feature done 才允许进入编译 |
+| `scripts/feature-next.py` | 按 depends_on 拓扑序输出下一个待实现 feature |
+| `scripts/feature-update.py` | 翻转 feature 状态并回写 detailed_design.md |
+| `scripts/feature-loop.sh` | R10 增量补齐主循环（feature-next → codegen → reviewer → compile → update） |
 | `src/` | 驱动源代码与初始框架 |
 | `src/safety/safe_image.bin` | 灾难恢复用最小镜像（bootloader + UART echo） |
 | `config/project.env` | 工具链路径、模式开关、超时配置 |

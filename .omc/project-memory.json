@@ -105,20 +105,50 @@
   "hotPaths": [
     {
       "path": "CLAUDE.md",
-      "accessCount": 19,
-      "lastAccessed": 1777209569913,
+      "accessCount": 24,
+      "lastAccessed": 1777248940598,
       "type": "file"
     },
     {
       "path": ".claude/commands/dev-driver.md",
-      "accessCount": 8,
-      "lastAccessed": 1777209563986,
+      "accessCount": 11,
+      "lastAccessed": 1777248932281,
+      "type": "file"
+    },
+    {
+      "path": "scripts/validate-feature-matrix.py",
+      "accessCount": 4,
+      "lastAccessed": 1777247480315,
+      "type": "file"
+    },
+    {
+      "path": "src/drivers/Dma/dma_detailed_design.md",
+      "accessCount": 4,
+      "lastAccessed": 1777248485984,
       "type": "file"
     },
     {
       "path": ".claude/agents/doc-analyst.md",
       "accessCount": 3,
       "lastAccessed": 1777209499741,
+      "type": "file"
+    },
+    {
+      "path": "ir/dma_feature_matrix.json",
+      "accessCount": 3,
+      "lastAccessed": 1777247468385,
+      "type": "file"
+    },
+    {
+      "path": "scripts/feature-loop.sh",
+      "accessCount": 3,
+      "lastAccessed": 1777247571497,
+      "type": "file"
+    },
+    {
+      "path": ".claude/agents/codegen-agent.md",
+      "accessCount": 3,
+      "lastAccessed": 1777248314434,
       "type": "file"
     },
     {
@@ -143,6 +173,12 @@
       "path": ".claude/agents/debugger-agent.md",
       "accessCount": 2,
       "lastAccessed": 1777209695282,
+      "type": "file"
+    },
+    {
+      "path": "config/project.env",
+      "accessCount": 2,
+      "lastAccessed": 1777247751708,
       "type": "file"
     },
     {
@@ -173,6 +209,54 @@
       "path": "docs/agent-workflow.md",
       "accessCount": 1,
       "lastAccessed": 1777209245923,
+      "type": "file"
+    },
+    {
+      "path": "src/drivers/Spi/spi_detailed_design.md",
+      "accessCount": 1,
+      "lastAccessed": 1777246043808,
+      "type": "file"
+    },
+    {
+      "path": ".claude/agents/reviewer-agent.md",
+      "accessCount": 1,
+      "lastAccessed": 1777246047977,
+      "type": "file"
+    },
+    {
+      "path": "scripts/validate-ir.py",
+      "accessCount": 1,
+      "lastAccessed": 1777246668919,
+      "type": "file"
+    },
+    {
+      "path": "ir/dma_ir_summary.json",
+      "accessCount": 1,
+      "lastAccessed": 1777246669454,
+      "type": "file"
+    },
+    {
+      "path": "scripts/feature-next.py",
+      "accessCount": 1,
+      "lastAccessed": 1777246764950,
+      "type": "file"
+    },
+    {
+      "path": "scripts/feature-update.py",
+      "accessCount": 1,
+      "lastAccessed": 1777246766392,
+      "type": "file"
+    },
+    {
+      "path": "scripts/feature-bootstrap.py",
+      "accessCount": 1,
+      "lastAccessed": 1777248244752,
+      "type": "file"
+    },
+    {
+      "path": "scripts/check-feature-matrix-clean.py",
+      "accessCount": 1,
+      "lastAccessed": 1777248910191,
       "type": "file"
     }
   ],

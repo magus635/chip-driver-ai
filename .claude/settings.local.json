@@ -9,7 +9,26 @@
       "Bash(head -n 333 CLAUDE.md)",
       "Bash(cat)",
       "Bash(mv /tmp/claude_head.md CLAUDE.md)",
-      "Bash(bash scripts/rules-version.sh)"
+      "Bash(bash scripts/rules-version.sh)",
+      "Bash(chmod +x scripts/feature-loop.sh scripts/feature-next.py scripts/feature-update.py scripts/validate-feature-matrix.py)",
+      "Bash(python3 scripts/validate-feature-matrix.py ir/dma_feature_matrix.json)",
+      "Bash(echo \"---exit=$?---\")",
+      "Bash(python3 scripts/feature-update.py ir/dma_feature_matrix.json --render)",
+      "Bash(python3 *)",
+      "Bash(bash scripts/feature-loop.sh ir/dma_feature_matrix.json --dry-run)",
+      "Bash(echo \"exit=$?\")",
+      "Bash(grep -n '\\\\$[a-zA-Z_]' scripts/feature-loop.sh)",
+      "Bash(bash -x scripts/feature-loop.sh ir/dma_feature_matrix.json --dry-run)",
+      "Bash(echo \"validate-exit=$?\")",
+      "Bash(awk '/FEATURE_MATRIX:BEGIN/,/FEATURE_MATRIX:END/' src/drivers/Dma/dma_detailed_design.md)",
+      "Bash(chmod +x scripts/feature-bootstrap.py)",
+      "Bash(echo \"next-exit=$?\")",
+      "Bash(awk '/^## 2\\\\./,/^## 3\\\\./' src/drivers/Dma/dma_detailed_design.md)",
+      "Bash(chmod +x scripts/check-feature-matrix-clean.py)",
+      "Bash(echo \"exit=$? \\(期望=1\\)\")",
+      "Bash(echo \"exit=$? \\(期望=0\\)\")",
+      "Bash(echo \"exit=$? \\(期望=2\\)\")",
+      "Bash(echo \"real-exit=$?\")"
     ]
   }
 }

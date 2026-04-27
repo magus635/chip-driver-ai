@@ -1,0 +1,7 @@
+{
+  "tool_name": "Bash",
+  "tool_input_preview": "{\"command\":\"grep -n \\\"unfinished\\\" scripts/feature-loop.sh | cat -A\",\"description\":\"Check for hidden characters\"}",
+  "error": "Exit code 1\ncat: illegal option -- A\nusage: cat [-belnstuv] [file ...]",
+  "timestamp": "2026-04-26T23:51:43.698Z",
+  "retry_count": 1
+}

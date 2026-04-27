@@ -96,8 +96,52 @@ python3 scripts/issue-token.py
 1. 读取 `ir/{module}_ir_summary.json`。
 2. 严禁读取 PDF 手册，保证 JSON 是唯一源。
 3. 生成代码时，针对 `safety_level` 插入冗余校验。
+4. **首轮 Feature Matrix bootstrap (R10)**：
+   ```bash
+   python3 scripts/feature-bootstrap.py ir/{module}_ir_summary.json
+   python3 scripts/feature-update.py ir/{module}_feature_matrix.json --render
+   ```
+   - 若文件已存在则跳过；codegen-agent 在首轮代码落盘后，**应** 把已实现的 feature 通过 `feature-update.py --status done` 翻转。
+   - 状态值：`todo`（默认） / `partial`（部分 API 实现） / `done`。
+
+### STEP 2.5 · Feature Completion Loop (R10) — **MUST**
+
+> **强制语义**：本步骤是循环，不是单次执行。在 `scripts/check-feature-matrix-clean.py` 返回 0 之前，**禁止进入 STEP 3**。
+> 主控 Claude 必须按下方流程逐轮驱动，每轮只补 1 个 feature。
+
+**循环不变式**：每一轮开始时，`scripts/check-feature-matrix-clean.py ir/{module}_feature_matrix.json` 退出码必须为 1（仍有未 done）；否则跳出循环进入 STEP 3。
+
+**单轮执行（MUST 全部执行，不得跳步）**：
+1. `next=$(python3 scripts/feature-next.py ir/{module}_feature_matrix.json --format id | head -n1)`
+   - 退出码 1 → 全部 done，跳出循环 → STEP 3
+   - 退出码 3 → 依赖死锁 → 立即中止流水线，请求人工调整 `depends_on`，**不得自动绕过**
+2. `python3 scripts/feature-next.py ir/{module}_feature_matrix.json --format prompt` 打印 codegen 提示
+3. **调用 codegen-agent**：`mode=feature, feature_id=$next` —— 仅消费该 feature 的 `ir_refs` 切片，仅生成 `target_apis` 列出的接口
+4. `bash scripts/check-arch.sh && python3 scripts/check-invariants.py ir/{module}_ir_summary.json src/drivers/{Module}/include/*_ll.h src/drivers/{Module}/src/*.c`
+5. `python3 scripts/issue-token.py`
+6. `bash scripts/compile.sh`（消费 token；失败按 R4/R5 修复）
+7. `python3 scripts/feature-update.py ir/{module}_feature_matrix.json --id $next --status done`（部分实现用 `--status partial`）
+8. 回到步骤 1
+
+**禁止行为**（违反即视为 R10 违规）：
+- ❌ 跑完 STEP 2 首轮 codegen 直接进 STEP 3
+- ❌ 一轮处理多个 feature_id
+- ❌ 在 STEP 3 入口前不调用 `check-feature-matrix-clean.py`
+- ❌ 用 `partial` 状态作为永久收尾（partial 必须最终翻转为 done 或回滚为 todo）
+
+**STEP 3 入口门禁（MUST）**：
+```bash
+python3 scripts/check-feature-matrix-clean.py ir/{module}_feature_matrix.json
+# exit 0 → 进入 STEP 3
+# exit 1 → 退回 STEP 2.5 循环
+# exit 2 → 矩阵文件缺失，退回 STEP 2 重跑 bootstrap
+```
+
+**上限**：单个 feature_id 重复进入 loop ≥ 3 次仍未 done，或循环轮数 > `MAX_FEATURE_ROUNDS` → 退出码 2，请求人工介入；与 R4 的 compile/link/debug 计数互不影响。
 
 ### STEP 3 · 编译修复循环 (compiler-agent)
+**入口门禁**：必须先通过 `scripts/check-feature-matrix-clean.py`（见 STEP 2.5 末尾），未通过禁止进入。
+
 1. **Token 校验**：调用 `scripts/compile.sh`。
    - 内部会自动运行 `verify-token.py --consume`。
    - **Exit 3**：Token 校验失败（代码被篡改或过期），必须退回 STEP 1.5。

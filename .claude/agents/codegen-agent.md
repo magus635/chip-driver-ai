@@ -81,8 +81,9 @@ python3 scripts/check-invariants.py ir/<module>_ir_summary.json src/drivers/<Mod
 | `module` | 模块名称（can_bus, spi, uart, i2c, adc, tim） | 必填 |
 | `ir_json` | IR JSON 文件（**R1 · 唯一机器数据源，必须消费**） | `ir/<module>_ir_summary.json` |
 | `target_dir` | 目标代码目录（**R2 · 不得更改**） | `src/drivers/{Module}/` |
-| `mode` | 生成模式：`full` / `incremental` / `stub` | `full` |
+| `mode` | 生成模式：`full` / `incremental` / `stub` / `feature` | `full` |
 | `missing_symbols` | 需要补充实现的符号列表（incremental模式） | `[]` |
+| `feature_id` | R10 模式下的目标 feature_id（feature 模式必填） | — |
 
 **禁止消费**：
 - ❌ `ir/<module>_ir_summary.md` — Markdown 仅供人工审读，code-gen **禁止**消费（R1）
@@ -518,6 +519,16 @@ bash scripts/check-arch.sh
 ### `stub` 模式
 - 生成函数签名和空实现（带 TODO 注释）
 - 用于快速搭建框架，后续人工填充
+
+### `feature` 模式（R10 增量补齐）
+- 由 `scripts/feature-loop.sh` 或 `/dev-driver STEP 2.5` 调用，每轮只补一个 feature。
+- **强制约束**：
+  - 入参 `feature_id` 必须在 `ir/<module>_feature_matrix.json` 中存在且状态非 `done`。
+  - 仅消费该 feature 的 `ir_refs` 切片，禁止读取其他寄存器/字段，避免上下文污染。
+  - 仅生成或修改 `target_apis` 列出的接口，禁止顺手重构邻近代码。
+  - 完成后必须调用：`python3 scripts/feature-update.py ir/<module>_feature_matrix.json --id <feature_id> --status done`（部分实现用 `partial` + `--notes`）。
+- 不签发新 token，不调用 reviewer-agent；这两步由 STEP 2.5 的 loop 驱动方负责。
+- 输出摘要除常规字段外必须包含 `feature_id` 与 `status_after`（done/partial）。
 
 ---
 
