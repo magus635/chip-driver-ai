@@ -1,0 +1,202 @@
+{
+  "schema_version": "1.0",
+  "module": "spi",
+  "ir_source": "ir/spi_ir_summary.json",
+  "design_doc": "src/drivers/Spi/spi_detailed_design.md",
+  "features": [
+    {
+      "feature_id": "SPI-INIT",
+      "category": "生命周期",
+      "name": "Init / DeInit",
+      "status": "todo",
+      "target_apis": [
+        "Spi_Init",
+        "Spi_DeInit"
+      ],
+      "depends_on": [],
+      "ir_refs": [],
+      "acceptance": "Spi_Init 完成寄存器初始化序列；Spi_DeInit 释放资源",
+      "notes": ""
+    },
+    {
+      "feature_id": "SPI-MODE-FULL-DUPLEX-MASTER",
+      "category": "操作模式",
+      "name": "full_duplex_master",
+      "status": "todo",
+      "target_apis": [
+        "Spi_Configure"
+      ],
+      "depends_on": [
+        "SPI-INIT"
+      ],
+      "ir_refs": [
+        "operating_modes.full_duplex_master"
+      ],
+      "acceptance": "配置 full_duplex_master 模式，符合 IR 中字段约束",
+      "notes": ""
+    },
+    {
+      "feature_id": "SPI-MODE-FULL-DUPLEX-SLAVE",
+      "category": "操作模式",
+      "name": "full_duplex_slave",
+      "status": "todo",
+      "target_apis": [
+        "Spi_Configure"
+      ],
+      "depends_on": [
+        "SPI-INIT"
+      ],
+      "ir_refs": [
+        "operating_modes.full_duplex_slave"
+      ],
+      "acceptance": "配置 full_duplex_slave 模式，符合 IR 中字段约束",
+      "notes": ""
+    },
+    {
+      "feature_id": "SPI-MODE-HALF-DUPLEX-MASTER-TX",
+      "category": "操作模式",
+      "name": "half_duplex_master_tx",
+      "status": "todo",
+      "target_apis": [
+        "Spi_Configure"
+      ],
+      "depends_on": [
+        "SPI-INIT"
+      ],
+      "ir_refs": [
+        "operating_modes.half_duplex_master_tx"
+      ],
+      "acceptance": "配置 half_duplex_master_tx 模式，符合 IR 中字段约束",
+      "notes": ""
+    },
+    {
+      "feature_id": "SPI-MODE-HALF-DUPLEX-MASTER-RX",
+      "category": "操作模式",
+      "name": "half_duplex_master_rx",
+      "status": "todo",
+      "target_apis": [
+        "Spi_Configure"
+      ],
+      "depends_on": [
+        "SPI-INIT"
+      ],
+      "ir_refs": [
+        "operating_modes.half_duplex_master_rx"
+      ],
+      "acceptance": "配置 half_duplex_master_rx 模式，符合 IR 中字段约束",
+      "notes": ""
+    },
+    {
+      "feature_id": "SPI-MODE-SIMPLEX-RX-MASTER",
+      "category": "操作模式",
+      "name": "simplex_rx_master",
+      "status": "todo",
+      "target_apis": [
+        "Spi_Configure"
+      ],
+      "depends_on": [
+        "SPI-INIT"
+      ],
+      "ir_refs": [
+        "operating_modes.simplex_rx_master"
+      ],
+      "acceptance": "配置 simplex_rx_master 模式，符合 IR 中字段约束",
+      "notes": ""
+    },
+    {
+      "feature_id": "SPI-IRQ",
+      "category": "中断与事件",
+      "name": "中断处理与回调分发",
+      "status": "todo",
+      "target_apis": [
+        "Spi_HandleInterrupt",
+        "Spi_RegisterCallback"
+      ],
+      "depends_on": [
+        "SPI-INIT"
+      ],
+      "ir_refs": [
+        "interrupts"
+      ],
+      "acceptance": "实现所有 IRQHandler 入口并将事件分发到回调",
+      "notes": ""
+    },
+    {
+      "feature_id": "SPI-DMA",
+      "category": "数据通路",
+      "name": "DMA 集成 (TX/RX)",
+      "status": "todo",
+      "target_apis": [
+        "Spi_TransferDMA"
+      ],
+      "depends_on": [
+        "SPI-INIT"
+      ],
+      "ir_refs": [
+        "dma_channels"
+      ],
+      "acceptance": "通过 DMA 完成异步传输并经回调通知完成",
+      "notes": ""
+    },
+    {
+      "feature_id": "SPI-GUARD-INV-SPI-001",
+      "category": "硬件保护",
+      "name": "INV_SPI_001 守卫",
+      "status": "todo",
+      "target_apis": [],
+      "depends_on": [
+        "SPI-INIT"
+      ],
+      "ir_refs": [
+        "invariants.INV_SPI_001"
+      ],
+      "acceptance": "When in master mode with software NSS (SSM=1), SSI must be 1, otherwise NSS is seen as low and MODF fault triggers.",
+      "notes": ""
+    },
+    {
+      "feature_id": "SPI-GUARD-INV-SPI-002",
+      "category": "硬件保护",
+      "name": "INV_SPI_002 守卫",
+      "status": "todo",
+      "target_apis": [],
+      "depends_on": [
+        "SPI-INIT"
+      ],
+      "ir_refs": [
+        "invariants.INV_SPI_002"
+      ],
+      "acceptance": "BR, CPOL, CPHA must not be changed while SPI is enabled (SPE=1). Disable first.",
+      "notes": ""
+    },
+    {
+      "feature_id": "SPI-GUARD-INV-SPI-003",
+      "category": "硬件保护",
+      "name": "INV_SPI_003 守卫",
+      "status": "todo",
+      "target_apis": [],
+      "depends_on": [
+        "SPI-INIT"
+      ],
+      "ir_refs": [
+        "invariants.INV_SPI_003"
+      ],
+      "acceptance": "SPE must not be cleared while BSY=1 (transfer in progress). Wait for BSY=0 first.",
+      "notes": ""
+    },
+    {
+      "feature_id": "SPI-GUARD-INV-SPI-004",
+      "category": "硬件保护",
+      "name": "INV_SPI_004 守卫",
+      "status": "todo",
+      "target_apis": [],
+      "depends_on": [
+        "SPI-INIT"
+      ],
+      "ir_refs": [
+        "invariants.INV_SPI_004"
+      ],
+      "acceptance": "CRCEN and DFF must not be changed while SPI is enabled (SPE=1). Disable first.",
+      "notes": ""
+    }
+  ]
+}

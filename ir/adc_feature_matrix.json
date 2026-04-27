@@ -1,0 +1,61 @@
+{
+  "schema_version": "1.0",
+  "module": "adc",
+  "ir_source": "ir/adc_ir_summary.json",
+  "design_doc": "src/drivers/Adc/adc_detailed_design.md",
+  "features": [
+    {
+      "feature_id": "ADC-INIT",
+      "category": "生命周期",
+      "name": "Init / DeInit",
+      "status": "todo",
+      "target_apis": [
+        "Adc_Init",
+        "Adc_DeInit"
+      ],
+      "depends_on": [],
+      "ir_refs": [],
+      "acceptance": "Adc_Init 完成寄存器初始化序列；Adc_DeInit 释放资源",
+      "notes": ""
+    },
+    {
+      "feature_id": "ADC-FEAT-POLLING-CONVERSION",
+      "category": "外设特性",
+      "name": "Polling Conversion",
+      "status": "todo",
+      "target_apis": [],
+      "depends_on": [
+        "ADC-INIT"
+      ],
+      "ir_refs": [],
+      "acceptance": "实现 Polling Conversion",
+      "notes": ""
+    },
+    {
+      "feature_id": "ADC-FEAT-INTERRUPT-DRIVEN-CONVERSION",
+      "category": "外设特性",
+      "name": "Interrupt Driven Conversion",
+      "status": "todo",
+      "target_apis": [],
+      "depends_on": [
+        "ADC-INIT"
+      ],
+      "ir_refs": [],
+      "acceptance": "实现 Interrupt Driven Conversion",
+      "notes": ""
+    },
+    {
+      "feature_id": "ADC-FEAT-DMA-TRANSFER-DMA1-CHANNEL-1",
+      "category": "外设特性",
+      "name": "DMA Transfer (DMA1 Channel 1)",
+      "status": "todo",
+      "target_apis": [],
+      "depends_on": [
+        "ADC-INIT"
+      ],
+      "ir_refs": [],
+      "acceptance": "实现 DMA Transfer (DMA1 Channel 1)",
+      "notes": ""
+    }
+  ]
+}

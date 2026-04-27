@@ -39,7 +39,10 @@
       "Bash(echo \"issue-exit=$?\")",
       "Bash(bash scripts/compile.sh)",
       "Bash(echo \"compile-exit=$?\")",
-      "Bash(grep -n '^---$\\\\|^### R\\\\|^## ' CLAUDE.md)"
+      "Bash(grep -n '^---$\\\\|^### R\\\\|^## ' CLAUDE.md)",
+      "Bash(awk -F: '$2 ~ /^#### \\(9|10\\) / {print}')",
+      "Bash(awk '/^#### 9 /{flag=1} /^#### 10 /{flag=0} flag && /^###### 9\\\\./ {print NR\": \"$0}' docs/parsed/stm32f103_reference_manual.md)",
+      "Bash(echo \"md-sync-exit=$?\")"
     ]
   }
 }

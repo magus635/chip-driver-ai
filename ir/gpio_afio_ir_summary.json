@@ -1,0 +1,296 @@
+{
+  "ir_version": "3.0",
+  "peripheral": {
+    "name": "GPIO_AFIO",
+    "full_name": "General-purpose I/O and Alternate Function I/O",
+    "chip_family": "STM32F1",
+    "chip_model": "STM32F103C8T6",
+    "source_document": "RM0008 Rev 21",
+    "source_sections": ["§9.1-§9.5"],
+    "safety_level": "QM",
+    "instances": [
+      { "name": "GPIOA", "base_address": "0x40010800", "bus": "APB2", "source": "RM0008 §3.3 p.50" },
+      { "name": "GPIOB", "base_address": "0x40010C00", "bus": "APB2", "source": "RM0008 §3.3 p.50" },
+      { "name": "GPIOC", "base_address": "0x40011000", "bus": "APB2", "source": "RM0008 §3.3 p.50" },
+      { "name": "GPIOD", "base_address": "0x40011400", "bus": "APB2", "source": "RM0008 §3.3 p.50" },
+      { "name": "GPIOE", "base_address": "0x40011800", "bus": "APB2", "source": "RM0008 §3.3 p.50" },
+      { "name": "GPIOF", "base_address": "0x40011C00", "bus": "APB2", "source": "RM0008 §3.3 p.50", "note": "STM32F103C8T6 (LQFP48) 不引出 GPIOF/G，但寄存器空间存在" },
+      { "name": "GPIOG", "base_address": "0x40012000", "bus": "APB2", "source": "RM0008 §3.3 p.50", "note": "见 GPIOF" },
+      { "name": "AFIO",  "base_address": "0x40010000", "bus": "APB2", "source": "RM0008 §3.3 p.50" }
+    ],
+    "registers": [
+      {
+        "name": "GPIO_CRL", "full_name": "Port configuration register low",
+        "offset": "0x00", "width": 32, "access": "RW", "reset_value": "0x44444444",
+        "description": "GPIO 引脚 0~7 的模式与配置位（每引脚 4 bit：MODE[1:0] + CNF[1:0]）",
+        "source": "RM0008 §9.2.1 p.166",
+        "fields": [
+          { "name": "MODE0", "bits": "1:0",  "description": "Pin 0 mode: 00=Input, 01=Out 10MHz, 10=Out 2MHz, 11=Out 50MHz" },
+          { "name": "CNF0",  "bits": "3:2",  "description": "Pin 0 cnf (Input: 00=Analog, 01=Floating, 10=PUPD, 11=reserved; Output: 00=PP, 01=OD, 10=AF-PP, 11=AF-OD)" },
+          { "name": "MODE1", "bits": "5:4" }, { "name": "CNF1", "bits": "7:6" },
+          { "name": "MODE2", "bits": "9:8" }, { "name": "CNF2", "bits": "11:10" },
+          { "name": "MODE3", "bits": "13:12" }, { "name": "CNF3", "bits": "15:14" },
+          { "name": "MODE4", "bits": "17:16" }, { "name": "CNF4", "bits": "19:18" },
+          { "name": "MODE5", "bits": "21:20" }, { "name": "CNF5", "bits": "23:22" },
+          { "name": "MODE6", "bits": "25:24" }, { "name": "CNF6", "bits": "27:26" },
+          { "name": "MODE7", "bits": "29:28" }, { "name": "CNF7", "bits": "31:30" }
+        ]
+      },
+      {
+        "name": "GPIO_CRH", "full_name": "Port configuration register high",
+        "offset": "0x04", "width": 32, "access": "RW", "reset_value": "0x44444444",
+        "description": "引脚 8~15 的模式与配置位",
+        "source": "RM0008 §9.2.2 p.167",
+        "fields": [
+          { "name": "MODE8",  "bits": "1:0" },  { "name": "CNF8",  "bits": "3:2" },
+          { "name": "MODE9",  "bits": "5:4" },  { "name": "CNF9",  "bits": "7:6" },
+          { "name": "MODE10", "bits": "9:8" },  { "name": "CNF10", "bits": "11:10" },
+          { "name": "MODE11", "bits": "13:12" },{ "name": "CNF11", "bits": "15:14" },
+          { "name": "MODE12", "bits": "17:16" },{ "name": "CNF12", "bits": "19:18" },
+          { "name": "MODE13", "bits": "21:20" },{ "name": "CNF13", "bits": "23:22" },
+          { "name": "MODE14", "bits": "25:24" },{ "name": "CNF14", "bits": "27:26" },
+          { "name": "MODE15", "bits": "29:28" },{ "name": "CNF15", "bits": "31:30" }
+        ]
+      },
+      {
+        "name": "GPIO_IDR", "full_name": "Port input data register",
+        "offset": "0x08", "width": 32, "access": "R", "reset_value": "0x00000000",
+        "description": "引脚电平输入采样（只读，每 APB2 周期更新）",
+        "source": "RM0008 §9.2.3 p.167",
+        "fields": [ { "name": "IDR", "bits": "15:0", "description": "16 路引脚输入位" } ]
+      },
+      {
+        "name": "GPIO_ODR", "full_name": "Port output data register",
+        "offset": "0x0C", "width": 32, "access": "RW", "reset_value": "0x00000000",
+        "description": "引脚输出寄存器；建议通过 BSRR/BRR 原子修改，避免读改写竞态",
+        "source": "RM0008 §9.2.4 p.168",
+        "fields": [ { "name": "ODR", "bits": "15:0", "description": "16 路输出位" } ]
+      },
+      {
+        "name": "GPIO_BSRR", "full_name": "Port bit set/reset register",
+        "offset": "0x10", "width": 32, "access": "W", "reset_value": "0x00000000",
+        "description": "原子置位/清零；高 16 位写 1 清 ODRx，低 16 位写 1 置 ODRx；读返回 0",
+        "source": "RM0008 §9.2.5 p.168",
+        "fields": [
+          { "name": "BS", "bits": "15:0",  "description": "Set bit (写 1 → ODR bit = 1)" },
+          { "name": "BR", "bits": "31:16", "description": "Reset bit (写 1 → ODR bit = 0；与 BS 同位同时写 1 时 BS 优先)" }
+        ]
+      },
+      {
+        "name": "GPIO_BRR", "full_name": "Port bit reset register",
+        "offset": "0x14", "width": 32, "access": "W", "reset_value": "0x00000000",
+        "description": "原子清零（功能等价于 BSRR 高 16 位）",
+        "source": "RM0008 §9.2.6 p.169",
+        "fields": [ { "name": "BR", "bits": "15:0", "description": "写 1 清 ODR bit" } ]
+      },
+      {
+        "name": "GPIO_LCKR", "full_name": "Port configuration lock register",
+        "offset": "0x18", "width": 32, "access": "RW", "reset_value": "0x00000000",
+        "description": "锁定 CRL/CRH 配置；通过 LCKK 写序列激活，复位前不可解锁",
+        "source": "RM0008 §9.2.7 p.169",
+        "fields": [
+          { "name": "LCK",  "bits": "15:0", "description": "16 路引脚锁位（LCKK=0 才可写）" },
+          { "name": "LCKK", "bits": "16",   "description": "锁键；通过 LOCK 序列置位（写1→写0→写1→读0→读1）" }
+        ]
+      },
+      {
+        "name": "AFIO_EVCR", "full_name": "Event control register",
+        "offset": "0x00", "width": 32, "access": "RW", "reset_value": "0x00000000",
+        "description": "Cortex EVENTOUT 事件输出引脚选择",
+        "source": "RM0008 §9.4.1 p.170",
+        "fields": [
+          { "name": "PIN",  "bits": "3:0",  "description": "引脚选择 (0..15)" },
+          { "name": "PORT", "bits": "6:4",  "description": "端口选择 (0=A..6=G)" },
+          { "name": "EVOE", "bits": "7",    "description": "EVENTOUT 输出使能" }
+        ]
+      },
+      {
+        "name": "AFIO_MAPR", "full_name": "AF remap and debug I/O configuration",
+        "offset": "0x04", "width": 32, "access": "RW", "reset_value": "0x00000000",
+        "description": "外设引脚重映射与 SWJ 调试接口配置",
+        "source": "RM0008 §9.4.2 p.171",
+        "fields": [
+          { "name": "SPI1_REMAP",     "bits": "0" },
+          { "name": "I2C1_REMAP",     "bits": "1" },
+          { "name": "USART1_REMAP",   "bits": "2" },
+          { "name": "USART2_REMAP",   "bits": "3" },
+          { "name": "USART3_REMAP",   "bits": "5:4" },
+          { "name": "TIM1_REMAP",     "bits": "7:6" },
+          { "name": "TIM2_REMAP",     "bits": "9:8" },
+          { "name": "TIM3_REMAP",     "bits": "11:10" },
+          { "name": "TIM4_REMAP",     "bits": "12" },
+          { "name": "CAN_REMAP",      "bits": "14:13" },
+          { "name": "PD01_REMAP",     "bits": "15", "description": "PD0/PD1 作 OSC_IN/OSC_OUT 重映射" },
+          { "name": "TIM5CH4_IREMAP", "bits": "16" },
+          { "name": "ADC1_ETRGINJ_REMAP", "bits": "17" },
+          { "name": "ADC1_ETRGREG_REMAP", "bits": "18" },
+          { "name": "ADC2_ETRGINJ_REMAP", "bits": "19" },
+          { "name": "ADC2_ETRGREG_REMAP", "bits": "20" },
+          { "name": "SWJ_CFG",        "bits": "26:24", "description": "SWJ 调试接口配置（写后立即生效，错误值会断开调试器）" }
+        ]
+      },
+      {
+        "name": "AFIO_EXTICR1", "full_name": "External interrupt config register 1",
+        "offset": "0x08", "width": 32, "access": "RW", "reset_value": "0x00000000",
+        "description": "EXTI0~3 引脚源选择（0=PA,1=PB,...,6=PG）",
+        "source": "RM0008 §9.4.3 p.184",
+        "fields": [
+          { "name": "EXTI0", "bits": "3:0" },
+          { "name": "EXTI1", "bits": "7:4" },
+          { "name": "EXTI2", "bits": "11:8" },
+          { "name": "EXTI3", "bits": "15:12" }
+        ]
+      },
+      {
+        "name": "AFIO_EXTICR2", "full_name": "External interrupt config register 2",
+        "offset": "0x0C", "width": 32, "access": "RW", "reset_value": "0x00000000",
+        "description": "EXTI4~7 引脚源选择",
+        "source": "RM0008 §9.4.4 p.185",
+        "fields": [
+          { "name": "EXTI4", "bits": "3:0" },
+          { "name": "EXTI5", "bits": "7:4" },
+          { "name": "EXTI6", "bits": "11:8" },
+          { "name": "EXTI7", "bits": "15:12" }
+        ]
+      },
+      {
+        "name": "AFIO_EXTICR3", "full_name": "External interrupt config register 3",
+        "offset": "0x10", "width": 32, "access": "RW", "reset_value": "0x00000000",
+        "description": "EXTI8~11 引脚源选择",
+        "source": "RM0008 §9.4.5 p.185",
+        "fields": [
+          { "name": "EXTI8",  "bits": "3:0" },
+          { "name": "EXTI9",  "bits": "7:4" },
+          { "name": "EXTI10", "bits": "11:8" },
+          { "name": "EXTI11", "bits": "15:12" }
+        ]
+      },
+      {
+        "name": "AFIO_EXTICR4", "full_name": "External interrupt config register 4",
+        "offset": "0x14", "width": 32, "access": "RW", "reset_value": "0x00000000",
+        "description": "EXTI12~15 引脚源选择",
+        "source": "RM0008 §9.4.6 p.186",
+        "fields": [
+          { "name": "EXTI12", "bits": "3:0" },
+          { "name": "EXTI13", "bits": "7:4" },
+          { "name": "EXTI14", "bits": "11:8" },
+          { "name": "EXTI15", "bits": "15:12" }
+        ]
+      },
+      {
+        "name": "AFIO_MAPR2", "full_name": "AF remap and debug I/O configuration 2",
+        "offset": "0x1C", "width": 32, "access": "RW", "reset_value": "0x00000000",
+        "description": "扩展定时器重映射（TIM9~14、FSMC_NADV）",
+        "source": "RM0008 §9.4.7 p.187",
+        "fields": [
+          { "name": "TIM9_REMAP",  "bits": "5" },
+          { "name": "TIM10_REMAP", "bits": "6" },
+          { "name": "TIM11_REMAP", "bits": "7" },
+          { "name": "TIM13_REMAP", "bits": "8" },
+          { "name": "TIM14_REMAP", "bits": "9" },
+          { "name": "FSMC_NADV",   "bits": "10" }
+        ]
+      }
+    ],
+    "interrupts": [],
+    "clock": [
+      { "instance": "GPIOA", "bus": "APB2", "enable_register": "RCC_APB2ENR", "enable_bit": 2, "enable_mask": "0x00000004", "enable_field": "IOPAEN", "reset_register": "RCC_APB2RSTR", "reset_bit": 2, "reset_mask": "0x00000004", "reset_field": "IOPARST", "source": "RM0008 §7.3.7 p.112" },
+      { "instance": "GPIOB", "bus": "APB2", "enable_register": "RCC_APB2ENR", "enable_bit": 3, "enable_mask": "0x00000008", "enable_field": "IOPBEN", "reset_register": "RCC_APB2RSTR", "reset_bit": 3, "reset_mask": "0x00000008", "reset_field": "IOPBRST", "source": "RM0008 §7.3.7 p.112" },
+      { "instance": "GPIOC", "bus": "APB2", "enable_register": "RCC_APB2ENR", "enable_bit": 4, "enable_mask": "0x00000010", "enable_field": "IOPCEN", "reset_register": "RCC_APB2RSTR", "reset_bit": 4, "reset_mask": "0x00000010", "reset_field": "IOPCRST", "source": "RM0008 §7.3.7 p.112" },
+      { "instance": "GPIOD", "bus": "APB2", "enable_register": "RCC_APB2ENR", "enable_bit": 5, "enable_mask": "0x00000020", "enable_field": "IOPDEN", "reset_register": "RCC_APB2RSTR", "reset_bit": 5, "reset_mask": "0x00000020", "reset_field": "IOPDRST", "source": "RM0008 §7.3.7 p.112" },
+      { "instance": "GPIOE", "bus": "APB2", "enable_register": "RCC_APB2ENR", "enable_bit": 6, "enable_mask": "0x00000040", "enable_field": "IOPEEN", "reset_register": "RCC_APB2RSTR", "reset_bit": 6, "reset_mask": "0x00000040", "reset_field": "IOPERST", "source": "RM0008 §7.3.7 p.112" },
+      { "instance": "GPIOF", "bus": "APB2", "enable_register": "RCC_APB2ENR", "enable_bit": 7, "enable_mask": "0x00000080", "enable_field": "IOPFEN", "reset_register": "RCC_APB2RSTR", "reset_bit": 7, "reset_mask": "0x00000080", "reset_field": "IOPFRST", "source": "RM0008 §7.3.7 p.112" },
+      { "instance": "GPIOG", "bus": "APB2", "enable_register": "RCC_APB2ENR", "enable_bit": 8, "enable_mask": "0x00000100", "enable_field": "IOPGEN", "reset_register": "RCC_APB2RSTR", "reset_bit": 8, "reset_mask": "0x00000100", "reset_field": "IOPGRST", "source": "RM0008 §7.3.7 p.112" },
+      { "instance": "AFIO",  "bus": "APB2", "enable_register": "RCC_APB2ENR", "enable_bit": 0, "enable_mask": "0x00000001", "enable_field": "AFIOEN", "reset_register": "RCC_APB2RSTR", "reset_bit": 0, "reset_mask": "0x00000001", "reset_field": "AFIORST", "source": "RM0008 §7.3.7 p.112" }
+    ],
+    "gpio_config": [],
+    "atomic_sequences": [
+      {
+        "id": "SEQ_LCKR_LOCK",
+        "purpose": "GPIO 引脚配置锁定（一旦完成在复位前不可解除）",
+        "barrier_required": true,
+        "steps": [
+          { "step": 1, "action": "WRITE", "target": "GPIOx->LCKR", "value": "(1<<16) | LCK_BITS", "comment": "LCKK=1 + 锁位掩码" },
+          { "step": 2, "action": "WRITE", "target": "GPIOx->LCKR", "value": "(0<<16) | LCK_BITS", "comment": "LCKK=0 + 同样的锁位" },
+          { "step": 3, "action": "WRITE", "target": "GPIOx->LCKR", "value": "(1<<16) | LCK_BITS", "comment": "LCKK=1 + 同样的锁位" },
+          { "step": 4, "action": "READ",  "target": "GPIOx->LCKR", "expect": "LCKK==0", "comment": "应读到 LCKK=0" },
+          { "step": 5, "action": "READ",  "target": "GPIOx->LCKR", "expect": "LCKK==1", "comment": "确认锁已激活；序列错误则全部回滚" }
+        ],
+        "source": "RM0008 §9.2.7 p.169-170"
+      },
+      {
+        "id": "SEQ_BSRR_ATOMIC_WRITE",
+        "purpose": "原子置位/清零，避免 ODR 读改写竞态",
+        "barrier_required": false,
+        "steps": [
+          { "step": 1, "action": "WRITE", "target": "GPIOx->BSRR", "value": "(1<<pin) for set | (1<<(pin+16)) for reset" }
+        ],
+        "source": "RM0008 §9.1.2 p.156"
+      }
+    ],
+    "init_sequence": [
+      { "step": 1, "action": "RCC_APB2ENR |= AFIOEN | IOPxEN", "layer": "drv", "requires": [], "description": "使能目标 GPIO bank + AFIO 时钟（必须最先）" },
+      { "step": 2, "action": "GPIOx->CRL/CRH 写 MODE+CNF", "layer": "ll",  "requires": ["step 1"], "description": "配置每个引脚 4-bit 字段" },
+      { "step": 3, "action": "AFIO_MAPR / EXTICRn (可选)", "layer": "drv", "requires": ["step 1"], "description": "需重映射或 EXTI 时设置 AFIO 寄存器" },
+      { "step": 4, "action": "GPIOx->ODR / BSRR (可选)", "layer": "ll",  "requires": ["step 2"], "description": "设定输出引脚初值" },
+      { "step": 5, "action": "GPIOx->LCKR LOCK 序列 (可选)", "layer": "drv", "requires": ["step 2"], "description": "对必须锁定的引脚走 LOCK 序列；之后不可改" }
+    ],
+    "errors": [
+      { "name": "GPIO_PARAM",      "code": 1, "description": "无效端口/引脚号", "recovery": "调用方修正参数" },
+      { "name": "GPIO_LOCKED",     "code": 2, "description": "引脚已被 LCKR 锁定，无法修改", "recovery": "复位 MCU 才能解锁" },
+      { "name": "GPIO_LOCK_ABORT", "code": 3, "description": "LOCK 序列写错，硬件已 abort", "recovery": "重新执行 SEQ_LCKR_LOCK" }
+    ],
+    "invariants": [
+      {
+        "id": "INV_GPIO_001",
+        "expression": "LCKR.LCKK == 1 && LCKR.LCK[n] == 1 implies !writable(CRL/CRH.{MODE,CNF}[n])",
+        "description": "锁定的引脚配置位在复位前不可修改",
+        "severity": "WARNING",
+        "scope": "always",
+        "enforced_by": ["reviewer-agent:static", "runtime"],
+        "source": "RM0008 §9.1.6 p.157"
+      },
+      {
+        "id": "INV_GPIO_002",
+        "expression": "AFIOEN == 0 implies !writable(AFIO_*)",
+        "description": "AFIO 寄存器访问前必须先使能 AFIO 时钟",
+        "severity": "CRITICAL",
+        "scope": "always",
+        "enforced_by": ["reviewer-agent:static"],
+        "source": "RM0008 §7.3.7 + §9.4 p.112,170"
+      },
+      {
+        "id": "INV_GPIO_003",
+        "expression": "IOPxEN == 0 implies !writable(GPIOx_*)",
+        "description": "GPIO 寄存器访问前必须先使能 GPIOx 时钟",
+        "severity": "CRITICAL",
+        "scope": "always",
+        "enforced_by": ["reviewer-agent:static"],
+        "source": "RM0008 §7.3.7 p.112"
+      }
+    ],
+    "errata": [],
+    "pending_reviews": [
+      { "id": "GPIO_PR_001", "category": "ambiguous_behavior", "topic": "BSRR 高低 16 位同位同时写 1 时硬件优先级", "current_assumption": "BS (低位) 优先（手册原文：If both BSx and BRx are set, BSx has priority）", "source": "RM0008 §9.2.5 p.168" }
+    ],
+    "operation_modes": [
+      { "name": "INPUT_FLOATING",   "description": "MODE=00, CNF=01 — 浮空输入" },
+      { "name": "INPUT_PULL_UP",    "description": "MODE=00, CNF=10, ODR.bit=1 — 上拉输入" },
+      { "name": "INPUT_PULL_DOWN",  "description": "MODE=00, CNF=10, ODR.bit=0 — 下拉输入" },
+      { "name": "INPUT_ANALOG",     "description": "MODE=00, CNF=00 — 模拟输入（ADC/DAC 引脚必选）" },
+      { "name": "OUTPUT_PP_10MHZ",  "description": "MODE=01, CNF=00 — 推挽输出 10MHz" },
+      { "name": "OUTPUT_PP_2MHZ",   "description": "MODE=10, CNF=00 — 推挽输出 2MHz" },
+      { "name": "OUTPUT_PP_50MHZ",  "description": "MODE=11, CNF=00 — 推挽输出 50MHz" },
+      { "name": "OUTPUT_OD",        "description": "MODE=01/10/11, CNF=01 — 开漏输出" },
+      { "name": "OUTPUT_AF_PP",     "description": "MODE=01/10/11, CNF=10 — 复用推挽输出" },
+      { "name": "OUTPUT_AF_OD",     "description": "MODE=01/10/11, CNF=11 — 复用开漏输出" }
+    ],
+    "generation_metadata": {
+      "tool": "doc-analyst (manual / inline)",
+      "generated_at": "2026-04-28",
+      "manual_pages_consumed": ["§9.1-§9.5"],
+      "confidence": 0.92,
+      "notes": "STM32F103C8T6 LQFP48 实际只引出 GPIOA[0..15] / GPIOB[0..15] / GPIOC[13..15] / GPIOD[0..1]，但寄存器空间 A..G 全部存在。codegen 不应假设引脚物理存在。"
+    }
+  }
+}

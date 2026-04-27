@@ -288,6 +288,48 @@
       "accessCount": 1,
       "lastAccessed": 1777296957817,
       "type": "file"
+    },
+    {
+      "path": "ir/gpio_afio_ir_summary.json",
+      "accessCount": 1,
+      "lastAccessed": 1777330446341,
+      "type": "file"
+    },
+    {
+      "path": "src/drivers/GpioAfio/include/gpio_afio_types.h",
+      "accessCount": 1,
+      "lastAccessed": 1777331338862,
+      "type": "file"
+    },
+    {
+      "path": "src/drivers/GpioAfio/include/gpio_afio_cfg.h",
+      "accessCount": 1,
+      "lastAccessed": 1777331344558,
+      "type": "file"
+    },
+    {
+      "path": "src/drivers/GpioAfio/include/gpio_afio_reg.h",
+      "accessCount": 1,
+      "lastAccessed": 1777331362292,
+      "type": "file"
+    },
+    {
+      "path": "src/drivers/GpioAfio/include/gpio_afio_ll.h",
+      "accessCount": 1,
+      "lastAccessed": 1777331380821,
+      "type": "file"
+    },
+    {
+      "path": "src/drivers/GpioAfio/include/gpio_afio_api.h",
+      "accessCount": 1,
+      "lastAccessed": 1777331385552,
+      "type": "file"
+    },
+    {
+      "path": "src/drivers/GpioAfio/src/gpio_afio_drv.c",
+      "accessCount": 1,
+      "lastAccessed": 1777331409904,
+      "type": "file"
     }
   ],
   "userDirectives": []

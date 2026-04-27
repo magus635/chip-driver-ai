@@ -1,0 +1,98 @@
+{
+  "schema_version": "1.0",
+  "module": "can",
+  "ir_source": "ir/can_ir_summary.json",
+  "design_doc": "src/drivers/Can/can_detailed_design.md",
+  "features": [
+    {
+      "feature_id": "CAN-INIT",
+      "category": "生命周期",
+      "name": "Init / DeInit",
+      "status": "todo",
+      "target_apis": [
+        "Can_Init",
+        "Can_DeInit"
+      ],
+      "depends_on": [],
+      "ir_refs": [],
+      "acceptance": "Can_Init 完成寄存器初始化序列；Can_DeInit 释放资源",
+      "notes": ""
+    },
+    {
+      "feature_id": "CAN-MODE-NORMAL",
+      "category": "操作模式",
+      "name": "Normal",
+      "status": "todo",
+      "target_apis": [
+        "Can_Configure"
+      ],
+      "depends_on": [
+        "CAN-INIT"
+      ],
+      "ir_refs": [
+        "operating_modes.Normal"
+      ],
+      "acceptance": "配置 Normal 模式，符合 IR 中字段约束",
+      "notes": ""
+    },
+    {
+      "feature_id": "CAN-MODE-INITIALIZATION",
+      "category": "操作模式",
+      "name": "Initialization",
+      "status": "todo",
+      "target_apis": [
+        "Can_Configure"
+      ],
+      "depends_on": [
+        "CAN-INIT"
+      ],
+      "ir_refs": [
+        "operating_modes.Initialization"
+      ],
+      "acceptance": "配置 Initialization 模式，符合 IR 中字段约束",
+      "notes": ""
+    },
+    {
+      "feature_id": "CAN-MODE-SLEEP",
+      "category": "操作模式",
+      "name": "Sleep",
+      "status": "todo",
+      "target_apis": [
+        "Can_Configure"
+      ],
+      "depends_on": [
+        "CAN-INIT"
+      ],
+      "ir_refs": [
+        "operating_modes.Sleep"
+      ],
+      "acceptance": "配置 Sleep 模式，符合 IR 中字段约束",
+      "notes": ""
+    },
+    {
+      "feature_id": "CAN-IRQ",
+      "category": "中断与事件",
+      "name": "中断处理与回调分发",
+      "status": "todo",
+      "target_apis": [
+        "CAN1_TX",
+        "CAN1_RX0",
+        "CAN1_RX1",
+        "CAN1_SCE",
+        "Can_HandleInterrupt",
+        "Can_RegisterCallback"
+      ],
+      "depends_on": [
+        "CAN-INIT"
+      ],
+      "ir_refs": [
+        "interrupts.CAN1_TX",
+        "interrupts.CAN1_RX0",
+        "interrupts.CAN1_RX1",
+        "interrupts.CAN1_SCE"
+      ],
+      "acceptance": "实现所有 IRQHandler 入口并将事件分发到回调",
+      "notes": ""
+    }
+  ]
+}

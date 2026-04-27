@@ -181,8 +181,9 @@ def main():
     features = derive_features(module, ir)
 
     # 推断 design_doc 路径（与现有约定保持一致）
-    drv_dir = REPO_ROOT / "src" / "drivers" / module.title()
-    design_doc = f"src/drivers/{module.title()}/{module}_detailed_design.md"
+    _camel = "".join(part.capitalize() for part in module.split("_"))
+    drv_dir = REPO_ROOT / "src" / "drivers" / _camel
+    design_doc = f"src/drivers/{_camel}/{module}_detailed_design.md"
 
     matrix = {
         "schema_version": "1.0",
