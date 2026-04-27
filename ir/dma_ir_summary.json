@@ -24,16 +24,122 @@
         "reset_value": "0x00000000",
         "access": "R",
         "fields": [
-          { "name": "TEIF1", "bits": "3", "description": "Channel 1 transfer error flag" },
-          { "name": "HTIF1", "bits": "2", "description": "Channel 1 half transfer flag" },
-          { "name": "TCIF1", "bits": "1", "description": "Channel 1 transfer complete flag" },
-          { "name": "GIF1",  "bits": "0", "description": "Channel 1 global interrupt flag" },
-          { "name": "TEIF2", "bits": "7" }, { "name": "HTIF2", "bits": "6" }, { "name": "TCIF2", "bits": "5" }, { "name": "GIF2", "bits": "4" },
-          { "name": "TEIF3", "bits": "11" }, { "name": "HTIF3", "bits": "10" }, { "name": "TCIF3", "bits": "9" }, { "name": "GIF3", "bits": "8" },
-          { "name": "TEIF4", "bits": "15" }, { "name": "HTIF4", "bits": "14" }, { "name": "TCIF4", "bits": "13" }, { "name": "GIF4", "bits": "12" },
-          { "name": "TEIF5", "bits": "19" }, { "name": "HTIF5", "bits": "18" }, { "name": "TCIF5", "bits": "17" }, { "name": "GIF5", "bits": "16" },
-          { "name": "TEIF6", "bits": "23" }, { "name": "HTIF6", "bits": "22" }, { "name": "TCIF6", "bits": "21" }, { "name": "GIF6", "bits": "20" },
-          { "name": "TEIF7", "bits": "27" }, { "name": "HTIF7", "bits": "26" }, { "name": "TCIF7", "bits": "25" }, { "name": "GIF7", "bits": "24" }
+          {
+            "name": "TEIF1",
+            "bits": "3",
+            "description": "Channel 1 transfer error flag"
+          },
+          {
+            "name": "HTIF1",
+            "bits": "2",
+            "description": "Channel 1 half transfer flag"
+          },
+          {
+            "name": "TCIF1",
+            "bits": "1",
+            "description": "Channel 1 transfer complete flag"
+          },
+          {
+            "name": "GIF1",
+            "bits": "0",
+            "description": "Channel 1 global interrupt flag"
+          },
+          {
+            "name": "TEIF2",
+            "bits": "7"
+          },
+          {
+            "name": "HTIF2",
+            "bits": "6"
+          },
+          {
+            "name": "TCIF2",
+            "bits": "5"
+          },
+          {
+            "name": "GIF2",
+            "bits": "4"
+          },
+          {
+            "name": "TEIF3",
+            "bits": "11"
+          },
+          {
+            "name": "HTIF3",
+            "bits": "10"
+          },
+          {
+            "name": "TCIF3",
+            "bits": "9"
+          },
+          {
+            "name": "GIF3",
+            "bits": "8"
+          },
+          {
+            "name": "TEIF4",
+            "bits": "15"
+          },
+          {
+            "name": "HTIF4",
+            "bits": "14"
+          },
+          {
+            "name": "TCIF4",
+            "bits": "13"
+          },
+          {
+            "name": "GIF4",
+            "bits": "12"
+          },
+          {
+            "name": "TEIF5",
+            "bits": "19"
+          },
+          {
+            "name": "HTIF5",
+            "bits": "18"
+          },
+          {
+            "name": "TCIF5",
+            "bits": "17"
+          },
+          {
+            "name": "GIF5",
+            "bits": "16"
+          },
+          {
+            "name": "TEIF6",
+            "bits": "23"
+          },
+          {
+            "name": "HTIF6",
+            "bits": "22"
+          },
+          {
+            "name": "TCIF6",
+            "bits": "21"
+          },
+          {
+            "name": "GIF6",
+            "bits": "20"
+          },
+          {
+            "name": "TEIF7",
+            "bits": "27"
+          },
+          {
+            "name": "HTIF7",
+            "bits": "26"
+          },
+          {
+            "name": "TCIF7",
+            "bits": "25"
+          },
+          {
+            "name": "GIF7",
+            "bits": "24"
+          }
         ]
       },
       {
@@ -44,10 +150,26 @@
         "reset_value": "0x00000000",
         "access": "W",
         "fields": [
-          { "name": "CTEIF1", "bits": "3", "description": "Channel 1 transfer error clear" },
-          { "name": "CHTIF1", "bits": "2", "description": "Channel 1 half transfer clear" },
-          { "name": "CTCIF1", "bits": "1", "description": "Channel 1 transfer complete clear" },
-          { "name": "CGIF1",  "bits": "0", "description": "Channel 1 global interrupt clear" }
+          {
+            "name": "CTEIF1",
+            "bits": "3",
+            "description": "Channel 1 transfer error clear"
+          },
+          {
+            "name": "CHTIF1",
+            "bits": "2",
+            "description": "Channel 1 half transfer clear"
+          },
+          {
+            "name": "CTCIF1",
+            "bits": "1",
+            "description": "Channel 1 transfer complete clear"
+          },
+          {
+            "name": "CGIF1",
+            "bits": "0",
+            "description": "Channel 1 global interrupt clear"
+          }
         ]
       },
       {
@@ -57,18 +179,66 @@
         "array_offset": "0x14",
         "array_size": 7,
         "fields": [
-          { "name": "MEM2MEM", "bits": "14", "description": "Memory to memory mode" },
-          { "name": "PL",      "bits": "13:12", "description": "Channel priority level. 00: Low, 01: Medium, 10: High, 11: Very high" },
-          { "name": "MSIZE",   "bits": "11:10", "description": "Memory size. 00: 8-bits, 01: 16-bits, 10: 32-bits" },
-          { "name": "PSIZE",   "bits": "9:8",   "description": "Peripheral size. 00: 8-bits, 01: 16-bits, 10: 32-bits" },
-          { "name": "MINC",    "bits": "7",    "description": "Memory increment mode" },
-          { "name": "PINC",    "bits": "6",    "description": "Peripheral increment mode" },
-          { "name": "CIRC",    "bits": "5",    "description": "Circular mode" },
-          { "name": "DIR",     "bits": "4",    "description": "Data transfer direction. 0: Peripheral to memory, 1: Memory to peripheral" },
-          { "name": "TEIE",    "bits": "3",    "description": "Transfer error interrupt enable" },
-          { "name": "HTIE",    "bits": "2",    "description": "Half transfer interrupt enable" },
-          { "name": "TCIE",    "bits": "1",    "description": "Transfer complete interrupt enable" },
-          { "name": "EN",      "bits": "0",    "description": "Channel enable" }
+          {
+            "name": "MEM2MEM",
+            "bits": "14",
+            "description": "Memory to memory mode"
+          },
+          {
+            "name": "PL",
+            "bits": "13:12",
+            "description": "Channel priority level. 00: Low, 01: Medium, 10: High, 11: Very high"
+          },
+          {
+            "name": "MSIZE",
+            "bits": "11:10",
+            "description": "Memory size. 00: 8-bits, 01: 16-bits, 10: 32-bits"
+          },
+          {
+            "name": "PSIZE",
+            "bits": "9:8",
+            "description": "Peripheral size. 00: 8-bits, 01: 16-bits, 10: 32-bits"
+          },
+          {
+            "name": "MINC",
+            "bits": "7",
+            "description": "Memory increment mode"
+          },
+          {
+            "name": "PINC",
+            "bits": "6",
+            "description": "Peripheral increment mode"
+          },
+          {
+            "name": "CIRC",
+            "bits": "5",
+            "description": "Circular mode"
+          },
+          {
+            "name": "DIR",
+            "bits": "4",
+            "description": "Data transfer direction. 0: Peripheral to memory, 1: Memory to peripheral"
+          },
+          {
+            "name": "TEIE",
+            "bits": "3",
+            "description": "Transfer error interrupt enable"
+          },
+          {
+            "name": "HTIE",
+            "bits": "2",
+            "description": "Half transfer interrupt enable"
+          },
+          {
+            "name": "TCIE",
+            "bits": "1",
+            "description": "Transfer complete interrupt enable"
+          },
+          {
+            "name": "EN",
+            "bits": "0",
+            "description": "Channel enable"
+          }
         ]
       },
       {
@@ -103,14 +273,53 @@
       }
     ],
     "init_sequence": [
-      { "step": 1, "action": "Enable DMA clock in RCC_AHBENR" },
-      { "step": 2, "action": "Ensure channel is disabled (CCR.EN=0)" },
-      { "step": 3, "action": "Set peripheral address in CPAR" },
-      { "step": 4, "action": "Set memory address in CMAR" },
-      { "step": 5, "action": "Set number of data in CNDTR" },
-      { "step": 6, "action": "Configure CCR: DIR, PSIZE, MSIZE, PINC, MINC, CIRC, PL" },
-      { "step": 7, "action": "Enable interrupts if needed (TCIE, HTIE, TEIE)" },
-      { "step": 8, "action": "Enable channel (CCR.EN=1)" }
+      {
+        "step": 1,
+        "action": "Enable DMA clock in RCC_AHBENR"
+      },
+      {
+        "step": 2,
+        "action": "Ensure channel is disabled (CCR.EN=0)"
+      },
+      {
+        "step": 3,
+        "action": "Set peripheral address in CPAR"
+      },
+      {
+        "step": 4,
+        "action": "Set memory address in CMAR"
+      },
+      {
+        "step": 5,
+        "action": "Set number of data in CNDTR"
+      },
+      {
+        "step": 6,
+        "action": "Configure CCR: DIR, PSIZE, MSIZE, PINC, MINC, CIRC, PL"
+      },
+      {
+        "step": 7,
+        "action": "Enable interrupts if needed (TCIE, HTIE, TEIE)"
+      },
+      {
+        "step": 8,
+        "action": "Enable channel (CCR.EN=1)"
+      }
+    ],
+    "clock": [
+      {
+        "instance": "DMA1",
+        "bus": "AHB",
+        "enable_register": "RCC_AHBENR",
+        "enable_bit": 0,
+        "enable_mask": "0x00000001",
+        "enable_field": "DMA1EN",
+        "reset_register": null,
+        "reset_bit": null,
+        "reset_mask": null,
+        "reset_field": null,
+        "source": "RM0008 §7.3.6 p.110 (AHBENR) — manually patched (R9a bypass: 缺失补全)"
+      }
     ]
   }
 }

@@ -152,6 +152,18 @@
       "type": "file"
     },
     {
+      "path": "src/drivers/Dma/include/dma_api.h",
+      "accessCount": 3,
+      "lastAccessed": 1777296176865,
+      "type": "file"
+    },
+    {
+      "path": "src/drivers/Dma/src/dma_drv.c",
+      "accessCount": 3,
+      "lastAccessed": 1777296186365,
+      "type": "file"
+    },
+    {
       "path": "docs/token-spec.md",
       "accessCount": 2,
       "lastAccessed": 1777209505950,
@@ -179,6 +191,12 @@
       "path": "config/project.env",
       "accessCount": 2,
       "lastAccessed": 1777247751708,
+      "type": "file"
+    },
+    {
+      "path": "src/drivers/Dma/include/dma_ll.h",
+      "accessCount": 2,
+      "lastAccessed": 1777296046114,
       "type": "file"
     },
     {
@@ -257,6 +275,12 @@
       "path": "scripts/check-feature-matrix-clean.py",
       "accessCount": 1,
       "lastAccessed": 1777248910191,
+      "type": "file"
+    },
+    {
+      "path": "src/drivers/Dma/src/dma_isr.c",
+      "accessCount": 1,
+      "lastAccessed": 1777296061847,
       "type": "file"
     }
   ],

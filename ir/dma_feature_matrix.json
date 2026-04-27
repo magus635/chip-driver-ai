@@ -1,0 +1,202 @@
+{
+  "schema_version": "1.0",
+  "module": "dma",
+  "ir_source": "ir/dma_ir_summary.json",
+  "design_doc": "src/drivers/Dma/dma_detailed_design.md",
+  "features": [
+    {
+      "feature_id": "DMA-INIT",
+      "category": "生命周期",
+      "name": "Init / DeInit",
+      "status": "done",
+      "target_apis": [
+        "Dma_Init",
+        "Dma_DeInit"
+      ],
+      "depends_on": [],
+      "ir_refs": [
+        "init_sequence"
+      ],
+      "acceptance": "Dma_Init 完成寄存器初始化序列；Dma_DeInit 释放资源",
+      "notes": ""
+    },
+    {
+      "feature_id": "DMA-GUARD-INV-DMA-001",
+      "category": "硬件保护",
+      "name": "INV_DMA_001 守卫",
+      "status": "done",
+      "target_apis": [],
+      "depends_on": [
+        "DMA-INIT"
+      ],
+      "ir_refs": [
+        "invariants.INV_DMA_001"
+      ],
+      "acceptance": "DMA channel must be disabled before configuring most parameters",
+      "notes": ""
+    },
+    {
+      "feature_id": "DMA-XFER-M2P",
+      "category": "基础传输",
+      "name": "内存到外设 (M2P)",
+      "status": "done",
+      "target_apis": [
+        "Dma_StartTransfer"
+      ],
+      "depends_on": [
+        "DMA-INIT"
+      ],
+      "ir_refs": [
+        "registers.CCR.DIR"
+      ],
+      "acceptance": "M2P 传输",
+      "notes": ""
+    },
+    {
+      "feature_id": "DMA-XFER-P2M",
+      "category": "基础传输",
+      "name": "外设到内存 (P2M)",
+      "status": "done",
+      "target_apis": [
+        "Dma_StartTransfer"
+      ],
+      "depends_on": [
+        "DMA-INIT"
+      ],
+      "ir_refs": [
+        "registers.CCR.DIR"
+      ],
+      "acceptance": "P2M 传输",
+      "notes": ""
+    },
+    {
+      "feature_id": "DMA-XFER-M2M",
+      "category": "基础传输",
+      "name": "内存到内存 (M2M)",
+      "status": "done",
+      "target_apis": [
+        "Dma_StartTransfer"
+      ],
+      "depends_on": [
+        "DMA-INIT"
+      ],
+      "ir_refs": [
+        "registers.CCR.MEM2MEM"
+      ],
+      "acceptance": "M2M 传输",
+      "notes": ""
+    },
+    {
+      "feature_id": "DMA-WIDTH",
+      "category": "数据宽度",
+      "name": "PSIZE/MSIZE",
+      "status": "done",
+      "target_apis": [
+        "Dma_StartTransfer"
+      ],
+      "depends_on": [
+        "DMA-INIT"
+      ],
+      "ir_refs": [
+        "registers.CCR.PSIZE",
+        "registers.CCR.MSIZE"
+      ],
+      "acceptance": "宽度可配",
+      "notes": ""
+    },
+    {
+      "feature_id": "DMA-INC",
+      "category": "寻址模式",
+      "name": "PINC/MINC",
+      "status": "done",
+      "target_apis": [
+        "Dma_StartTransfer"
+      ],
+      "depends_on": [
+        "DMA-INIT"
+      ],
+      "ir_refs": [
+        "registers.CCR.PINC",
+        "registers.CCR.MINC"
+      ],
+      "acceptance": "递增可配",
+      "notes": ""
+    },
+    {
+      "feature_id": "DMA-CIRC",
+      "category": "寻址模式",
+      "name": "循环模式",
+      "status": "done",
+      "target_apis": [
+        "Dma_StartTransfer"
+      ],
+      "depends_on": [
+        "DMA-INIT"
+      ],
+      "ir_refs": [
+        "registers.CCR.CIRC"
+      ],
+      "acceptance": "circular 可配",
+      "notes": ""
+    },
+    {
+      "feature_id": "DMA-IRQ-TC",
+      "category": "中断与事件",
+      "name": "TC 轮询",
+      "status": "done",
+      "target_apis": [
+        "Dma_IsTransferComplete"
+      ],
+      "depends_on": [
+        "DMA-INIT"
+      ],
+      "ir_refs": [
+        "registers.ISR.TCIF1"
+      ],
+      "acceptance": "TC 查询",
+      "notes": ""
+    },
+    {
+      "feature_id": "DMA-IRQ-HTTE",
+      "category": "中断与事件",
+      "name": "HT/TE 事件",
+      "status": "done",
+      "target_apis": [
+        "Dma_IsHalfTransfer",
+        "Dma_HasError",
+        "Dma_ClearFlags"
+      ],
+      "depends_on": [
+        "DMA-IRQ-TC"
+      ],
+      "ir_refs": [
+        "registers.ISR.HTIF1",
+        "registers.ISR.TEIF1",
+        "registers.IFCR.CHTIF1",
+        "registers.IFCR.CTEIF1"
+      ],
+      "acceptance": "HT/TE 查询 + W1C 清除 API",
+      "notes": "已解析寄存器位，暂无 API 导出"
+    },
+    {
+      "feature_id": "DMA-ISR",
+      "category": "中断与事件",
+      "name": "IRQHandler 入口与回调",
+      "status": "done",
+      "target_apis": [
+        "DMA1_Channel1_IRQHandler",
+        "Dma_RegisterCallback",
+        "Dma_HandleInterrupt"
+      ],
+      "depends_on": [
+        "DMA-IRQ-HTTE"
+      ],
+      "ir_refs": [
+        "registers.ISR",
+        "registers.IFCR"
+      ],
+      "acceptance": "每通道 IRQHandler 入口；W1C 清标志后调用注册回调",
+      "notes": "框架已建立，等待回调逻辑注入"
+    }
+  ]
+}

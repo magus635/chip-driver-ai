@@ -28,7 +28,17 @@
       "Bash(echo \"exit=$? \\(期望=1\\)\")",
       "Bash(echo \"exit=$? \\(期望=0\\)\")",
       "Bash(echo \"exit=$? \\(期望=2\\)\")",
-      "Bash(echo \"real-exit=$?\")"
+      "Bash(echo \"real-exit=$?\")",
+      "Bash(bash scripts/check-arch.sh)",
+      "Bash(echo \"check-arch-exit=$?\")",
+      "Bash(echo \"check-inv-exit=$?\")",
+      "Bash(echo \"gate-exit=$? \\(期望=1\\)\")",
+      "Bash(echo \"gate-exit=$? \\(期望=1，仍有 HTTE/ISR\\)\")",
+      "Bash(echo \"gate-exit=$? \\(期望=1，仍剩 ISR\\)\")",
+      "Bash(echo \"gate-exit=$? \\(期望=0\\)\")",
+      "Bash(echo \"issue-exit=$?\")",
+      "Bash(bash scripts/compile.sh)",
+      "Bash(echo \"compile-exit=$?\")"
     ]
   }
 }
