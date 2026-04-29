@@ -1,12 +1,12 @@
 /**
- * @file    gpio_afio_cfg.h
+ * @file    gpioafio_cfg.h
  * @brief   GPIO + AFIO Layer 0 — compile-time configuration
- * Source:  ir/gpio_afio_ir_summary.json v3.0
+ * Source:  ir/gpioafio_ir_summary.json v3.0
  */
 #ifndef GPIO_AFIO_CFG_H
 #define GPIO_AFIO_CFG_H
 
-#include "gpio_afio_types.h"
+#include "gpioafio_types.h"
 
 /* STM32F103C8T6 LQFP48 实际引出引脚掩码（IR generation_metadata） */
 #define GPIO_PINS_AVAILABLE_PA  ((uint16_t)0xFFFFU)

@@ -1,6 +1,6 @@
 # 外设中间表示规范 (Peripheral IR Specification)
 
-**版本**: 3.0
+**版本**: 4.0
 **用途**: 定义 `doc-analyst` Agent 输出的结构化外设描述格式。**ir/<module>_ir_summary.json** 是唯一机器可消费真值源。
 **消费者**: `code-gen` Agent（从 IR 生成驱动代码）、`reviewer-agent`（验证代码与 IR 的一致性）、`check-invariants.py`（静态检查）
 
@@ -54,7 +54,7 @@
 
 ```json
 {
-  "ir_version": "3.0",
+  "ir_version": "4.0",
   "peripheral": {
     "name": "CAN",
     "full_name": "Controller Area Network",
@@ -64,6 +64,8 @@
     "source_sections": ["32.7 bxCAN registers", "32.4 Operating modes"],
 
     "instances": [ ... ],
+    "instance_model": { ... },
+
     "registers": [ ... ],
     "interrupts": [ ... ],
     "clock": [ ... ],
@@ -75,6 +77,10 @@
     "configuration_strategies": [ ... ],
     "cross_field_constraints": [ ... ],
     "errata": [ ... ],
+
+    "signal_graph": [ ... ],
+    "shared_resources": [ ... ],
+    "structural_relations": [ ... ],
 
     "pending_reviews": [ ... ],
     "generation_metadata": { ... }
@@ -107,6 +113,8 @@
 
 ### 4.2 registers — 寄存器定义（核心）
 
+**v4.0 新增字段**：`register_set_id`（可选）。当 `instance_model` 使用 `topology: tree/dag` 时，每条寄存器记录**必须**填写此字段，以声明该寄存器属于哪个实例层级的寄存器布局。详见 §9.4。
+
 ```json
 "registers": [
   {
@@ -119,10 +127,9 @@
     "description": "CAN master control register",
     "source": "RM0090 §32.9.1 p.1070",
     "confidence": 0.98,
-
     "endinit": "none",
     "safety_relevant": false,
-
+    "register_set_id": "CAN_GLOBAL_REGS",
     "bitfields": [
       {
         "name": "INRQ",
@@ -158,6 +165,9 @@
     "description": "CAN receive FIFO 0 register",
     "source": "RM0090 §32.9.4 p.1074",
     "confidence": 0.98,
+    "endinit": "none",
+    "safety_relevant": false,
+    "register_set_id": "CAN_GLOBAL_REGS",
 
     "bitfields": [
       {
@@ -168,7 +178,8 @@
         "access": "RO",
         "reset_value": 0,
         "description": "FIFO 0 message pending (read-only count)",
-        "source": "RM0090 §32.9.4"
+        "source": "RM0090 §32.9.4",
+        "confidence": 0.98
       },
       {
         "name": "FULL0",
@@ -178,7 +189,8 @@
         "access": "W1C",
         "reset_value": 0,
         "description": "FIFO 0 full. Set by hardware, cleared by writing 1.",
-        "source": "RM0090 §32.9.4"
+        "source": "RM0090 §32.9.4",
+        "confidence": 0.98
       },
       {
         "name": "FOVR0",
@@ -188,7 +200,8 @@
         "access": "W1C",
         "reset_value": 0,
         "description": "FIFO 0 overrun. Set by hardware, cleared by writing 1.",
-        "source": "RM0090 §32.9.4"
+        "source": "RM0090 §32.9.4",
+        "confidence": 0.98
       },
       {
         "name": "RFOM0",
@@ -198,7 +211,8 @@
         "access": "W1C",
         "reset_value": 0,
         "description": "Release FIFO 0 output mailbox. Set by software to release.",
-        "source": "RM0090 §32.9.4"
+        "source": "RM0090 §32.9.4",
+        "confidence": 0.97
       }
     ]
   }
@@ -266,7 +280,7 @@
     "reset_register": "RCC_APB1RSTR",
     "reset_bit": "CAN1RST",
     "max_frequency_mhz": 42,
-    "source": "RM0090 SS7.3.14",
+    "source": "RM0090 §7.3.14",
     "confidence": 0.95
   }
 ]
@@ -329,7 +343,7 @@
       "field": "CAN1EN",
       "value": "1",
       "layer": "drv",
-      "source": "RM0090 SS32.4.1"
+      "source": "RM0090 §32.4.1"
     },
     {
       "order": 2,
@@ -338,7 +352,7 @@
       "field": "INRQ",
       "value": "1",
       "layer": "ll",
-      "source": "RM0090 SS32.4.1"
+      "source": "RM0090 §32.4.1"
     },
     {
       "order": 3,
@@ -348,14 +362,14 @@
       "condition": "== 1",
       "timeout_required": true,
       "layer": "drv",
-      "source": "RM0090 SS32.4.1"
+      "source": "RM0090 §32.4.1"
     },
     {
       "order": 4,
       "description": "Configure bit timing (BRP, TS1, TS2, SJW)",
       "register": "BTR",
       "layer": "ll",
-      "source": "RM0090 SS32.7.7"
+      "source": "RM0090 §32.7.7"
     },
     {
       "order": 5,
@@ -364,7 +378,7 @@
       "field": "INRQ",
       "value": "0",
       "layer": "ll",
-      "source": "RM0090 SS32.4.1"
+      "source": "RM0090 §32.4.1"
     }
   ],
 
@@ -374,14 +388,18 @@
       "description": "Enter initialization mode to stop all bus activity",
       "register": "MCR",
       "field": "INRQ",
-      "value": "1"
+      "value": "1",
+      "layer": "ll",
+      "source": "RM0090 §32.4.1"
     },
     {
       "order": 2,
       "description": "Disable peripheral clock",
       "register": "RCC_APB1ENR",
       "field": "CAN1EN",
-      "value": "0"
+      "value": "0",
+      "layer": "drv",
+      "source": "RM0090 §7.3.14"
     }
   ],
 
@@ -447,16 +465,19 @@
 **表达式语法**（最小可解析子集）：
 
 ```ebnf
-expr      := term (logic_op term)*
-term      := atom | "!" atom | "(" expr ")"
-atom      := field_ref cmp_op value
-           | "writable(" field_ref ")"
-           | "readable(" field_ref ")"
-field_ref := REG_NAME "." FIELD_NAME
-cmp_op    := "==" | "!=" | ">" | "<" | ">=" | "<="
-logic_op  := "&&" | "||" | "implies"
-value     := INT | HEX | field_ref
+expr         := term (logic_op term)*
+term         := atom | "!" atom | "(" expr ")"
+atom         := field_ref cmp_op value
+              | "writable(" reg_or_field ")"
+              | "readable(" reg_or_field ")"
+field_ref    := REG_NAME "." FIELD_NAME
+reg_or_field := REG_NAME | field_ref
+cmp_op       := "==" | "!=" | ">" | "<" | ">=" | "<="
+logic_op     := "&&" | "||" | "implies"
+value        := INT | HEX | field_ref
 ```
+
+> **注**：`writable(REG_NAME)` 是寄存器级简写，含义为"REG_NAME 中任意字段均可写入"。`writable(REG_NAME.FIELD_NAME)` 则精确到位域级别。reviewer-agent 实现时两种形式都须支持。
 
 **示例**（SPI）：
 
@@ -505,12 +526,12 @@ value     := INT | HEX | field_ref
 ```json
 "errata": [
   {
-    "id": "ES0182_2.1.8",
+    "id": "ES0306_2.3.7",
     "title": "Limitation on I2C N=2 byte reception",
     "affected_registers": ["CR1", "SR1"],
     "workaround": "Must set POS bit before clearing ADDR for 2-byte reception",
     "impact_on_code": "I2C_MasterReceive must special-case Size==2",
-    "source": "ES0182 Rev 13, §2.1.8",
+    "source": "ES0306 Rev 7, §2.3.7",
     "confidence": 0.95
   }
 ]
@@ -525,7 +546,7 @@ value     := INT | HEX | field_ref
   {
     "id": "SEQ_OVR_CLEAR",
     "name": "Overrun Clear Sequence",
-    "source": "RM0090 SS28.3.10",
+    "source": "RM0090 §28.3.10",
     "steps": [
       {"order": 1, "operation": "READ", "target": "DR", "comment": "Read DR to discard data"},
       {"order": 2, "operation": "READ", "target": "SR", "comment": "Read SR to complete OVR clear"}
@@ -844,7 +865,7 @@ SPIx->CR1 = (SPIx->CR1 & ~SPI_CR1_BR_Msk) | ((br_value << SPI_CR1_BR_Pos) & SPI_
   "generation_date": "2026-04-11",
   "source_documents": [
     {"name": "RM0008", "version": "Rev 21", "path": "docs/stm32f103_reference_manual.pdf"},
-    {"name": "ES0182", "version": "Rev 13", "path": "docs/stm32f4_errata.pdf"}
+    {"name": "ES0306", "version": "Rev 7",  "path": "docs/stm32f103_errata.pdf"}
   ],
   "total_registers": 24,
   "total_bitfields": 87,
@@ -934,7 +955,12 @@ SPIx->CR1 = (SPIx->CR1 & ~SPI_CR1_BR_Msk) | ((br_value << SPI_CR1_BR_Pos) & SPI_
       "CR2": {"SSOE": 0}                        // 禁止 SSOE 在 single-master
     },
     "prerequisites": ["NSS pin configured as GPIO output"],
-    "source": "RM0008 §25.3.3"
+    "constraints": [
+      "SSI must be 1 (INV_SPI_001)",
+      "SSOE must be 0 in single-master mode"
+    ],
+    "source": "RM0008 §25.3.3",
+    "confidence": 0.99
   },
   {
     "id": "multimaster_mode",
@@ -942,8 +968,8 @@ SPIx->CR1 = (SPIx->CR1 & ~SPI_CR1_BR_Msk) | ((br_value << SPI_CR1_BR_Pos) & SPI_
     "description": "多主机竞争模式。每个节点通过 NSS 脚信号和 MODF 监听实现仲裁。",
     "applies_to": ["master"],
     "register_config": {
-      "CR1": {"MSTR": 1, "SSM": 0},             // 硬件 NSS 模式
-      "CR2": {"SSOE": 0}                        // CRITICAL: 禁止启用 SSOE
+      "CR1": {"MSTR": 1, "SSM": 0},
+      "CR2": {"SSOE": 0, "ERRIE": 1}            // CRITICAL: SSOE禁止; ERRIE必须使能以检测碰撞
     },
     "prerequisites": [
       "NSS configured as input (floating or pulled up)",
@@ -954,7 +980,8 @@ SPIx->CR1 = (SPIx->CR1 & ~SPI_CR1_BR_Msk) | ((br_value << SPI_CR1_BR_Pos) & SPI_
       "Cannot use SSOE in multimaster environment",
       "MODF flag indicates collision; master must release bus and retry"
     ],
-    "source": "RM0008 §25.3.1"
+    "source": "RM0008 §25.3.1",
+    "confidence": 0.98
   },
   {
     "id": "hardware_nss_slave_mode",
@@ -965,8 +992,33 @@ SPIx->CR1 = (SPIx->CR1 & ~SPI_CR1_BR_Msk) | ((br_value << SPI_CR1_BR_Pos) & SPI_
       "CR1": {"MSTR": 0, "SSM": 0},
       "CR2": {"SSOE": 0}
     },
-    "prerequisites": ["NSS pin configured as input (floating)"],
-    "source": "RM0008 §25.3.2"
+    "prerequisites": [
+      "NSS pin configured as input (floating)",
+      "Master controls NSS signal"
+    ],
+    "constraints": [
+      "Slave becomes active only when NSS is pulled low"
+    ],
+    "source": "RM0008 §25.3.2",
+    "confidence": 0.98
+  },
+  {
+    "id": "software_nss_slave_mode",
+    "name": "Software NSS Slave Mode",
+    "description": "从机使用软件 NSS 管理。SSI 位决定是否响应。",
+    "applies_to": ["slave"],
+    "register_config": {
+      "CR1": {"MSTR": 0, "SSM": 1, "SSI": 0},
+      "CR2": {"SSOE": 0}
+    },
+    "prerequisites": [
+      "NSS pin can be used for other purposes"
+    ],
+    "constraints": [
+      "SSI=0 allows MODF detection for collision handling"
+    ],
+    "source": "RM0008 §25.3.2",
+    "confidence": 0.98
   }
 ]
 ```
@@ -1176,3 +1228,667 @@ doc-analyst 输出 IR 后，必须通过以下自验证：
 | 13 | `cross_field_constraints[]` 非空 | 至少包含 1 个约束；所有 LOCK 字段、字段交互、初始化顺序都应列出 |
 | 14 | 约束的 `violation_effect` 清晰 | 每个约束都明确描述违反后果（"未定义行为" / "硬件自动修复" / "数据丢失" 等） |
 | 15 | `init_sequence` 中关键步骤有 `requires` | 初始化顺序依赖（如 AFIO → GPIO）都应标注 |
+| 16 | `instance_model` 存在且 `topology != flat` 时，所有 `registers[]` 记录须有 `register_set_id` | 遍历检查 |
+| 17 | `instance_model.instances[]` 中不存在环（tree topology） | DFS 检测 |
+| 18 | `signal_graph[].source.instance_id` / `sink.instance_id` 均在 `instance_model` 或 `instances[]` 中存在 | ID 查找 |
+| 19 | `signal_graph[].routing_nodes[].select_register` 在对应外设 `registers[]` 中存在 | 跨外设引用标注 `peripheral` 字段 |
+| 20 | `signal_graph[type=event]` 与 `interrupts[]` 的 `irq_number` 无重复定义冲突 | 对照检查 |
+| 21 | `shared_resources[].requestors` ≥ 2，且 `fixed_priority` 时 `priority_level` 无重复 | 值唯一性检查 |
+| 22 | `structural_relations[].participants[].instance_id` 均在 `instance_model` 或 `instances[]` 中存在 | ID 查找 |
+
+---
+
+## 8. ASPICE CL2 追溯扩展（swr_refs）
+
+本章定义为满足 **ASPICE CL2 SWE.1 双向追溯**要求而引入的扩展字段。
+
+### 8.1 追溯链设计
+
+```
+docs/srs/<module>_srs.md        ← SWE.1 工作产品（SWR 权威来源）
+    │  (SWR ID 锚点)
+    ▼
+ir/<module>_feature_matrix.json  ← swr_refs 字段：SWR → Feature 映射
+    │  (feature.ir_refs)
+    ▼
+ir/<module>_ir_summary.json      ← 寄存器/位域/序列（硬件规格权威来源）
+    │
+    ▼
+src/<module>_*.c / *.h           ← 代码（注释中标注 SWR ID）
+    │
+    ▼
+tests/<module>_test.c            ← SWE.4 测试用例（引用 SWR ID 和 TC ID）
+```
+
+### 8.2 feature_matrix.json 中的 swr_refs 字段
+
+在 `ir/<module>_feature_matrix.json` 的每个 feature 对象中新增 `swr_refs` 字段：
+
+```json
+{
+  "feature_id": "CAN-INIT",
+  "category": "生命周期",
+  "name": "Init / DeInit",
+  "status": "todo",
+  "target_apis": ["Can_Init", "Can_DeInit"],
+  "depends_on": [],
+  "ir_refs": [
+    "functional_model.init_sequence",
+    "registers.MCR",
+    "registers.MSR"
+  ],
+  "swr_refs": [
+    "SWR-CAN-001",
+    "SWR-CAN-002"
+  ],
+  "acceptance": "Can_Init 完成初始化序列；Can_DeInit 释放资源",
+  "notes": ""
+}
+```
+
+**字段规则**：
+
+| 规则 | 说明 |
+|---|---|
+| `swr_refs` 非空 | 每个 feature 至少关联 1 条 SWR；无对应 SWR 的 feature 须在 notes 中注明豁免原因 |
+| SWR 必须存在 | `swr_refs` 中列出的每个 ID 必须在 `docs/srs/<module>_srs.md` 中有对应的 `### SWR-XXX-NNN` 标题 |
+| 双向覆盖 | SRS 追溯矩阵（第 11 节）中的每条 SWR 必须对应一个 feature；`scripts/validate-srs-traceability.py` 自动检查 |
+| schema_version | 引入 `swr_refs` 的 feature_matrix 文件须将 `schema_version` 升至 `"1.1"` |
+
+### 8.3 代码层注释规范
+
+code-gen 在生成或修改函数时，若函数直接实现某条 SWR，应在函数头注释中标注：
+
+```c
+/* SWR: SWR-CAN-001 — CAN 外设初始化
+ * IR:  functional_model.init_sequence (can_ir_summary.json)
+ * TC:  TC-CAN-001
+ */
+Can_StatusType Can_Init(CAN_TypeDef *CANx, const Can_ConfigType *config)
+{
+    ...
+}
+```
+
+**注释字段说明**：
+
+| 字段 | 含义 | 是否必填 |
+|---|---|---|
+| `SWR:` | 对应的软件需求 ID | 必填（若有对应 SWR） |
+| `IR:` | 消费的 IR JSON 元素路径 | 必填（R1 要求） |
+| `TC:` | 验证该函数的测试用例 ID | 必填（有测试时） |
+
+### 8.4 SRS 文件约定
+
+- **存放位置**：`docs/srs/<module>_srs.md`（如 `docs/srs/can_srs.md`）
+- **SWR ID 格式**：`SWR-<MODULE>-<NNN>`（三位数字，从 001 开始连续编号，不分子类）
+- **优先级枚举**：`M`（必须/Must）、`S`（应当/Should）、`O`（可选/Optional）
+- **状态枚举**：`草稿` → `评审中` → `已批准`（须在 frontmatter `review_status` 字段维护）
+- **模板**：`docs/srs/srs-template.md`（新模块复制此模板填写）
+- **CI 检查**：`scripts/validate-srs-traceability.py` 在 Gate 1（IR Gate）后自动运行
+
+### 8.5 CI 集成点
+
+| 阶段 | 检查 | 失败退出码 |
+|---|---|---|
+| Gate 1（IR Gate）之后 | `validate-srs-traceability.py --module <module>` | 1（覆盖缺口）/ 2（需人工审核） |
+| Gate 2（Review Gate）之前 | reviewer-agent 检查 swr_refs 与 SRS 的一致性 | 拒绝签发 token |
+| 代码生成后 | 检查 `/* SWR: */` 注释覆盖率 | 警告（非阻断） |
+
+### 8.6 SRS 评审记录集成
+
+SRS 评审结论记录到 `.claude/review-decisions.md`，格式与 R9 决策记录一致，类别使用 `srs_review`：
+
+```
+| 日期 | reviewer-agent | srs_review | SRS-CAN-001 需求完整性 | 批准 | 0.95 | QM | docs/srs/can_srs.md | R9@v3.1 |
+```
+
+---
+
+## 9. `instance_model` — 层次化实例模型（v4.0 新增）
+
+### 9.1 设计动机
+
+`instances[]`（v3.x）仅支持平级多实例（同一外设的多个独立副本）。当外设内部具有**嵌套子单元**（如 ADC Kernel → Group → Channel、GTM Cluster → Channel、DMA Controller → Channel Group → Channel）时，平级结构无法表达地址层次和寄存器归属。`instance_model` 用有向树（或有向无环图）替代平级数组，描述任意深度的实例层次。
+
+**向后兼容原则**：`instance_model` 为可选字段。不存在时 code-gen 退回到 `instances[]` 处理逻辑；`topology: "flat"` 时两者等价。
+
+### 9.2 顶层字段
+
+```json
+"instance_model": {
+  "topology": "flat | tree | dag",
+  "instances": [ <InstanceNode>, ... ]
+}
+```
+
+| 字段 | 类型 | 必填 | 说明 |
+|---|---|---|---|
+| `topology` | enum | 是 | `flat`：平级，等价于旧 `instances[]`；`tree`：有根树；`dag`：有向无环图（共享子节点） |
+| `instances` | array | 是 | 所有实例节点的扁平列表，通过 `parent` / `children` 构造树形 |
+
+### 9.3 InstanceNode 字段
+
+```json
+{
+  "id": "VADC_K0_G0",
+  "level": 2,
+  "base_address": "0xF0200420",
+  "base_address_mode": "absolute",
+  "register_set_id": "VADC_GROUP_REGS",
+  "parent": "VADC_K0",
+  "children": ["VADC_K0_G0_CH0", "VADC_K0_G0_CH1"],
+  "multiplicity": {
+    "count": 2,
+    "stride": "0x0400",
+    "index_start": 0,
+    "index_macro": "VADC_GROUP_BASE(k, g)"
+  },
+  "source": "TC39xB_UM §29.3.1 Table 29-1"
+}
+```
+
+| 字段 | 类型 | 必填 | 说明 |
+|---|---|---|---|
+| `id` | string | 是 | 全局唯一标识符，供 `signal_graph` / `structural_relations` 引用 |
+| `level` | integer | 是 | 树的深度，根节点为 0 |
+| `base_address` | string (hex) | 是（level 0）；可选（其他） | level 0 用绝对地址；深层节点若 `base_address_mode: relative` 则为相对父节点的偏移 |
+| `base_address_mode` | enum | 否 | `absolute`（默认）或 `relative_to_parent` |
+| `register_set_id` | string | 是 | 关联 `registers[]` 中同一 `register_set_id` 的寄存器组；同一 set 的寄存器由该节点的 `base_address` + 各寄存器 `offset` 定位 |
+| `parent` | string \| null | 是 | 父节点 `id`；根节点填 `null` |
+| `children` | string[] | 否 | 子节点 `id` 列表；叶节点省略或填 `[]` |
+| `multiplicity` | object | 否 | 当该类型节点在父节点下存在多份相同布局的副本时使用 |
+| `multiplicity.count` | integer | 是（若有） | 副本数量 |
+| `multiplicity.stride` | string (hex) | 是（若有） | 相邻副本间的地址间距 |
+| `multiplicity.index_start` | integer | 否 | 第一个副本的索引，默认 0 |
+| `multiplicity.index_macro` | string | 否 | 推荐生成的基地址宏名称模板，code-gen 使用 |
+| `source` | string | 是 | 手册章节引用 |
+
+### 9.4 对 `registers[]` 的变化
+
+每条寄存器记录增加可选字段 `register_set_id`，标明其归属的实例层级：
+
+```json
+{
+  "name": "ARBCFG",
+  "register_set_id": "VADC_GROUP_REGS",
+  "offset": "0x0080",
+  "width": 32,
+  ...
+}
+```
+
+**规则**：
+- 若 `instance_model` 存在且 `topology != "flat"`，所有寄存器**必须**填写 `register_set_id`
+- 同一 `register_set_id` 的寄存器布局在所有同级实例中完全一致（stride 寻址前提）
+- `register_set_id` 命名约定：`<PERIPHERAL>_<LEVEL_NAME>_REGS`，如 `VADC_KERNEL_REGS`、`VADC_GROUP_REGS`
+
+### 9.5 code-gen 消费规则
+
+```
+1. 读取 instance_model.topology
+   - flat → 退回旧 instances[] 逻辑
+   - tree / dag → 执行以下步骤
+
+2. 拓扑排序：BFS 遍历 instances，按 level 分组
+
+3. 对每个 level > 0 且有 multiplicity 的节点类型：
+   生成基地址宏：
+     #define <INDEX_MACRO>  (PARENT_BASE + (n) * stride)
+   生成实例类型定义（复用同一 typedef，无需重复）
+
+4. 对每个 register_set_id：
+   收集所有 registers[register_set_id == x] 的寄存器
+   生成结构体 typedef <PERIPHERAL>_<LEVEL>_TypeDef
+
+5. 生成实例指针宏：
+   对非 multiplicity 节点：#define INST_ID  ((<TypeDef>*)base_address)
+   对 multiplicity 节点：  #define INST_ID(n) ((<TypeDef>*)<INDEX_MACRO>(n))
+```
+
+### 9.6 验证规则
+
+| # | 检查项 |
+|---|---|
+| V9.1 | 所有 `id` 在 `instances[]` 内唯一 |
+| V9.2 | `parent` 引用的 `id` 必须存在（根节点除外） |
+| V9.3 | `children` 引用的 `id` 必须存在 |
+| V9.4 | `topology: tree` 时不得存在环（用 DFS 检测） |
+| V9.5 | `instance_model` 存在且 `topology != flat` 时，`registers[]` 中每条记录须有 `register_set_id` |
+| V9.6 | `register_set_id` 须在某个实例节点中被引用 |
+| V9.7 | `multiplicity.stride` × `multiplicity.count` 不得超出父节点地址空间（若父节点有 size 字段） |
+
+---
+
+## 10. `signal_graph` — 信号图（v4.0 新增）
+
+### 10.1 设计动机
+
+外设间的所有流动——触发脉冲、时钟信号、数据通路、同步脉冲、事件/中断——本质上都是有向图中的边。`signal_graph` 用统一的有向边结构描述这些流动，通过 `type` 字段区分语义，通过 `routing_nodes[]` 描述中间路由节点（mux、总线、SRC、分频器等）。
+
+**与现有字段的关系**：
+- `interrupts[]` 保留，描述事件源的寄存器级属性；路由路径（如经 SRC 到 CPU）用 `signal_graph[type=event]` 补充
+- `dma_channels[]` 保留，描述 DMA 通道静态映射；跨外设触发链用 `signal_graph[type=trigger]` 补充
+- `clock[]` 保留，描述外设总线时钟使能；片内分频链用 `signal_graph[type=clock]` 补充
+
+### 10.2 Signal 对象字段
+
+```json
+{
+  "id": "SIG_GTM_TO_VADC_K0G0",
+  "type": "trigger",
+  "description": "GTM ATOM0 CH0 output triggers VADC K0 Group0 request source 0",
+  "source": {
+    "instance_id": "GTM_ATOM0_CH0",
+    "peripheral": "GTM",
+    "port": "OUT"
+  },
+  "routing_nodes": [
+    {
+      "node_type": "mux",
+      "node_id": "OTGB0_LINE0",
+      "peripheral": "GTM",
+      "select_register": "OTGB0_CTRL",
+      "select_field": "SEL0",
+      "select_value": 5,
+      "source": "TC39xB_UM §20.9.1"
+    }
+  ],
+  "sink": {
+    "instance_id": "VADC_K0_G0",
+    "peripheral": "VADC",
+    "port": "TRIG_IN_0",
+    "connect_register": "K0_G0_REQTSEL",
+    "connect_field": "TRSEL",
+    "connect_value": 2,
+    "edge_type": "rising",
+    "source": "TC39xB_UM §29.7.3"
+  },
+  "config_sequence": "SEQ_GTM_VADC_TRIG_SETUP",
+  "doc_source": "TC39xB_UM §29.7 & §20.9"
+}
+```
+
+#### 顶层字段
+
+| 字段 | 类型 | 必填 | 说明 |
+|---|---|---|---|
+| `id` | string | 是 | 全局唯一，供 `shared_resources` / `structural_relations` 引用 |
+| `type` | enum | 是 | 见下表 |
+| `description` | string | 否 | 可读说明 |
+| `source` | object | 是 | 信号起点 |
+| `routing_nodes` | array | 否 | 中间路由节点，空列表表示直接连接 |
+| `sink` | object | 是 | 信号终点 |
+| `config_sequence` | string | 否 | 建立此信号连接所需的 `atomic_sequences` ID |
+| `doc_source` | string | 是 | 手册章节引用（注意与信号起点字段 `source` 区分） |
+
+#### `type` 枚举
+
+| 值 | 含义 | code-gen 生成 | 典型场景 |
+|---|---|---|---|
+| `trigger` | 外部硬件触发脉冲 | 触发源选择配置函数 + 使能 | GTM→ADC, TIM→ADC |
+| `clock` | 时钟信号（含分频） | 时钟使能 + 分频系数配置 | 外设内部分频链 |
+| `data` | 数据通路（结果、FIFO、DMA） | 数据读写函数 + DMA/FIFO 配置 | ADC结果→内存 |
+| `sync` | 同步脉冲（同时启动多个单元） | 同步触发配置 | ADC kernel 同步 |
+| `enable` | 使能信号（一个外设使能另一个） | 使能配置顺序约束 | 时钟门控 |
+| `event` | 事件/中断信号（含路由节点） | 中断/SRC/NVIC 配置函数 | 外设→SRC→CPU |
+
+#### `source` / `sink` 对象字段
+
+| 字段 | 类型 | 必填 | 说明 |
+|---|---|---|---|
+| `instance_id` | string | 是 | 引用 `instance_model.instances[].id` 或 `instances[].name` |
+| `peripheral` | string | 是 | 外设名（跨外设时尤其重要） |
+| `port` | string | 否 | 逻辑端口名（同一实例可能有多个输入/输出端口） |
+| `connect_register` | string | 否（sink 端推荐） | 终点配置寄存器名 |
+| `connect_field` | string | 否（sink 端推荐） | 终点配置位域名 |
+| `connect_value` | any | 否 | 写入值 |
+| `edge_type` | enum | 否（trigger type） | `rising` \| `falling` \| `both` \| `level` |
+
+#### `routing_nodes[]` 节点字段
+
+| 字段 | 类型 | 必填 | 说明 |
+|---|---|---|---|
+| `node_type` | enum | 是 | 见下表 |
+| `node_id` | string | 是 | 节点唯一标识 |
+| `peripheral` | string | 是 | 该节点属于哪个外设 |
+| `select_register` | string | 否 | 配置该节点的寄存器 |
+| `select_field` | string | 否 | 配置该节点的位域 |
+| `select_value` | any | 否 | 选择值 |
+| `source` | string | 是 | 手册引用 |
+
+#### `node_type` 枚举
+
+| 值 | 含义 | code-gen 行为 |
+|---|---|---|
+| `mux` | 多路选择器（N 选 1） | 生成选择值写入代码 |
+| `gate` | 信号门控（enable/disable） | 生成门控使能/禁用代码 |
+| `prescaler` | 分频器 | 生成分频系数配置代码 |
+| `src` | Service Request Controller（TC3xx） | 生成 SRC 节点配置代码（SRPN + TOS） |
+| `bus` | 信号总线（多信号共享，只需选择） | 生成总线选择代码 |
+| `fifo` | FIFO 缓冲（异步解耦） | 生成 FIFO 配置代码 |
+| `buffer` | 单级缓冲寄存器 | 生成缓冲读写代码 |
+
+### 10.3 简单外设的降级示例
+
+STM32F1 CAN TX 中断（直连 NVIC，无路由节点）：
+
+```json
+{
+  "id": "SIG_CAN1_TX_INT",
+  "type": "event",
+  "source": {
+    "instance_id": "CAN1",
+    "peripheral": "CAN",
+    "port": "TX_COMPLETE_EVENT"
+  },
+  "routing_nodes": [],
+  "sink": {
+    "instance_id": "NVIC",
+    "peripheral": "CORE",
+    "port": "IRQ_19",
+    "connect_register": "NVIC_ISER0",
+    "connect_field": "bit19",
+    "connect_value": 1
+  },
+  "doc_source": "RM0008 §24.8"
+}
+```
+
+### 10.4 code-gen 消费规则
+
+```
+按 type 分派处理：
+
+type=trigger：
+  对 routing_nodes 中每个节点：
+    生成：<Peripheral>_ConfigTriggerRoute(node_id, select_value)
+  生成：<Peripheral>_EnableHardwareTrigger(instance_id, port, edge_type)
+
+type=clock：
+  对 routing_nodes 中 node_type=prescaler 的节点：
+    生成：<Peripheral>_SetClockDivider(register, field, value)
+  生成时钟使能调用（已有 clock[] 处理，此处补充分频配置）
+
+type=event：
+  对 routing_nodes 中 node_type=src 的节点：
+    生成：SRC_Configure(node_id, priority, target_cpu_or_dma)
+  无 routing_nodes 时：生成 NVIC_EnableIRQ(irq_number)
+
+type=data：
+  若 sink 端有 DMA 连接：生成 DMA 通道配置调用
+  若无：生成结果读取函数（按 sink.connect_register）
+
+type=sync / type=enable：
+  生成对应的寄存器写操作序列，顺序依据 source → routing_nodes → sink
+
+初始化顺序规则：
+  同一外设的 signal_graph 节点按 source→sink 拓扑排序确定配置顺序
+  跨外设时：source 外设的 signal_graph 节点先于 sink 外设配置
+```
+
+### 10.5 验证规则
+
+| # | 检查项 |
+|---|---|
+| V10.1 | 所有 `id` 全局唯一 |
+| V10.2 | `source.instance_id` 和 `sink.instance_id` 须在 `instance_model` 或 `instances[]` 中存在 |
+| V10.3 | `routing_nodes[].select_register` 须在对应外设的 `registers[]` 中存在（或标注为跨外设引用） |
+| V10.4 | `sink.connect_register` 须在 sink 外设的 `registers[]` 中存在 |
+| V10.5 | `type=event` 的信号须与 `interrupts[]` 中的对应事件源保持一致（irq_number 不冲突） |
+| V10.6 | `config_sequence` 引用的 ID 须在 `atomic_sequences[]` 中存在 |
+
+---
+
+## 11. `shared_resources` — 共享资源与仲裁模型（v4.0 新增）
+
+### 11.1 设计动机
+
+当多个请求方竞争同一硬件单元时（如多个 request source 竞争同一 ADC 核心，多个 DMA 通道竞争总线带宽），需要显式描述：**资源是什么、谁在竞争、按什么规则仲裁、抢占语义如何**。此模型不绑定到任何特定外设类型，适用于所有含仲裁逻辑的外设。
+
+### 11.2 SharedResource 对象字段
+
+```json
+{
+  "id": "RES_VADC_K0_CONV_CORE",
+  "resource_name": "VADC Kernel 0 Conversion Core",
+  "resource_instance": "VADC_K0",
+  "arbiter": {
+    "type": "fixed_priority",
+    "config_register": "K0_ARBCFG",
+    "config_field": "ASEN",
+    "rounds_per_cycle": 8,
+    "source": "TC39xB_UM §29.4.2"
+  },
+  "requestors": [
+    {
+      "id": "REQ_K0_QUEUE",
+      "name": "Queue / Inject Request Source",
+      "priority_level": 3,
+      "priority_register": "K0_ARBPR",
+      "priority_field": "PRIO0",
+      "can_preempt_lower": true,
+      "abort_behavior": "stop_and_restart",
+      "enable_register": "K0_RQCTRL0",
+      "enable_field": "ENGT",
+      "source": "TC39xB_UM §29.4.3"
+    },
+    {
+      "id": "REQ_K0_SCAN",
+      "name": "Group Scan Request Source",
+      "priority_level": 1,
+      "priority_register": "K0_ARBPR",
+      "priority_field": "PRIO1",
+      "can_preempt_lower": false,
+      "abort_behavior": "complete_then_switch",
+      "enable_register": "K0_RSLEN",
+      "enable_field": "ENGT",
+      "source": "TC39xB_UM §29.4.4"
+    }
+  ],
+  "source": "TC39xB_UM §29.4"
+}
+```
+
+#### SharedResource 顶层字段
+
+| 字段 | 类型 | 必填 | 说明 |
+|---|---|---|---|
+| `id` | string | 是 | 全局唯一 |
+| `resource_name` | string | 是 | 可读名称，描述被共享的硬件单元 |
+| `resource_instance` | string | 是 | 被共享单元的 `instance_id` |
+| `arbiter` | object | 是 | 仲裁器描述 |
+| `requestors` | array | 是 | 竞争请求方列表（≥ 2） |
+| `source` | string | 是 | 手册引用 |
+
+#### `arbiter` 字段
+
+| 字段 | 类型 | 必填 | 说明 |
+|---|---|---|---|
+| `type` | enum | 是 | `fixed_priority` \| `round_robin` \| `weighted` \| `token_ring` \| `fcfs` |
+| `config_register` | string | 否 | 配置仲裁行为的寄存器 |
+| `config_field` | string | 否 | 仲裁使能/模式位域 |
+| `rounds_per_cycle` | integer | 否 | 每个仲裁周期内的仲裁轮数（影响最坏等待时间计算） |
+| `source` | string | 是 | 手册引用 |
+
+#### `requestors[]` 字段
+
+| 字段 | 类型 | 必填 | 说明 |
+|---|---|---|---|
+| `id` | string | 是 | 请求方唯一标识 |
+| `name` | string | 是 | 可读名称 |
+| `priority_level` | integer | 否 | 数值越大优先级越高（`fixed_priority` 时必填） |
+| `priority_register` | string | 否 | 优先级配置寄存器 |
+| `priority_field` | string | 否 | 优先级配置位域 |
+| `can_preempt_lower` | boolean | 否 | 是否可打断低优先级正在进行的操作，默认 `false` |
+| `abort_behavior` | enum | 否 | `stop_and_restart`：中止当前操作并重新开始；`complete_then_switch`：完成当前后切换；`discard`：丢弃当前请求 |
+| `enable_register` | string | 否 | 使能该请求源的寄存器 |
+| `enable_field` | string | 否 | 使能位域 |
+| `source` | string | 是 | 手册引用 |
+
+### 11.3 code-gen 消费规则
+
+```
+对每个 shared_resource：
+
+  1. 生成仲裁器配置函数：
+     <Module>_ConfigArbiter_<resource_id>(
+         <Module>_ArbConfigType *config)
+     内部写 arbiter.config_register.config_field
+
+  2. 对每个 requestor：
+     生成请求源配置函数：
+       <Module>_ConfigRequestSource_<req_id>(...)
+       内部写 priority_register.priority_field（若有）
+
+     生成请求源使能/禁用函数：
+       <Module>_EnableRequestSource_<req_id>(instance)
+       <Module>_DisableRequestSource_<req_id>(instance)
+
+  3. 若任意 requestor.can_preempt_lower = true：
+     在被抢占时的中断/回调中生成 abort 处理逻辑
+     按 abort_behavior 生成相应代码：
+       stop_and_restart → 检查 active_flag，写 abort 位，等待完成
+       complete_then_switch → 轮询完成标志后切换
+       discard → 直接覆盖请求寄存器
+
+  4. 生成优先级常量宏：
+     #define <MODULE>_<REQ_ID>_PRIORITY  <priority_level>
+```
+
+### 11.4 验证规则
+
+| # | 检查项 |
+|---|---|
+| V11.1 | `resource_instance` 须在 `instance_model` 或 `instances[]` 中存在 |
+| V11.2 | `fixed_priority` 类型时，每个 requestor 的 `priority_level` 须填写且无重复 |
+| V11.3 | `priority_register` / `enable_register` 须在对应外设的 `registers[]` 中存在 |
+| V11.4 | 若 `can_preempt_lower: true`，`abort_behavior` 必须填写 |
+| V11.5 | 每个 `resource_instance` 最多被一个 `shared_resource` 描述 |
+
+---
+
+## 12. `structural_relations` — 结构关系模型（v4.0 新增）
+
+### 12.1 设计动机
+
+`signal_graph` 描述"流动什么"，`structural_relations` 描述实例之间"是什么关系"。结构关系是**配置时的逻辑绑定**，而非运行时的信号流：主从同步、互斥独占、资源划分、级联链接等。这些关系影响初始化顺序、API 设计（是否需要 group-level 的聚合函数）和安全约束。
+
+### 12.2 StructuralRelation 对象字段
+
+```json
+{
+  "id": "REL_VADC_KERNEL_SYNC",
+  "type": "master_slave",
+  "description": "VADC Kernel 0 acts as sync master, driving kernels 1 and 3 to start conversion simultaneously",
+  "participants": [
+    {
+      "role": "master",
+      "instance_id": "VADC_K0",
+      "config_register": "K0_SYNCTR",
+      "config_field": "STSEL",
+      "config_value_for_this_role": 0,
+      "source": "TC39xB_UM §29.5.4"
+    },
+    {
+      "role": "slave",
+      "instance_id": "VADC_K1",
+      "config_register": "K1_SYNCTR",
+      "config_field": "STSEL",
+      "config_value_for_this_role": 1,
+      "source": "TC39xB_UM §29.5.4"
+    },
+    {
+      "role": "slave",
+      "instance_id": "VADC_K3",
+      "config_register": "K3_SYNCTR",
+      "config_field": "STSEL",
+      "config_value_for_this_role": 1,
+      "source": "TC39xB_UM §29.5.4"
+    }
+  ],
+  "init_order": "master_first",
+  "activation_sequence": "SEQ_VADC_SYNC_ACTIVATE",
+  "constraint": "All slaves must complete channel configuration before master starts first conversion",
+  "source": "TC39xB_UM §29.5"
+}
+```
+
+#### StructuralRelation 字段
+
+| 字段 | 类型 | 必填 | 说明 |
+|---|---|---|---|
+| `id` | string | 是 | 全局唯一 |
+| `type` | enum | 是 | 见下表 |
+| `description` | string | 否 | 关系的功能描述 |
+| `participants` | array | 是 | 参与方列表（≥ 2） |
+| `init_order` | enum | 否 | `master_first` \| `slaves_first` \| `any`；默认按 type 推导（见下表） |
+| `activation_sequence` | string | 否 | 激活该关系所需的 `atomic_sequences` ID |
+| `constraint` | string | 否 | 使该关系正确工作的自然语言约束描述 |
+| `source` | string | 是 | 手册引用 |
+
+#### `type` 枚举与默认 `init_order`
+
+| type | 含义 | 默认 init_order | 典型场景 |
+|---|---|---|---|
+| `master_slave` | 主控一个或多个从属，主的动作驱动从 | `master_first` | ADC 同步、TIM 同步、I2C 主从 |
+| `peer` | 平等协作，互相感知但独立运行 | `any` | 多核共享外设、双向通信 |
+| `broadcast` | 一个配置源影响所有成员 | `source_first` | 全局寄存器影响所有 kernel |
+| `chain` | 顺序级联，前一个输出驱动下一个 | `source_first` | DMA 描述符链、PWM 级联 |
+| `mutex` | 互斥使用，运行时只有一个 active | `any` | 引脚复用、总线仲裁 |
+| `partition` | 静态资源划分，各自独占一部分 | `any` | Filter bank 分配、内存分区 |
+
+#### `participants[]` 字段
+
+| 字段 | 类型 | 必填 | 说明 |
+|---|---|---|---|
+| `role` | enum | 是 | `master` \| `slave` \| `peer` \| `source` \| `sink` \| `member` \| `owner` \| `sharer` |
+| `instance_id` | string | 是 | 引用 `instance_model` 或 `instances[]` 中的 id |
+| `config_register` | string | 否 | 使该实例承担此 role 所需写的寄存器 |
+| `config_field` | string | 否 | 对应位域 |
+| `config_value_for_this_role` | any | 否 | 对应值 |
+| `source` | string | 否 | 手册引用（精确到寄存器位域说明的章节） |
+
+### 12.3 code-gen 消费规则
+
+```
+对每个 structural_relation：
+
+  1. 根据 init_order 确定初始化顺序：
+     master_first  → 排序时 role=master 的实例优先于 role=slave
+     slaves_first  → 反之
+     source_first  → role=source 先于 role=sink
+     any           → 不约束顺序
+
+  2. 对每个 participant（按排序后的顺序）：
+     若 config_register 和 config_field 均有值：
+       生成：<Module>_LL_SetField(<config_register>, <config_field>,
+                                   <config_value_for_this_role>)
+       注释：/* REL: <relation.id> — role: <participant.role> */
+
+  3. 若 activation_sequence 有值：
+     在所有 participant 配置完成后调用对应 atomic_sequence 函数
+
+  4. 根据 type 生成高层 API：
+     master_slave →
+       <Module>_ConfigSyncMaster(master_instance, slave_list[])
+       <Module>_ConfigSyncSlave(slave_instance, master_instance)
+     partition →
+       <Module>_PartitionResource(owner_instance, range_start, range_end)
+     mutex →
+       在注释中标注互斥约束，不生成运行时锁（驱动层不负责）
+
+  5. constraint 非空时，在生成的函数头注释中写入：
+     /* CONSTRAINT: <constraint> */
+```
+
+### 12.4 验证规则
+
+| # | 检查项 |
+|---|---|
+| V12.1 | 所有 `id` 全局唯一 |
+| V12.2 | `participants[].instance_id` 须在 `instance_model` 或 `instances[]` 中存在 |
+| V12.3 | `master_slave` 类型须有且仅有一个 `role=master` 的参与方 |
+| V12.4 | `participants[].config_register` 须在对应实例的 `register_set_id` 所归属的 `registers[]` 中存在 |
+| V12.5 | `activation_sequence` 引用的 ID 须在 `atomic_sequences[]` 中存在 |
+| V12.6 | `mutex` 类型时，运行时互斥保护须在代码生成注释中显式声明（驱动不提供锁） |

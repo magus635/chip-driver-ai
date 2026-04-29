@@ -1,5 +1,5 @@
 {
-  "schema_version": "1.0",
+  "schema_version": "1.1",
   "module": "gpio_afio",
   "ir_source": "ir/gpio_afio_ir_summary.json",
   "design_doc": "src/drivers/GpioAfio/gpio_afio_detailed_design.md",
@@ -18,13 +18,16 @@
         "init_sequence"
       ],
       "acceptance": "Gpio_Afio_Init 完成寄存器初始化序列；Gpio_Afio_DeInit 释放资源",
-      "notes": ""
+      "notes": "",
+      "swr_refs": [
+        "SWR-GPIO-001"
+      ]
     },
     {
       "feature_id": "GPIO_AFIO-MODE-INPUT-FLOATING",
       "category": "操作模式",
       "name": "INPUT_FLOATING",
-      "status": "todo",
+      "status": "done",
       "target_apis": [
         "Gpio_Afio_Configure"
       ],
@@ -32,16 +35,19 @@
         "GPIO_AFIO-INIT"
       ],
       "ir_refs": [
-        "operating_modes.INPUT_FLOATING"
+        "operation_modes.INPUT_FLOATING"
       ],
       "acceptance": "配置 INPUT_FLOATING 模式，符合 IR 中字段约束",
-      "notes": ""
+      "notes": "",
+      "swr_refs": [
+        "SWR-GPIO-002"
+      ]
     },
     {
       "feature_id": "GPIO_AFIO-MODE-INPUT-PULL-UP",
       "category": "操作模式",
       "name": "INPUT_PULL_UP",
-      "status": "todo",
+      "status": "done",
       "target_apis": [
         "Gpio_Afio_Configure"
       ],
@@ -49,16 +55,19 @@
         "GPIO_AFIO-INIT"
       ],
       "ir_refs": [
-        "operating_modes.INPUT_PULL_UP"
+        "operation_modes.INPUT_PULL_UP"
       ],
       "acceptance": "配置 INPUT_PULL_UP 模式，符合 IR 中字段约束",
-      "notes": ""
+      "notes": "",
+      "swr_refs": [
+        "SWR-GPIO-002"
+      ]
     },
     {
       "feature_id": "GPIO_AFIO-MODE-INPUT-PULL-DOWN",
       "category": "操作模式",
       "name": "INPUT_PULL_DOWN",
-      "status": "todo",
+      "status": "done",
       "target_apis": [
         "Gpio_Afio_Configure"
       ],
@@ -66,16 +75,19 @@
         "GPIO_AFIO-INIT"
       ],
       "ir_refs": [
-        "operating_modes.INPUT_PULL_DOWN"
+        "operation_modes.INPUT_PULL_DOWN"
       ],
       "acceptance": "配置 INPUT_PULL_DOWN 模式，符合 IR 中字段约束",
-      "notes": ""
+      "notes": "",
+      "swr_refs": [
+        "SWR-GPIO-002"
+      ]
     },
     {
       "feature_id": "GPIO_AFIO-MODE-INPUT-ANALOG",
       "category": "操作模式",
       "name": "INPUT_ANALOG",
-      "status": "todo",
+      "status": "done",
       "target_apis": [
         "Gpio_Afio_Configure"
       ],
@@ -83,16 +95,19 @@
         "GPIO_AFIO-INIT"
       ],
       "ir_refs": [
-        "operating_modes.INPUT_ANALOG"
+        "operation_modes.INPUT_ANALOG"
       ],
       "acceptance": "配置 INPUT_ANALOG 模式，符合 IR 中字段约束",
-      "notes": ""
+      "notes": "",
+      "swr_refs": [
+        "SWR-GPIO-002"
+      ]
     },
     {
       "feature_id": "GPIO_AFIO-MODE-OUTPUT-PP-10MHZ",
       "category": "操作模式",
       "name": "OUTPUT_PP_10MHZ",
-      "status": "todo",
+      "status": "done",
       "target_apis": [
         "Gpio_Afio_Configure"
       ],
@@ -100,16 +115,19 @@
         "GPIO_AFIO-INIT"
       ],
       "ir_refs": [
-        "operating_modes.OUTPUT_PP_10MHZ"
+        "operation_modes.OUTPUT_PP_10MHZ"
       ],
       "acceptance": "配置 OUTPUT_PP_10MHZ 模式，符合 IR 中字段约束",
-      "notes": ""
+      "notes": "",
+      "swr_refs": [
+        "SWR-GPIO-002"
+      ]
     },
     {
       "feature_id": "GPIO_AFIO-MODE-OUTPUT-PP-2MHZ",
       "category": "操作模式",
       "name": "OUTPUT_PP_2MHZ",
-      "status": "todo",
+      "status": "done",
       "target_apis": [
         "Gpio_Afio_Configure"
       ],
@@ -117,16 +135,19 @@
         "GPIO_AFIO-INIT"
       ],
       "ir_refs": [
-        "operating_modes.OUTPUT_PP_2MHZ"
+        "operation_modes.OUTPUT_PP_2MHZ"
       ],
       "acceptance": "配置 OUTPUT_PP_2MHZ 模式，符合 IR 中字段约束",
-      "notes": ""
+      "notes": "",
+      "swr_refs": [
+        "SWR-GPIO-002"
+      ]
     },
     {
       "feature_id": "GPIO_AFIO-MODE-OUTPUT-PP-50MHZ",
       "category": "操作模式",
       "name": "OUTPUT_PP_50MHZ",
-      "status": "todo",
+      "status": "done",
       "target_apis": [
         "Gpio_Afio_Configure"
       ],
@@ -134,16 +155,19 @@
         "GPIO_AFIO-INIT"
       ],
       "ir_refs": [
-        "operating_modes.OUTPUT_PP_50MHZ"
+        "operation_modes.OUTPUT_PP_50MHZ"
       ],
       "acceptance": "配置 OUTPUT_PP_50MHZ 模式，符合 IR 中字段约束",
-      "notes": ""
+      "notes": "",
+      "swr_refs": [
+        "SWR-GPIO-002"
+      ]
     },
     {
       "feature_id": "GPIO_AFIO-MODE-OUTPUT-OD",
       "category": "操作模式",
       "name": "OUTPUT_OD",
-      "status": "todo",
+      "status": "done",
       "target_apis": [
         "Gpio_Afio_Configure"
       ],
@@ -151,16 +175,19 @@
         "GPIO_AFIO-INIT"
       ],
       "ir_refs": [
-        "operating_modes.OUTPUT_OD"
+        "operation_modes.OUTPUT_OD"
       ],
       "acceptance": "配置 OUTPUT_OD 模式，符合 IR 中字段约束",
-      "notes": ""
+      "notes": "",
+      "swr_refs": [
+        "SWR-GPIO-002"
+      ]
     },
     {
       "feature_id": "GPIO_AFIO-MODE-OUTPUT-AF-PP",
       "category": "操作模式",
       "name": "OUTPUT_AF_PP",
-      "status": "todo",
+      "status": "done",
       "target_apis": [
         "Gpio_Afio_Configure"
       ],
@@ -168,16 +195,19 @@
         "GPIO_AFIO-INIT"
       ],
       "ir_refs": [
-        "operating_modes.OUTPUT_AF_PP"
+        "operation_modes.OUTPUT_AF_PP"
       ],
       "acceptance": "配置 OUTPUT_AF_PP 模式，符合 IR 中字段约束",
-      "notes": ""
+      "notes": "",
+      "swr_refs": [
+        "SWR-GPIO-002"
+      ]
     },
     {
       "feature_id": "GPIO_AFIO-MODE-OUTPUT-AF-OD",
       "category": "操作模式",
       "name": "OUTPUT_AF_OD",
-      "status": "todo",
+      "status": "done",
       "target_apis": [
         "Gpio_Afio_Configure"
       ],
@@ -185,10 +215,13 @@
         "GPIO_AFIO-INIT"
       ],
       "ir_refs": [
-        "operating_modes.OUTPUT_AF_OD"
+        "operation_modes.OUTPUT_AF_OD"
       ],
       "acceptance": "配置 OUTPUT_AF_OD 模式，符合 IR 中字段约束",
-      "notes": ""
+      "notes": "",
+      "swr_refs": [
+        "SWR-GPIO-002"
+      ]
     },
     {
       "feature_id": "GPIO_AFIO-GUARD-INV-GPIO-001",
@@ -203,7 +236,10 @@
         "invariants.INV_GPIO_001"
       ],
       "acceptance": "锁定的引脚配置位在复位前不可修改",
-      "notes": ""
+      "notes": "",
+      "swr_refs": [
+        "SWR-GPIO-003"
+      ]
     },
     {
       "feature_id": "GPIO_AFIO-GUARD-INV-GPIO-002",
@@ -218,7 +254,10 @@
         "invariants.INV_GPIO_002"
       ],
       "acceptance": "AFIO 寄存器访问前必须先使能 AFIO 时钟",
-      "notes": ""
+      "notes": "",
+      "swr_refs": [
+        "SWR-GPIO-003"
+      ]
     },
     {
       "feature_id": "GPIO_AFIO-GUARD-INV-GPIO-003",
@@ -233,7 +272,10 @@
         "invariants.INV_GPIO_003"
       ],
       "acceptance": "GPIO 寄存器访问前必须先使能 GPIOx 时钟",
-      "notes": ""
+      "notes": "",
+      "swr_refs": [
+        "SWR-GPIO-003"
+      ]
     }
   ]
 }

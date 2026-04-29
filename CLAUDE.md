@@ -99,7 +99,7 @@
 | 10 | **寄存器操作注释必须标注 IR 来源** | `CANx->BTR = btr;` | `CANx->BTR = btr; /* IR: configuration_strategies[0] - RM0090 §32.7.7 */` | R1 权威来源原则 |
 | 11 | **配置锁字段写入必须前置守卫**（示例：UART BRR） | 修改 `USARTx->BRR` 未先清 `USART_CR1.UE` | `USARTx->CR1 &= ~USART_CR1_UE_Msk;` → 写 BRR → 恢复 UE；注释 `/* Guard: INV_UART_001 */` | IR 中 LOCK 不变式必须被 code-gen 消费。违规由 `scripts/check-invariants.py` 检出。**注**：时序敏感的 disable 序列（如 SPI full-duplex 关闭顺序）归 R8#12 |
 | 12 | **DeInit/Disable 必须遵循 IR `disable_procedures`** | `Spi_DeInit` 中 full_duplex 分支遗漏 wait_RXNE | 从 IR 读取模式专属步骤列表，逐步生成并标注手册来源 | 不同模式关闭序列步骤不同（RM0008 §25.3.8），遗漏会导致数据丢失或总线挂死 |
-| 13 | **详细设计文档须与代码同步生成** | 先写代码后补文档，导致图文不符 | 在代码生成的同时产生 `<module>_detailed_design.md`，确保流程图与代码逻辑原子同步 | 保证文档与实现的高度一致性，作为专家审查的首要依据 |
+| 13 | **详细设计文档须与代码同步生成且含全量章节** | 先写代码后补文档；文档只有架构概述没有接口/流程/示例 | 同步生成 `<module>_detailed_design.md`，**强制 9 章节**（架构目标/文件清单/功能特性矩阵/异步闭环/数据结构/接口函数/流程图/调用示例/不变式审计），由 `scripts/check-detailed-design.py` 校验。模板见 `docs/detailed-design-template.md` | 1:1 对应代码，作为人类专家评审首要依据；缺章 → STEP 2.D 拒绝 |
 | 14 | **功能特性全量对账与状态公示** | 详细设计文档中未明确列出所有 IR 提取特性的实现状态，导致遗漏 | **必须**在 `<module>_detailed_design.md` 中建立一个独立的 Markdown 表格，1:1 列出 IR 中所有的功能特性，并使用【🟢 已完成 / 🟡 部分完成 / 🔴 未完成】标记状态和对应 API | 确保驱动能力的完全透明，任何人接手文档都能立即看到能力边界与技术债 |
 | 15 | **传输模式强制覆盖 (Totality)** | 硬件支持 DMA 或中断，但驱动仅实现轮询（Polling） | 若 IR 定义了 DMA 请求或中断标志，驱动**必须**提供异步非阻塞 API（如 `xxx_TransferDMA`） | 轮询仅为基础模式，高性能驱动必须支持硬件提供的所有传输路径 |
 | 16 | **服务能力联动审计 (Linkage)** | 底层服务（如 DMA Callback）升级后，上层驱动未及时集成 | 当 DMA, NVIC, RCC 等通用层能力增强时，调用方驱动必须同步更新逻辑（如改为回调通知） | 保持系统演进的一致性，防止底层新特性成为“死代码” |
@@ -167,6 +167,26 @@ AI推荐: <推荐选项编号及理由>
 - **CI 模式**（`INTERACTIVE_MODE=0`）：feature-loop 仍跑 dry-run/校验，但不调用 codegen-agent，将待实现清单写入 `.claude/pending-reviews.md`。
 - **STEP 3 入口门禁（强制）**：`scripts/check-feature-matrix-clean.py` 必须返回 0，否则**禁止进入 STEP 3 编译阶段**。这是 R10 与 R6 token gate 并列的第二道不可绕过的关卡。
 - **配套脚本**：`scripts/{validate-feature-matrix,feature-next,feature-update}.py`、`scripts/feature-loop.sh`，全部遵守 R6 接口规范（`--help/--dry-run/--log`）。
+
+### R11 · ASPICE 双向追溯（swr_refs）
+- **动机**：将来需支持 Aurix TC39xB 等汽车多核 MCU 项目，预先建立 SWE.1 双向追溯（SRS↔Feature↔IR↔代码↔测试）以满足 ASPICE CL2 / ISO 26262 评审。retrofit 成本很高，越早建立越好。
+- **追溯链**（详见 `docs/ir-specification.md` §8）：
+  ```
+  docs/srs/<module>_srs.md  (SWR 权威源，含 <!-- SWR-XXX-NNN --> 锚点)
+      ↓
+  ir/<module>_feature_matrix.json  (feature.swr_refs[] 字段 → SWR ID)
+      ↓
+  ir/<module>_ir_summary.json  (寄存器/序列硬件源)
+      ↓
+  src/drivers/<Module>/*.{c,h}  (代码注释引用 /* SWR-XXX-NNN */)
+      ↓
+  tests/<module>_test.c  (SWE.4 测试用例引用 SWR ID)
+  ```
+- **schema 升级**：`feature_matrix.json` 每个 feature 增加可选字段 `swr_refs: [string]`。空数组允许（向后兼容），但启用 R11 模式后强制非空。
+- **SRS 文件**：每个模块 `docs/srs/<module>_srs.md`，每条 SWR 含锚点 `<!-- SWR-<MODULE>-<NNN> -->`、标题、验收准则、来源、优先级、状态。模板见 `docs/srs/_template.md`。
+- **校验门禁**：`scripts/validate-feature-matrix.py --check-swr` 扫描 SRS 锚点，校验 feature.swr_refs 引用全部存在。dev-driver STEP 1.5 末尾追加此检查（汽车合规项目强制；其他项目可选）。
+- **代码层注释**：实现 SWR 的关键函数顶部注释 `/* satisfies SWR-XXX-NNN */`，与 R8#10 IR 来源标注同模式。
+- **R11 与 R10 的关系**：R10 解决"功能是否实现"，R11 解决"功能为何要实现 + 测试如何验证"。两者正交，R10 是必须，R11 在汽车场景下必须。
 
 ---
 

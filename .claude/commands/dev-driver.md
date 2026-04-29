@@ -105,8 +105,11 @@ bash scripts/check-arch.sh
 python3 scripts/check-invariants.py ir/${module}_ir_summary.json \
     src/drivers/${module^}/include/*_ll.h \
     src/drivers/${module^}/src/*.c
+python3 scripts/check-detailed-design.py --module ${module}
 ```
-失败则退回 STEP 2 让 codegen-agent 修；通过后进入 STEP 2.5。
+任一失败 → 退回 STEP 2 让 codegen-agent 修；全部通过后进入 STEP 2.5。
+
+> `check-detailed-design.py` 强制 R8#13 的 9 章节清单（详见 `docs/detailed-design-template.md`），缺章即拒。
 
 ### STEP 2.5 · Feature Completion Loop (R10) — **MUST**
 

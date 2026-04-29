@@ -36,9 +36,13 @@ def load_json(path: Path):
         return json.load(f)
 
 
+SUPPORTED_SCHEMA_VERSIONS = ("1.0", "1.1")  # 1.1 加入可选 swr_refs
+
+
 def validate_schema(matrix, errors):
-    if matrix.get("schema_version") != "1.0":
-        errors.append(f"schema_version 必须为 '1.0'，实际: {matrix.get('schema_version')!r}")
+    sv = matrix.get("schema_version")
+    if sv not in SUPPORTED_SCHEMA_VERSIONS:
+        errors.append(f"schema_version 必须 ∈ {SUPPORTED_SCHEMA_VERSIONS}，实际: {sv!r}")
     if not matrix.get("module"):
         errors.append("缺少 module 字段")
     feats = matrix.get("features")
@@ -181,7 +185,44 @@ def validate_md_sync(matrix, errors):
         )
 
 
-def run_one(path: Path):
+_SWR_ANCHOR_RE = re.compile(r"<!--\s*(SWR-[A-Z0-9_-]+)\s*-->")
+
+
+def extract_swr_anchors(srs_path: Path):
+    """读 SRS markdown，抽出所有 <!-- SWR-XXX-NNN --> 锚点"""
+    if not srs_path.exists():
+        return None
+    text = srs_path.read_text(encoding="utf-8")
+    return set(_SWR_ANCHOR_RE.findall(text))
+
+
+def validate_swr(matrix, errors, check_swr: bool):
+    """R11 · 校验 feature.swr_refs 引用全部存在于 docs/srs/<module>_srs.md。
+    - 任何 feature 含非空 swr_refs → 隐式启用检查
+    - 显式 --check-swr → 即使全空也强制检查存在 SRS 文件"""
+    feats = matrix.get("features", [])
+    has_any_swr = any(f.get("swr_refs") for f in feats)
+    if not (check_swr or has_any_swr):
+        return
+    module = matrix.get("module", "")
+    srs_path = REPO_ROOT / "docs" / "srs" / f"{module}_srs.md"
+    anchors = extract_swr_anchors(srs_path)
+    if anchors is None:
+        if check_swr or has_any_swr:
+            errors.append(
+                f"R11 · SRS 缺失: {srs_path.relative_to(REPO_ROOT)} 不存在；"
+                f"feature 含 swr_refs 时必须提供 SRS"
+            )
+        return
+    for f in feats:
+        for swr in f.get("swr_refs", []) or []:
+            if swr not in anchors:
+                errors.append(
+                    f"R11 · {f['feature_id']}: swr_refs {swr!r} 在 {srs_path.name} 中找不到锚点"
+                )
+
+
+def run_one(path: Path, check_swr: bool = False):
     errors = []
     try:
         matrix = load_json(path)
@@ -193,6 +234,7 @@ def run_one(path: Path):
     validate_deps(matrix, errors)
     validate_ir_refs(matrix, errors)
     validate_md_sync(matrix, errors)
+    validate_swr(matrix, errors, check_swr)
     return errors
 
 
@@ -200,6 +242,8 @@ def main():
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("path", nargs="?", help="ir/<module>_feature_matrix.json")
     ap.add_argument("--all", action="store_true", help="校验所有 ir/*_feature_matrix.json")
+    ap.add_argument("--check-swr", action="store_true",
+                    help="R11 · 强制校验 swr_refs 引用与 docs/srs/<module>_srs.md 锚点一致")
     ap.add_argument("--dry-run", action="store_true", help="不做任何写操作（本脚本只读，仅为接口对齐）")
     ap.add_argument("--log", help="将输出额外写入指定日志文件")
     args = ap.parse_args()
@@ -220,7 +264,7 @@ def main():
     log_lines = []
     failed = 0
     for p in targets:
-        errs = run_one(p)
+        errs = run_one(p, check_swr=args.check_swr)
         if errs:
             failed += 1
             msg = f"❌ {p}\n  - " + "\n  - ".join(errs)

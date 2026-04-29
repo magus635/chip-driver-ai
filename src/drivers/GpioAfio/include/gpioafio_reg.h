@@ -1,7 +1,7 @@
 /**
- * @file    gpio_afio_reg.h
+ * @file    gpioafio_reg.h
  * @brief   GPIO + AFIO Layer 1 — register memory map
- * Source:  ir/gpio_afio_ir_summary.json v3.0
+ * Source:  ir/gpioafio_ir_summary.json v3.0
  *
  * IR-ref: peripheral.instances[GPIOA..G, AFIO]
  * IR-ref: peripheral.registers[*]

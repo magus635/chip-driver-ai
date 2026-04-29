@@ -1,7 +1,7 @@
 {
   "tool_name": "Bash",
-  "tool_input_preview": "{\"command\":\"grep -n \\\"unfinished\\\" scripts/feature-loop.sh | cat -A\",\"description\":\"Check for hidden characters\"}",
-  "error": "Exit code 1\ncat: illegal option -- A\nusage: cat [-belnstuv] [file ...]",
-  "timestamp": "2026-04-26T23:51:43.698Z",
+  "tool_input_preview": "{\"command\":\"chmod +x scripts/extract-design-tables.py\\necho \\\"=== 预跑 GpioAfio：dry-run 看抽出的字段数 ===\\\"\\npython3 scripts/extract-design-tables.py --module gpio_afio --dry-run\\necho \\\"\\\"\\necho \\\"=== --all ...",
+  "error": "Exit code 1\n=== 预跑 GpioAfio：dry-run 看抽出的字段数 ===\n[EXTRACT] gpio_afio: enums=4 structs=1 apis=7 -> src/drivers/GpioAfio/gpio_afio_detailed_design.md\n[DRY-RUN] 未写盘\n\n=== --all dry-run，验证回溯 module 名 ===\n[ERROR] missing: /Users/qlwang/Documents/GitHub/chip-driver-ai/src/drivers/Can/can_detailed_design.md\n[ERROR] missing: /Users/qlwang/Documents/GitHub/chip-driver-ai/src/drivers/Gpioafio/gpioafio_detailed_design.md\n[ERROR] missing: /Users/qlwang/Documents/GitHub/chip-driver-ai/src/drivers/I2c/i2c_detai...",
+  "timestamp": "2026-04-28T22:47:25.158Z",
   "retry_count": 1
 }

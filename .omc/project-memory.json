@@ -105,26 +105,44 @@
   "hotPaths": [
     {
       "path": "CLAUDE.md",
-      "accessCount": 30,
-      "lastAccessed": 1777329090866,
+      "accessCount": 33,
+      "lastAccessed": 1777497736161,
       "type": "file"
     },
     {
       "path": ".claude/commands/dev-driver.md",
-      "accessCount": 16,
-      "lastAccessed": 1777297097503,
+      "accessCount": 17,
+      "lastAccessed": 1777415870115,
       "type": "file"
     },
     {
       "path": "scripts/validate-feature-matrix.py",
-      "accessCount": 4,
-      "lastAccessed": 1777247480315,
+      "accessCount": 8,
+      "lastAccessed": 1777497822852,
+      "type": "file"
+    },
+    {
+      "path": "src/drivers/GpioAfio/include/gpioafio_types.h",
+      "accessCount": 6,
+      "lastAccessed": 1777471922450,
+      "type": "file"
+    },
+    {
+      "path": "scripts/extract-design-tables.py",
+      "accessCount": 5,
+      "lastAccessed": 1777471903348,
       "type": "file"
     },
     {
       "path": "src/drivers/Dma/dma_detailed_design.md",
       "accessCount": 4,
       "lastAccessed": 1777248485984,
+      "type": "file"
+    },
+    {
+      "path": ".claude/agents/codegen-agent.md",
+      "accessCount": 4,
+      "lastAccessed": 1777497957762,
       "type": "file"
     },
     {
@@ -143,12 +161,6 @@
       "path": "scripts/feature-loop.sh",
       "accessCount": 3,
       "lastAccessed": 1777247571497,
-      "type": "file"
-    },
-    {
-      "path": ".claude/agents/codegen-agent.md",
-      "accessCount": 3,
-      "lastAccessed": 1777248314434,
       "type": "file"
     },
     {
@@ -203,6 +215,24 @@
       "path": "src/drivers/Dma/include/dma_ll.h",
       "accessCount": 2,
       "lastAccessed": 1777296046114,
+      "type": "file"
+    },
+    {
+      "path": "src/drivers/GpioAfio/include/gpioafio_ll.h",
+      "accessCount": 2,
+      "lastAccessed": 1777384703762,
+      "type": "file"
+    },
+    {
+      "path": "src/drivers/GpioAfio/gpio_afio_detailed_design.md",
+      "accessCount": 2,
+      "lastAccessed": 1777415978191,
+      "type": "file"
+    },
+    {
+      "path": "src/drivers/GpioAfio/include/gpioafio_api.h",
+      "accessCount": 2,
+      "lastAccessed": 1777471938450,
       "type": "file"
     },
     {
@@ -329,6 +359,42 @@
       "path": "src/drivers/GpioAfio/src/gpio_afio_drv.c",
       "accessCount": 1,
       "lastAccessed": 1777331409904,
+      "type": "file"
+    },
+    {
+      "path": "src/drivers/GpioAfio/src/gpioafio_drv.c",
+      "accessCount": 1,
+      "lastAccessed": 1777384613854,
+      "type": "file"
+    },
+    {
+      "path": "docs/detailed-design-template.md",
+      "accessCount": 1,
+      "lastAccessed": 1777415736666,
+      "type": "file"
+    },
+    {
+      "path": "scripts/check-detailed-design.py",
+      "accessCount": 1,
+      "lastAccessed": 1777415754610,
+      "type": "file"
+    },
+    {
+      "path": "ir/gpio_afio_feature_matrix.json",
+      "accessCount": 1,
+      "lastAccessed": 1777497713952,
+      "type": "file"
+    },
+    {
+      "path": "docs/srs/_template.md",
+      "accessCount": 1,
+      "lastAccessed": 1777497748238,
+      "type": "file"
+    },
+    {
+      "path": "docs/srs/gpio_afio_srs.md",
+      "accessCount": 1,
+      "lastAccessed": 1777497774241,
       "type": "file"
     }
   ],

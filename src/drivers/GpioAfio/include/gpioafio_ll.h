@@ -1,7 +1,7 @@
 /**
- * @file    gpio_afio_ll.h
+ * @file    gpioafio_ll.h
  * @brief   GPIO + AFIO Layer 2 — static-inline atomic ops
- * Source:  ir/gpio_afio_ir_summary.json v3.0
+ * Source:  ir/gpioafio_ir_summary.json v3.0
  *
  * Invariant guards (R8 #11):
  *   INV_GPIO_002 — AFIOEN must be 1 before AFIO writes
@@ -11,8 +11,8 @@
 #ifndef GPIO_AFIO_LL_H
 #define GPIO_AFIO_LL_H
 
-#include "gpio_afio_reg.h"
-#include "gpio_afio_types.h"
+#include "gpioafio_reg.h"
+#include "gpioafio_types.h"
 
 /* RCC clock helpers (declared here, not in RCC driver, to keep GPIO self-contained) */
 static inline void GpioAfio_LL_EnableClockGpio(GpioAfio_Port_e port)
@@ -71,6 +71,48 @@ static inline uint16_t GpioAfio_LL_ReadPort(GpioAfio_Port_e port)
 static inline bool GpioAfio_LL_IsLocked(GpioAfio_Port_e port)
 {
     return ((GpioAfio_LL_GetBank(port)->LCKR & GPIO_LCKR_LCKK_Msk) != 0U);
+}
+
+/* Apply MODE+CNF to every pin in mask within one bank (R8#17: composition in LL). */
+static inline void GpioAfio_LL_ApplyPinModeMask(GpioAfio_Port_e port,
+                                                 uint16_t pin_mask,
+                                                 GpioAfio_Mode_e mode)
+{
+    for (uint8_t pin = 0U; pin < 16U; pin++) {
+        if ((pin_mask & (uint16_t)(1U << pin)) != 0U) {
+            GpioAfio_LL_SetPinMode(port, pin, mode);
+        }
+    }
+}
+
+/* Bank-level reset to power-on values (DeInit; INV_GPIO_001 must be checked by caller). */
+static inline void GpioAfio_LL_ResetBank(GpioAfio_Port_e port)
+{
+    GPIO_TypeDef *bank = GpioAfio_LL_GetBank(port);
+    bank->CRL = 0x44444444UL; /* RM0008 §9.2.1 reset value */
+    bank->CRH = 0x44444444UL; /* RM0008 §9.2.2 reset value */
+    bank->ODR = 0U;           /* RM0008 §9.2.4 reset value */
+}
+
+/* Atomic toggle: read ODR, compose set/reset masks, write BSRR in single store. */
+static inline void GpioAfio_LL_TogglePins(GpioAfio_Port_e port, uint16_t pin_mask)
+{
+    GPIO_TypeDef *bank = GpioAfio_LL_GetBank(port);
+    uint16_t cur       = (uint16_t)(bank->ODR & 0xFFFFU);
+    uint16_t set_bits  = (uint16_t)(pin_mask & ~cur);
+    uint16_t clr_bits  = (uint16_t)(pin_mask & cur);
+    bank->BSRR = (uint32_t)set_bits | ((uint32_t)clr_bits << 16U);
+}
+
+/* LCKR raw access (driver-layer SEQ_LCKR_LOCK orchestration). */
+static inline void GpioAfio_LL_WriteLckr(GpioAfio_Port_e port, uint32_t value)
+{
+    GpioAfio_LL_GetBank(port)->LCKR = value;
+}
+
+static inline uint32_t GpioAfio_LL_ReadLckr(GpioAfio_Port_e port)
+{
+    return GpioAfio_LL_GetBank(port)->LCKR;
 }
 
 /* AFIO EXTI source select (4-bit field per EXTI line, 4 lines per EXTICR reg) */

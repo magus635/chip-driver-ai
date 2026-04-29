@@ -76,7 +76,7 @@ def derive_features(module: str, ir: dict):
         fid = f"{mod_up}-MODE-{slug(nm)}"
         add(fid, "操作模式", nm,
             [f"{module.title()}_Configure"],
-            [f"operating_modes.{nm}"],
+            [f"operation_modes.{nm}"],
             f"配置 {nm} 模式，符合 IR 中字段约束",
             deps=[init_id])
 

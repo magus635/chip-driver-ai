@@ -42,7 +42,21 @@
       "Bash(grep -n '^---$\\\\|^### R\\\\|^## ' CLAUDE.md)",
       "Bash(awk -F: '$2 ~ /^#### \\(9|10\\) / {print}')",
       "Bash(awk '/^#### 9 /{flag=1} /^#### 10 /{flag=0} flag && /^###### 9\\\\./ {print NR\": \"$0}' docs/parsed/stm32f103_reference_manual.md)",
-      "Bash(echo \"md-sync-exit=$?\")"
+      "Bash(echo \"md-sync-exit=$?\")",
+      "Bash(sed -n '45,55p' src/drivers/GpioAfio/src/gpioafio_drv.c)",
+      "Bash(sed -n '395,440p' scripts/check-arch.sh)",
+      "Bash(chmod +x scripts/check-detailed-design.py)",
+      "Bash(chmod +x scripts/extract-design-tables.py)",
+      "Bash(awk '/DATA_STRUCTURES:BEGIN/,/DATA_STRUCTURES:END/' src/drivers/GpioAfio/gpio_afio_detailed_design.md)",
+      "Bash(awk '/API_FUNCTIONS:BEGIN/,/API_FUNCTIONS:END/' src/drivers/GpioAfio/gpio_afio_detailed_design.md)",
+      "Read(//Users/qlwang/Downloads/**)",
+      "Bash(grep -nE '^#{1,3} ' /Users/qlwang/Documents/GitHub/chip-driver-ai/docs/ir-specification.md)",
+      "Bash(grep -n \"^### R10\\\\|^---$\\\\|^## \" CLAUDE.md)",
+      "Bash(sed -i '' 's|f\"operating_modes\\\\.{nm}\"|f\"operation_modes.{nm}\"|' scripts/feature-bootstrap.py)",
+      "Bash(echo \"validate: $?\")",
+      "Bash(echo \"validate --check-swr: $?\")",
+      "Bash(echo \"validate --all: $?\")",
+      "Bash(echo \"matrix gate: $?\")"
     ]
   }
 }
